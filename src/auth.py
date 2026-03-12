@@ -163,6 +163,13 @@ def _load_credential_from_file() -> bool:
         return False
 
 
+def refresh_auth_state() -> None:
+    """Reload auth-related state from disk and env."""
+    global _auth_enabled
+    _auth_enabled = None
+    _load_credential_from_file()
+
+
 def is_auth_enabled() -> bool:
     """Return whether admin authentication is enabled (ADMIN_AUTH_ENABLED=true)."""
     global _auth_enabled
@@ -172,12 +179,16 @@ def is_auth_enabled() -> bool:
     return _auth_enabled
 
 
+def has_stored_password() -> bool:
+    """Return whether a valid stored password hash exists on disk."""
+    return _load_credential_from_file()
+
+
 def is_password_set() -> bool:
     """Return whether initial password has been set (credential file exists and valid)."""
     if not is_auth_enabled():
         return False
-    _load_credential_from_file()
-    return _password_hash_stored is not None
+    return has_stored_password()
 
 
 def is_password_changeable() -> bool:
@@ -230,6 +241,7 @@ def set_initial_password(password: str) -> Optional[str]:
         tmp_path.write_text(content)
         tmp_path.chmod(0o600)
         tmp_path.rename(cred_path)
+        _load_credential_from_file()
         return None
     except OSError as e:
         logger.error("Failed to write credential file: %s", e)
