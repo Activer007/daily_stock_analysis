@@ -1058,11 +1058,6 @@ textarea {
   );
 }
 
-.dock-items {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
 .dock-item {
   position: relative;
