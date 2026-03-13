@@ -94,7 +94,7 @@ def _cookie_params(request: Request) -> dict:
     }
 
 
-def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> None:
+def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> bool:
     """Persist auth toggle to .env and reload runtime config."""
     manager_applied = False
     if request is not None:
@@ -109,15 +109,24 @@ def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> None:
             manager_applied = False
 
     if not manager_applied:
-        manager = ConfigManager()
-        manager.apply_updates(
-            updates=[("ADMIN_AUTH_ENABLED", "true" if enabled else "false")],
-            sensitive_keys=set(),
-            mask_token="******",
-        )
+        try:
+            manager = ConfigManager()
+            manager.apply_updates(
+                updates=[("ADMIN_AUTH_ENABLED", "true" if enabled else "false")],
+                sensitive_keys=set(),
+                mask_token="******",
+            )
+            manager_applied = True
+        except Exception:
+            manager_applied = False
+
+    if not manager_applied:
+        return False
+
     Config.reset_instance()
     setup_env(override=True)
     refresh_auth_state()
+    return True
 
 
 def _password_set_for_response(auth_enabled: bool) -> bool:
@@ -277,13 +286,23 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 clear_rate_limit(ip)
 
     if target_enabled != current_enabled:
+        if not _apply_auth_enabled(target_enabled, request=request):
+            return JSONResponse(
+                status_code=500,
+                content={"error": "internal_error", "message": "Failed to update auth settings"},
+            )
         if not rotate_session_secret():
+            _apply_auth_enabled(current_enabled, request=request)
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to rotate session secret"},
             )
-
-    _apply_auth_enabled(target_enabled, request=request)
+    else:
+        if not _apply_auth_enabled(target_enabled, request=request):
+            return JSONResponse(
+                status_code=500,
+                content={"error": "internal_error", "message": "Failed to update auth settings"},
+            )
 
     if target_enabled:
         session_val = create_session()
