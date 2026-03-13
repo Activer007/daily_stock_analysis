@@ -21,7 +21,7 @@ const BUTTON_VARIANT_STYLES = {
   primary: 'border border-cyan/30 bg-cyan text-slate-950 shadow-lg shadow-cyan/20 hover:brightness-105',
   secondary: 'border border-white/10 bg-card text-foreground shadow-soft-card hover:bg-hover',
   outline: 'border border-cyan/25 bg-transparent text-cyan hover:bg-cyan/10',
-  ghost: 'border border-transparent bg-transparent text-secondary hover:bg-white/5 hover:text-foreground',
+  ghost: 'border border-transparent bg-transparent text-secondary-text hover:bg-white/5 hover:text-foreground',
   gradient: 'border border-cyan/20 bg-gradient-to-r from-cyan to-purple text-white shadow-lg shadow-cyan/20 hover:brightness-105',
   danger: 'border border-danger/40 bg-danger text-white shadow-lg shadow-danger/20 hover:brightness-105',
 } as const;

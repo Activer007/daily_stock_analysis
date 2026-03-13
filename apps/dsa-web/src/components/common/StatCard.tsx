@@ -36,9 +36,9 @@ export const StatCard: React.FC<StatCardProps> = ({
     <div className={cn('rounded-2xl border bg-card/75 p-4 shadow-soft-card', toneStyles[tone], className)}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-secondary">{label}</p>
+          <p className="text-xs uppercase tracking-[0.22em] text-secondary-text">{label}</p>
           <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-          {hint ? <div className="mt-2 text-sm text-secondary">{hint}</div> : null}
+          {hint ? <div className="mt-2 text-sm text-secondary-text">{hint}</div> : null}
         </div>
         {icon ? <div className="text-cyan">{icon}</div> : null}
       </div>

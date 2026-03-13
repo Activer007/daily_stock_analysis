@@ -12,12 +12,12 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'border-white/10 bg-white/5 text-secondary',
+  default: 'border-border/40 bg-elevated/40 text-secondary-text',
   success: 'border-success/20 bg-success/10 text-success',
   warning: 'border-warning/20 bg-warning/10 text-warning',
   danger: 'border-danger/20 bg-danger/10 text-danger',
   info: 'border-cyan/20 bg-cyan/10 text-cyan',
-  history: 'border-purple/20 bg-purple/10 text-violet-200',
+  history: 'border-purple/20 bg-purple/10 text-purple',
 };
 
 const glowStyles: Record<BadgeVariant, string> = {
@@ -25,8 +25,8 @@ const glowStyles: Record<BadgeVariant, string> = {
   success: 'shadow-success/20',
   warning: 'shadow-warning/20',
   danger: 'shadow-danger/20',
-  info: 'shadow-cyan-500/20',
-  history: 'shadow-purple-500/20',
+  info: 'shadow-cyan/20',
+  history: 'shadow-purple/20',
 };
 
 /**

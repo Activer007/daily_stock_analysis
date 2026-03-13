@@ -76,6 +76,8 @@ export default {
         base: 'hsl(var(--background))',
         elevated: 'hsl(var(--elevated))',
         hover: 'hsl(var(--hover))',
+        'secondary-bg': 'hsl(var(--secondary))',
+        'muted-bg': 'hsl(var(--muted))',
         'secondary-text': 'hsl(var(--secondary-text))',
         'muted-text': 'hsl(var(--muted-text))',
       },

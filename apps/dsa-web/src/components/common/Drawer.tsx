@@ -2,6 +2,8 @@ import type React from 'react';
 import { useEffect, useCallback } from 'react';
 import { cn } from '../../utils/cn';
 
+let activeDrawerCount = 0;
+
 interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -35,12 +37,19 @@ export const Drawer: React.FC<DrawerProps> = ({
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+      activeDrawerCount++;
+      if (activeDrawerCount === 1) {
+        document.body.style.overflow = 'hidden';
+      }
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        activeDrawerCount--;
+        if (activeDrawerCount === 0) {
+          document.body.style.overflow = '';
+        }
+      };
     }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
@@ -49,7 +58,7 @@ export const Drawer: React.FC<DrawerProps> = ({
     <div className="fixed inset-0 overflow-hidden" style={{ zIndex }}>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/72 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
 
@@ -67,7 +76,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-secondary transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-secondary-text transition-colors hover:bg-white/10 hover:text-white"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

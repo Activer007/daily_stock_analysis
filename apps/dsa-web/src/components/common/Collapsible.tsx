@@ -39,7 +39,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
           <span className="font-medium text-gray-100">{title}</span>
         </div>
         <svg
-          className={cn('h-5 w-5 text-secondary transition-transform duration-300', isOpen && 'rotate-180')}
+          className={cn('h-5 w-5 text-secondary-text transition-transform duration-300', isOpen && 'rotate-180')}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

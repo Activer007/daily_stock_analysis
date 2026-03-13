@@ -25,7 +25,7 @@ export const Input = ({ label, hint, error, className = '', id, ...props }: Inpu
         aria-invalid={ariaInvalid}
         className={cn(
           'h-11 w-full rounded-xl border border-white/10 bg-card px-4 text-sm text-foreground shadow-soft-card transition-all',
-          'placeholder:text-muted focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40',
+          'placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40',
           error ? 'border-danger/30 focus:border-danger/40 focus:ring-danger/10' : 'hover:border-white/18',
           className,
         )}
@@ -36,7 +36,7 @@ export const Input = ({ label, hint, error, className = '', id, ...props }: Inpu
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-2 text-xs text-secondary">
+        <p id={hintId} className="mt-2 text-xs text-secondary-text">
           {hint}
         </p>
       ) : null}
