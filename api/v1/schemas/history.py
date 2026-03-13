@@ -65,6 +65,18 @@ class HistoryListResponse(BaseModel):
         }
 
 
+class DeleteHistoryRequest(BaseModel):
+    """删除历史记录请求"""
+
+    record_ids: List[int] = Field(default_factory=list, description="要删除的历史记录主键 ID 列表")
+
+
+class DeleteHistoryResponse(BaseModel):
+    """删除历史记录响应"""
+
+    deleted: int = Field(..., description="实际删除的历史记录数量")
+
+
 class NewsIntelItem(BaseModel):
     """新闻情报条目"""
 

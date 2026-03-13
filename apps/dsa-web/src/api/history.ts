@@ -77,4 +77,16 @@ export const historyApi = {
     const response = await apiClient.get<{ content: string }>(`/api/v1/history/${recordId}/markdown`);
     return response.data.content;
   },
+
+  /**
+   * 批量删除历史记录
+   * @param recordIds 分析历史记录主键 ID 列表
+   */
+  deleteRecords: async (recordIds: number[]): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete<Record<string, unknown>>('/api/v1/history', {
+      data: { record_ids: recordIds },
+    });
+
+    return toCamelCase<{ deleted: number }>(response.data);
+  },
 };

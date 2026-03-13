@@ -274,6 +274,22 @@ class HistoryService:
             "context_snapshot": context_snapshot,
         }
 
+    def delete_history_records(self, record_ids: List[int]) -> int:
+        """
+        删除指定的历史分析记录。
+
+        Args:
+            record_ids: 历史记录主键 ID 列表
+
+        Returns:
+            实际删除的记录数
+        """
+        try:
+            return self.db.delete_analysis_history_records(record_ids)
+        except Exception as e:
+            logger.error(f"删除历史记录失败: {e}", exc_info=True)
+            return 0
+
     def get_news_intel(self, query_id: str, limit: int = 20) -> List[Dict[str, str]]:
         """
         获取指定 query_id 关联的新闻情报

@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiErrorAlert } from '../components/common';
+import { ApiErrorAlert, ConfirmDialog } from '../components/common';
 import { getParsedApiError } from '../api/error';
 import type { HistoryItem, AnalysisReport, TaskInfo } from '../types/analysis';
 import { historyApi } from '../api/history';
@@ -33,6 +33,9 @@ const HomePage: React.FC = () => {
 
 // 历史列表状态
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<number[]>([]);
+  const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -109,6 +112,11 @@ const HomePage: React.FC = () => {
   const selectedReportRef = useRef(selectedReport);
   selectedReportRef.current = selectedReport;
 
+  useEffect(() => {
+    const visibleIds = new Set(historyItems.map((item) => item.id));
+    setSelectedHistoryIds((prev) => prev.filter((id) => visibleIds.has(id)));
+  }, [historyItems]);
+
   // 加载历史列表
   const fetchHistory = useCallback(async (autoSelectFirst = false, reset = true, silent = false) => {
     if (!silent) {
@@ -183,6 +191,73 @@ const HomePage: React.FC = () => {
       fetchHistory(false, false);
     }
   }, [fetchHistory, isLoadingMore, hasMore]);
+
+  const handleToggleHistorySelection = useCallback((recordId: number) => {
+    setSelectedHistoryIds((prev) => (
+      prev.includes(recordId)
+        ? prev.filter((id) => id !== recordId)
+        : [...prev, recordId]
+    ));
+  }, []);
+
+  const handleToggleSelectAllHistory = useCallback(() => {
+    const visibleIds = historyItemsRef.current.map((item) => item.id);
+    setSelectedHistoryIds((prev) => {
+      const visibleSet = new Set(visibleIds);
+      const allSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.includes(id));
+      if (allSelected) {
+        return prev.filter((id) => !visibleSet.has(id));
+      }
+      return Array.from(new Set([...prev, ...visibleIds]));
+    });
+  }, []);
+
+  const handleDeleteSelectedHistory = useCallback(async () => {
+    const recordIds = Array.from(new Set(selectedHistoryIds));
+    if (recordIds.length === 0 || isDeletingHistory) {
+      return;
+    }
+
+    setIsDeletingHistory(true);
+    try {
+      await historyApi.deleteRecords(recordIds);
+      const deletedIdSet = new Set(recordIds);
+      const remainingItems = historyItemsRef.current.filter((item) => !deletedIdSet.has(item.id));
+      const selectedWasDeleted = selectedReportRef.current?.meta.id !== undefined
+        && deletedIdSet.has(selectedReportRef.current.meta.id);
+
+      setHistoryItems(remainingItems);
+      setSelectedHistoryIds([]);
+      setHasMore(true);
+
+      if (selectedWasDeleted) {
+        const nextItem = remainingItems[0];
+        if (nextItem) {
+          try {
+            const report = await historyApi.getDetail(nextItem.id);
+            setStoreError(null);
+            setSelectedReport(report);
+          } catch (err) {
+            console.error('Failed to fetch replacement report:', err);
+            setStoreError(getParsedApiError(err));
+            setSelectedReport(null);
+          }
+        } else {
+          setSelectedReport(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete history:', err);
+      setStoreError(getParsedApiError(err));
+    } finally {
+      setIsDeletingHistory(false);
+      setShowDeleteConfirm(false);
+    }
+  }, [isDeletingHistory, selectedHistoryIds, setStoreError]);
+
+  const confirmDeleteHistory = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
 
   // 初始加载 - 自动选择第一条（仅挂载时执行一次）
   useEffect(() => {
@@ -295,8 +370,13 @@ const HomePage: React.FC = () => {
         isLoadingMore={isLoadingMore}
         hasMore={hasMore}
         selectedId={selectedReport?.meta.id}
+        selectedIds={new Set(selectedHistoryIds)}
+        isDeleting={isDeletingHistory}
         onItemClick={(id) => { handleHistoryClick(id); setSidebarOpen(false); }}
         onLoadMore={handleLoadMore}
+        onToggleItemSelection={handleToggleHistorySelection}
+        onToggleSelectAll={handleToggleSelectAllHistory}
+        onDeleteSelected={confirmDeleteHistory}
         className="max-h-[62vh] md:max-h-[62vh] flex-1 overflow-hidden"
       />
     </div>
@@ -450,6 +530,22 @@ const HomePage: React.FC = () => {
           onClose={() => setShowMarkdownDrawer(false)}
         />
       )}
+
+      {/* 删除确认对话框 */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="删除历史记录"
+        message={
+          selectedHistoryIds.length === 1
+            ? '确认删除这条历史记录吗？删除后将不可恢复。'
+            : `确认删除选中的 ${selectedHistoryIds.length} 条历史记录吗？删除后将不可恢复。`
+        }
+        confirmText={isDeletingHistory ? '删除中...' : '确认删除'}
+        cancelText="取消"
+        isDanger={true}
+        onConfirm={handleDeleteSelectedHistory}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 };

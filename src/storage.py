@@ -977,6 +977,31 @@ class DatabaseManager:
             ).scalars().first()
             return result
 
+    def delete_analysis_history_records(self, record_ids: List[int]) -> int:
+        """
+        删除指定的分析历史记录。
+
+        同时清理依赖这些历史记录的回测结果，避免外键约束失败。
+
+        Args:
+            record_ids: 要删除的历史记录主键 ID 列表
+
+        Returns:
+            实际删除的历史记录数量
+        """
+        ids = sorted({int(record_id) for record_id in record_ids if record_id is not None})
+        if not ids:
+            return 0
+
+        with self.session_scope() as session:
+            session.execute(
+                delete(BacktestResult).where(BacktestResult.analysis_history_id.in_(ids))
+            )
+            result = session.execute(
+                delete(AnalysisHistory).where(AnalysisHistory.id.in_(ids))
+            )
+            return result.rowcount or 0
+
     def get_latest_analysis_by_query_id(self, query_id: str) -> Optional[AnalysisHistory]:
         """
         根据 query_id 查询最新一条分析历史记录
