@@ -113,8 +113,10 @@ def _load_session_secret() -> Optional[bytes]:
             if len(_session_secret) != 32:
                 logger.warning("Invalid .session_secret length, regenerating")
                 _session_secret = None
-            else:
-                return _session_secret
+                if rotate_session_secret():
+                    return _session_secret
+                return None
+            return _session_secret
 
         data_dir.mkdir(parents=True, exist_ok=True)
         new_secret = secrets.token_bytes(32)

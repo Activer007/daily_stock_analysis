@@ -135,12 +135,26 @@ class AuthSessionTestCase(unittest.TestCase):
             secret_path.chmod(0o600)
             old_secret = secret_path.read_bytes()
 
-            with patch.object(Path, "rename", side_effect=FileExistsError("exists")):
-                auth.rotate_session_secret()
+            auth.rotate_session_secret()
 
             new_secret = secret_path.read_bytes()
             self.assertNotEqual(old_secret, new_secret)
             self.assertEqual(auth._session_secret, new_secret)
+
+        self._patch_env_and_run(test_fn=run)
+
+    def test_load_session_secret_regenerates_invalid_length(self) -> None:
+        def run():
+            secret_path = self.data_dir / ".session_secret"
+            secret_path.write_bytes(b"x")
+            secret_path.chmod(0o600)
+
+            tok = auth.create_session()
+            self.assertTrue(tok)
+
+            new_secret = secret_path.read_bytes()
+            self.assertEqual(len(new_secret), 32)
+            self.assertNotEqual(new_secret, b"x")
 
         self._patch_env_and_run(test_fn=run)
 

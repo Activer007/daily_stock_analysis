@@ -105,7 +105,12 @@ def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> bool:
                 mask_token="******",
             )
             manager_applied = True
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "Failed to apply auth toggle via shared SystemConfigService, falling back: %s",
+                exc,
+                exc_info=True,
+            )
             manager_applied = False
 
     if not manager_applied:
@@ -117,7 +122,8 @@ def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> bool:
                 mask_token="******",
             )
             manager_applied = True
-        except Exception:
+        except Exception as exc:
+            logger.error("Failed to apply auth toggle via ConfigManager: %s", exc, exc_info=True)
             manager_applied = False
 
     if not manager_applied:
@@ -292,7 +298,9 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 content={"error": "internal_error", "message": "Failed to update auth settings"},
             )
         if not rotate_session_secret():
-            _apply_auth_enabled(current_enabled, request=request)
+            rollback_ok = _apply_auth_enabled(current_enabled, request=request)
+            if not rollback_ok:
+                logger.error("Failed to roll back auth state after session secret rotation failure")
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to rotate session secret"},
@@ -307,7 +315,9 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
     if target_enabled:
         session_val = create_session()
         if not session_val:
-            _apply_auth_enabled(current_enabled, request=request)
+            rollback_ok = _apply_auth_enabled(current_enabled, request=request)
+            if not rollback_ok:
+                logger.error("Failed to roll back auth state after session creation failure")
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to create session"},
