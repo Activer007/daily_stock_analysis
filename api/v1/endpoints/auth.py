@@ -194,28 +194,37 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 status_code=400,
                 content={"error": "password_required", "message": "开启密码登录前请先设置密码"},
             )
-        elif not current_enabled:
-            if not current_password:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "current_required", "message": "重新开启认证前请输入当前密码"},
-                )
-            ip = get_client_ip(request)
-            if not check_rate_limit(ip):
-                return JSONResponse(
-                    status_code=429,
-                    content={
-                        "error": "rate_limited",
-                        "message": "Too many failed attempts. Please try again later.",
-                    },
-                )
-            if not verify_stored_password(current_password):
-                record_login_failure(ip)
-                return JSONResponse(
-                    status_code=401,
-                    content={"error": "invalid_password", "message": "当前密码错误"},
-                )
-            clear_rate_limit(ip)
+        else:
+            # P1 Vulnerability Fix: Enforce current-password check independent of global cached flag
+            # We must verify they actually possess a valid admin session, otherwise an attacker
+            # could hit a race condition when auth becomes enabled mid-flight.
+            # This triggers whenever trying to enable/keep enabled an existing auth setup.
+            cookie_val = request.cookies.get(COOKIE_NAME)
+            # if target_enabled is True here, they are requesting to enable or keep auth enabled
+            is_valid_session = cookie_val and verify_session(cookie_val)
+            
+            if not is_valid_session:
+                if not current_password:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "current_required", "message": "重新开启认证前请输入当前密码"},
+                    )
+                ip = get_client_ip(request)
+                if not check_rate_limit(ip):
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": "rate_limited",
+                            "message": "Too many failed attempts. Please try again later.",
+                        },
+                    )
+                if not verify_stored_password(current_password):
+                    record_login_failure(ip)
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "invalid_password", "message": "当前密码错误"},
+                    )
+                clear_rate_limit(ip)
 
     _apply_auth_enabled(target_enabled)
 
