@@ -21,8 +21,9 @@ interface HistoryListProps {
 }
 
 /**
- * 历史记录列表组件
- * 显示最近的股票分析历史，支持点击查看详情、滚动加载更多，以及批量勾选删除
+ * History record list component.
+ * Displays recent stock analysis history, supports clicking for details, scroll-to-load-more, 
+ * and batch selection for deletion.
  */
 export const HistoryList: React.FC<HistoryListProps> = ({
   items,
@@ -47,13 +48,13 @@ export const HistoryList: React.FC<HistoryListProps> = ({
   const allVisibleSelected = items.length > 0 && selectedCount === items.length;
   const someVisibleSelected = selectedCount > 0 && !allVisibleSelected;
 
-  // 使用 IntersectionObserver 检测滚动到底部
+  // Use IntersectionObserver to detect scrolling to bottom
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const target = entries[0];
-      // 只有当触发器真正可见且有更多数据时才加载
+      // Only load when trigger is truly visible and more data exists
       if (target.isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-        // 确保容器有滚动能力（内容超过容器高度）
+        // Ensure container has scroll capacity (content exceeds container height)
         const container = scrollContainerRef.current;
         if (container && container.scrollHeight > container.clientHeight) {
           onLoadMore();
@@ -70,8 +71,8 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
     const observer = new IntersectionObserver(handleObserver, {
       root: container,
-      rootMargin: '20px', // 减小预加载距离
-      threshold: 0.1, // 触发器至少 10% 可见时才触发
+      rootMargin: '20px', // Reduce pre-load distance
+      threshold: 0.1, // Trigger only when at least 10% of trigger is visible
     });
 
     observer.observe(trigger);
@@ -158,7 +159,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                     className={`history-item w-full text-left ${selectedId === item.id ? 'active' : ''}`}
                   >
                     <div className="flex items-center gap-2 w-full">
-                      {/* 情感分数指示条 */}
+                      {/* Sentiment score indicator bar */}
                       {item.sentimentScore !== undefined && (
                         <span
                           className="w-0.5 h-8 rounded-full flex-shrink-0"

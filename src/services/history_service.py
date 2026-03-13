@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-历史查询服务层
+History Query Service Layer
 ===================================
 
-职责：
-1. 封装历史记录查询逻辑
-2. 提供分页和筛选功能
-3. 生成 Markdown 格式的详细报告
+Responsibilities:
+1. Encapsulate history record query logic
+2. Provide pagination and filtering functionality
+3. Generate detailed reports in Markdown format
 """
 
 import json
@@ -33,17 +33,17 @@ class MarkdownReportGenerationError(Exception):
 
 class HistoryService:
     """
-    历史查询服务
+    History Query Service
     
-    封装历史分析记录的查询逻辑
+    Encapsulates query logic for historical analysis records.
     """
     
     def __init__(self, db_manager: Optional[DatabaseManager] = None):
         """
-        初始化历史查询服务
+        Initialize the history query service.
         
         Args:
-            db_manager: 数据库管理器（可选，默认使用单例）
+            db_manager: Database manager (optional, defaults to singleton instance)
         """
         self.db = db_manager or DatabaseManager.get_instance()
     
@@ -56,20 +56,20 @@ class HistoryService:
         limit: int = 20
     ) -> Dict[str, Any]:
         """
-        获取历史分析列表
+        Get history analysis list.
         
         Args:
-            stock_code: 股票代码筛选
-            start_date: 开始日期 (YYYY-MM-DD)
-            end_date: 结束日期 (YYYY-MM-DD)
-            page: 页码
-            limit: 每页数量
+            stock_code: Stock code filter
+            start_date: Start date (YYYY-MM-DD)
+            end_date: End date (YYYY-MM-DD)
+            page: Page number
+            limit: Items per page
             
         Returns:
-            包含 total, items 的字典
+            Dictionary containing total count and items
         """
         try:
-            # 解析日期参数
+            # Parse date parameters
             start_dt = None
             end_dt = None
             
@@ -85,10 +85,10 @@ class HistoryService:
                 except ValueError:
                     logger.warning(f"无效的 end_date 格式: {end_date}")
             
-            # 计算 offset
+            # Calculate offset
             offset = (page - 1) * limit
             
-            # 使用新的分页查询方法
+            # Use new paginated query method
             records, total = self.db.get_analysis_history_paginated(
                 code=stock_code,
                 start_date=start_dt,
@@ -97,7 +97,7 @@ class HistoryService:
                 limit=limit
             )
             
-            # 转换为响应格式
+            # Convert to response format
             items = []
             for record in records:
                 items.append({
@@ -185,15 +185,16 @@ class HistoryService:
 
     def get_history_detail_by_id(self, record_id: int) -> Optional[Dict[str, Any]]:
         """
-        获取历史报告详情
+        Get history report detail.
 
-        使用数据库主键精确查询，避免 query_id 在批量分析时重复导致返回错误记录。
+        Uses database primary key for precise query, avoiding returning incorrect records 
+        due to duplicate query_id in batch analysis.
 
         Args:
-            record_id: 分析历史记录主键 ID
+            record_id: Analysis history record primary key ID
 
         Returns:
-            完整的分析报告字典，不存在返回 None
+            Complete analysis report dictionary, or None if not exists
         """
         try:
             record = self.db.get_analysis_history_by_id(record_id)
@@ -276,30 +277,30 @@ class HistoryService:
 
     def delete_history_records(self, record_ids: List[int]) -> int:
         """
-        删除指定的历史分析记录。
+        Delete specified analysis history records.
 
         Args:
-            record_ids: 历史记录主键 ID 列表
+            record_ids: List of history record primary key IDs
 
         Returns:
-            实际删除的记录数
+            Number of records actually deleted
+
+        Raises:
+            Exception: Re-raises any storage-layer exception so the API caller
+                       receives a proper 500 error instead of a silent success.
         """
-        try:
-            return self.db.delete_analysis_history_records(record_ids)
-        except Exception as e:
-            logger.error(f"删除历史记录失败: {e}", exc_info=True)
-            return 0
+        return self.db.delete_analysis_history_records(record_ids)
 
     def get_news_intel(self, query_id: str, limit: int = 20) -> List[Dict[str, str]]:
         """
-        获取指定 query_id 关联的新闻情报
+        Get news intelligence associated with a specified query_id.
 
         Args:
-            query_id: 分析记录唯一标识
-            limit: 返回数量限制
+            query_id: Unique analysis identifier
+            limit: Result limit
 
         Returns:
-            新闻情报列表（包含 title、snippet、url）
+            List of news intelligence (containing title, snippet, and url)
         """
         try:
             records = self.db.get_news_intel_by_query_id(query_id=query_id, limit=limit)
@@ -326,25 +327,25 @@ class HistoryService:
 
     def get_news_intel_by_record_id(self, record_id: int, limit: int = 20) -> List[Dict[str, str]]:
         """
-        根据分析历史记录 ID 获取关联的新闻情报
+        Get associated news intelligence based on analysis history record ID.
 
-        将 record_id 解析为 query_id，再调用 get_news_intel。
+        Parses record_id to query_id, then calls get_news_intel.
 
         Args:
-            record_id: 分析历史记录主键 ID
-            limit: 返回数量限制
+            record_id: Analysis history primary key ID
+            limit: Result limit
 
         Returns:
-            新闻情报列表（包含 title、snippet、url）
+            List of news intelligence (containing title, snippet, and url)
         """
         try:
-            # 根据 record_id 查出对应的 AnalysisHistory 记录
+            # Look up the corresponding AnalysisHistory record by record_id
             record = self.db.get_analysis_history_by_id(record_id)
             if not record:
-                logger.warning(f"未找到 record_id={record_id} 的分析记录")
+                logger.warning(f"No analysis record found for record_id={record_id}")
                 return []
 
-            # 从记录中获取 query_id，然后调用原方法
+            # Get query_id from record, then call original method
             return self.get_news_intel(query_id=record.query_id, limit=limit)
 
         except Exception as e:
@@ -382,13 +383,13 @@ class HistoryService:
     
     def _get_sentiment_label(self, score: int) -> str:
         """
-        根据评分获取情绪标签
+        Get sentiment label based on score.
 
         Args:
-            score: 情绪评分 (0-100)
+            score: Sentiment score (0-100)
 
         Returns:
-            情绪标签
+            Sentiment label
         """
         if score >= 80:
             return "极度乐观"

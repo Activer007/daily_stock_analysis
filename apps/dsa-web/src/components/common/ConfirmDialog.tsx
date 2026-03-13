@@ -12,8 +12,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * 通用确认对话框组件
- * 样式与 ChatPage 保持一致
+ * Generic confirmation dialog component.
+ * Style is consistent with ChatPage.
  */
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
