@@ -69,12 +69,31 @@ def _get_credential_path() -> Path:
 def _is_auth_enabled_from_env() -> bool:
     """Read ADMIN_AUTH_ENABLED from .env file."""
     _ensure_env_loaded()
-    env_path = Path(__file__).resolve().parent.parent / ".env"
+    env_file = os.getenv("ENV_FILE")
+    env_path = Path(env_file) if env_file else Path(__file__).resolve().parent.parent / ".env"
     if not env_path.exists():
         return False
     values = dotenv_values(env_path)
     val = (values.get("ADMIN_AUTH_ENABLED") or "").strip().lower()
     return val in ("true", "1", "yes")
+
+
+def rotate_session_secret() -> None:
+    """Rotate the session signing secret to invalidate all active sessions."""
+    global _session_secret
+    data_dir = _get_data_dir()
+    secret_path = data_dir / ".session_secret"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    new_secret = secrets.token_bytes(32)
+    try:
+        tmp_path = secret_path.with_suffix(".tmp")
+        tmp_path.write_bytes(new_secret)
+        tmp_path.chmod(0o600)
+        tmp_path.replace(secret_path)
+        _session_secret = new_secret
+        logger.info("Session secret rotated successfully")
+    except OSError as e:
+        logger.error("Failed to rotate .session_secret: %s", e)
 
 
 def _load_session_secret() -> Optional[bytes]:
@@ -165,8 +184,9 @@ def _load_credential_from_file() -> bool:
 
 def refresh_auth_state() -> None:
     """Reload auth-related state from disk and env."""
-    global _auth_enabled
+    global _auth_enabled, _session_secret
     _auth_enabled = None
+    _session_secret = None
     _load_credential_from_file()
 
 
@@ -182,6 +202,13 @@ def is_auth_enabled() -> bool:
 def has_stored_password() -> bool:
     """Return whether a valid stored password hash exists on disk."""
     return _load_credential_from_file()
+
+
+def verify_stored_password(password: str) -> bool:
+    """Verify password against stored credential even when auth is disabled."""
+    if not has_stored_password():
+        return False
+    return _verify_password_hash(password, _password_hash_salt, _password_hash_stored)
 
 
 def is_password_set() -> bool:
@@ -240,7 +267,7 @@ def set_initial_password(password: str) -> Optional[str]:
         tmp_path = cred_path.with_suffix(".tmp")
         tmp_path.write_text(content)
         tmp_path.chmod(0o600)
-        tmp_path.rename(cred_path)
+        tmp_path.replace(cred_path)
         _load_credential_from_file()
         return None
     except OSError as e:
@@ -252,9 +279,7 @@ def verify_password(password: str) -> bool:
     """Verify password against stored credential. Constant-time where applicable."""
     if not is_auth_enabled():
         return True
-    if not is_password_set():
-        return False
-    return _verify_password_hash(password, _password_hash_salt, _password_hash_stored)
+    return verify_stored_password(password)
 
 
 def change_password(current: str, new: str) -> Optional[str]:
@@ -291,7 +316,7 @@ def change_password(current: str, new: str) -> Optional[str]:
         tmp_path = cred_path.with_suffix(".tmp")
         tmp_path.write_text(content)
         tmp_path.chmod(0o600)
-        tmp_path.rename(cred_path)
+        tmp_path.replace(cred_path)
         # Reload into memory so subsequent verify_password uses new hash
         _load_credential_from_file()
         return None
@@ -416,7 +441,7 @@ def overwrite_password(new_password: str) -> Optional[str]:
         tmp_path = cred_path.with_suffix(".tmp")
         tmp_path.write_text(content)
         tmp_path.chmod(0o600)
-        tmp_path.rename(cred_path)
+        tmp_path.replace(cred_path)
         _load_credential_from_file()
         return None
     except OSError as e:

@@ -24,8 +24,10 @@ from src.auth import (
     is_password_set,
     record_login_failure,
     refresh_auth_state,
+    rotate_session_secret,
     set_initial_password,
     verify_password,
+    verify_stored_password,
     verify_session,
 )
 from src.config import Config, setup_env
@@ -63,6 +65,7 @@ class AuthSettingsRequest(BaseModel):
     auth_enabled: bool = Field(alias="authEnabled")
     password: str = Field(default="")
     password_confirm: str | None = Field(default=None, alias="passwordConfirm")
+    current_password: str = Field(default="", alias="currentPassword")
 
 
 def _cookie_params(request: Request) -> dict:
@@ -108,6 +111,20 @@ def _password_set_for_response(auth_enabled: bool) -> bool:
     return is_password_set() if auth_enabled else False
 
 
+def _set_session_cookie(response: Response, session_value: str, request: Request) -> None:
+    """Attach the admin session cookie to a response."""
+    params = _cookie_params(request)
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=session_value,
+        httponly=params["httponly"],
+        samesite=params["samesite"],
+        secure=params["secure"],
+        path=params["path"],
+        max_age=params["max_age"],
+    )
+
+
 @router.get(
     "/status",
     summary="Get auth status",
@@ -131,18 +148,32 @@ async def auth_status(request: Request):
 @router.post(
     "/settings",
     summary="Update auth settings",
-    description="Enable or disable password login. When enabling without an existing password, password + passwordConfirm are required.",
+    description=(
+        "Enable or disable password login. When enabling without an existing password, "
+        "password + passwordConfirm are required. When re-enabling with a stored password, "
+        "currentPassword is required."
+    ),
 )
 async def auth_update_settings(request: Request, body: AuthSettingsRequest):
     """Manage auth enablement from the settings page."""
     target_enabled = body.auth_enabled
+    current_enabled = is_auth_enabled()
     stored_password_exists = has_stored_password()
 
     password = (body.password or "").strip()
     confirm = (body.password_confirm or "").strip()
+    current_password = (body.current_password or "").strip()
 
     if target_enabled:
         if password or confirm:
+            if stored_password_exists:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": "password_already_set",
+                        "message": "已存在管理员密码，请启用认证后通过修改密码功能更新",
+                    },
+                )
             if not password:
                 return JSONResponse(
                     status_code=400,
@@ -164,12 +195,47 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 status_code=400,
                 content={"error": "password_required", "message": "开启密码登录前请先设置密码"},
             )
+        else:
+            # P1 Vulnerability Fix: Enforce current-password check independent of global cached flag
+            # We must verify they actually possess a valid admin session, otherwise an attacker
+            # could hit a race condition when auth becomes enabled mid-flight.
+            # This triggers whenever trying to enable/keep enabled an existing auth setup.
+            cookie_val = request.cookies.get(COOKIE_NAME)
+            # if target_enabled is True here, they are requesting to enable or keep auth enabled
+            is_valid_session = cookie_val and verify_session(cookie_val)
+            
+            if not is_valid_session:
+                if not current_password:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "current_required", "message": "重新开启认证前请输入当前密码"},
+                    )
+                ip = get_client_ip(request)
+                if not check_rate_limit(ip):
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": "rate_limited",
+                            "message": "Too many failed attempts. Please try again later.",
+                        },
+                    )
+                if not verify_stored_password(current_password):
+                    record_login_failure(ip)
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "invalid_password", "message": "当前密码错误"},
+                    )
+                clear_rate_limit(ip)
+
+    if target_enabled != current_enabled:
+        rotate_session_secret()
 
     _apply_auth_enabled(target_enabled)
 
     if target_enabled:
         session_val = create_session()
         if not session_val:
+            _apply_auth_enabled(current_enabled)
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to create session"},
@@ -182,16 +248,7 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 "passwordChangeable": True,
             }
         )
-        params = _cookie_params(request)
-        resp.set_cookie(
-            key=COOKIE_NAME,
-            value=session_val,
-            httponly=params["httponly"],
-            samesite=params["samesite"],
-            secure=params["secure"],
-            path=params["path"],
-            max_age=params["max_age"],
-        )
+        _set_session_cookie(resp, session_val, request)
         return resp
 
     resp = JSONResponse(
@@ -271,16 +328,7 @@ async def auth_login(request: Request, body: LoginRequest):
         )
 
     resp = JSONResponse(content={"ok": True})
-    params = _cookie_params(request)
-    resp.set_cookie(
-        key=COOKIE_NAME,
-        value=session_val,
-        httponly=params["httponly"],
-        samesite=params["samesite"],
-        secure=params["secure"],
-        path=params["path"],
-        max_age=params["max_age"],
-    )
+    _set_session_cookie(resp, session_val, request)
     return resp
 
 

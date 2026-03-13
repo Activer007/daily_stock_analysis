@@ -128,6 +128,22 @@ class AuthSessionTestCase(unittest.TestCase):
 
         self._patch_env_and_run(test_fn=run)
 
+    def test_rotate_session_secret_overwrites_existing(self) -> None:
+        def run():
+            secret_path = self.data_dir / ".session_secret"
+            secret_path.write_bytes(b"a" * 32)
+            secret_path.chmod(0o600)
+            old_secret = secret_path.read_bytes()
+
+            with patch.object(Path, "rename", side_effect=FileExistsError("exists")):
+                auth.rotate_session_secret()
+
+            new_secret = secret_path.read_bytes()
+            self.assertNotEqual(old_secret, new_secret)
+            self.assertEqual(auth._session_secret, new_secret)
+
+        self._patch_env_and_run(test_fn=run)
+
 
 class AuthRateLimitTestCase(unittest.TestCase):
     """Test rate limiting."""
@@ -187,6 +203,37 @@ class AuthSetPasswordTestCase(unittest.TestCase):
             auth._auth_enabled = False
             self.assertTrue(auth.has_stored_password())
             self.assertFalse(auth.is_password_set())
+
+        self._run_with_patch(run)
+
+    def test_verify_stored_password_when_auth_disabled(self) -> None:
+        def run():
+            err = auth.set_initial_password("password123")
+            self.assertIsNone(err)
+
+            auth._auth_enabled = False
+            self.assertTrue(auth.verify_stored_password("password123"))
+            self.assertFalse(auth.verify_stored_password("wrongpass"))
+
+        self._run_with_patch(run)
+
+    def test_is_auth_enabled_from_env_respects_env_file(self) -> None:
+        custom_env = self.data_dir / "custom.env"
+        custom_env.write_text("ADMIN_AUTH_ENABLED=true\n", encoding="utf-8")
+
+        with patch.dict(os.environ, {"ENV_FILE": str(custom_env)}):
+            auth._auth_enabled = None
+            self.assertTrue(auth._is_auth_enabled_from_env())
+
+    def test_refresh_auth_state_clears_session_secret_cache(self) -> None:
+        def run():
+            first_secret = auth.create_session()
+            self.assertTrue(first_secret)
+            self.assertIsNotNone(auth._session_secret)
+
+            auth._session_secret = b"x" * 32
+            auth.refresh_auth_state()
+            self.assertNotEqual(auth._session_secret, b"x" * 32)
 
         self._run_with_patch(run)
 
