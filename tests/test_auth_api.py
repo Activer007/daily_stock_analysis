@@ -227,6 +227,49 @@ class AuthApiTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         call_next.assert_awaited_once()
 
+    def test_auth_settings_requires_session_when_auth_enabled(self) -> None:
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/auth/settings",
+            "headers": [],
+            "query_string": b"",
+            "scheme": "http",
+            "client": ("127.0.0.1", 1234),
+            "server": ("testserver", 80),
+            "root_path": "",
+        }
+        request = Request(scope)
+        middleware = AuthMiddleware(app=MagicMock())
+
+        with patch("api.middlewares.auth.is_auth_enabled", return_value=True):
+            response = asyncio.run(middleware.dispatch(request, AsyncMock(return_value=Response(status_code=200))))
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_auth_settings_is_reachable_when_auth_disabled(self) -> None:
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/auth/settings",
+            "headers": [],
+            "query_string": b"",
+            "scheme": "http",
+            "client": ("127.0.0.1", 1234),
+            "server": ("testserver", 80),
+            "root_path": "",
+        }
+        request = Request(scope)
+        middleware = AuthMiddleware(app=MagicMock())
+        next_response = Response(status_code=200)
+        call_next = AsyncMock(return_value=next_response)
+
+        with patch("api.middlewares.auth.is_auth_enabled", return_value=False):
+            response = asyncio.run(middleware.dispatch(request, call_next))
+
+        self.assertEqual(response.status_code, 200)
+        call_next.assert_awaited_once()
+
     def test_auth_settings_enable_sets_initial_password_and_logs_in(self) -> None:
         self.env_path.write_text(
             "STOCK_LIST=600519\nGEMINI_API_KEY=test\nADMIN_AUTH_ENABLED=false\n",
@@ -316,6 +359,32 @@ class AuthApiTestCase(unittest.TestCase):
         self.assertIn(b'"authEnabled":true', enable_response.body)
         self.assertIn(b'"passwordSet":true', enable_response.body)
         self.assertIn("dsa_session=", enable_response.headers["set-cookie"])
+
+    def test_auth_settings_rejects_overwriting_existing_password(self) -> None:
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            auth.set_initial_password("passwd6")
+            disable_response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=False),
+                )
+            )
+            self.assertEqual(disable_response.status_code, 200)
+
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(
+                        authEnabled=True,
+                        password="newpass123",
+                        passwordConfirm="newpass123",
+                    ),
+                )
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'"error":"password_already_set"', response.body)
 
 
 if __name__ == "__main__":

@@ -190,6 +190,26 @@ class AuthSetPasswordTestCase(unittest.TestCase):
 
         self._run_with_patch(run)
 
+    def test_is_auth_enabled_from_env_respects_env_file(self) -> None:
+        custom_env = self.data_dir / "custom.env"
+        custom_env.write_text("ADMIN_AUTH_ENABLED=true\n", encoding="utf-8")
+
+        with patch.dict(os.environ, {"ENV_FILE": str(custom_env)}):
+            auth._auth_enabled = None
+            self.assertTrue(auth._is_auth_enabled_from_env())
+
+    def test_refresh_auth_state_clears_session_secret_cache(self) -> None:
+        def run():
+            first_secret = auth.create_session()
+            self.assertTrue(first_secret)
+            self.assertIsNotNone(auth._session_secret)
+
+            auth._session_secret = b"x" * 32
+            auth.refresh_auth_state()
+            self.assertNotEqual(auth._session_secret, b"x" * 32)
+
+        self._run_with_patch(run)
+
     def test_set_initial_password_invalid(self) -> None:
         def run():
             self.assertIsNotNone(auth.set_initial_password(""))

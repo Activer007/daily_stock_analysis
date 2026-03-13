@@ -108,6 +108,20 @@ def _password_set_for_response(auth_enabled: bool) -> bool:
     return is_password_set() if auth_enabled else False
 
 
+def _set_session_cookie(response: Response, session_value: str, request: Request) -> None:
+    """Attach the admin session cookie to a response."""
+    params = _cookie_params(request)
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=session_value,
+        httponly=params["httponly"],
+        samesite=params["samesite"],
+        secure=params["secure"],
+        path=params["path"],
+        max_age=params["max_age"],
+    )
+
+
 @router.get(
     "/status",
     summary="Get auth status",
@@ -143,6 +157,14 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
 
     if target_enabled:
         if password or confirm:
+            if stored_password_exists:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": "password_already_set",
+                        "message": "已存在管理员密码，请启用认证后通过修改密码功能更新",
+                    },
+                )
             if not password:
                 return JSONResponse(
                     status_code=400,
@@ -182,16 +204,7 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 "passwordChangeable": True,
             }
         )
-        params = _cookie_params(request)
-        resp.set_cookie(
-            key=COOKIE_NAME,
-            value=session_val,
-            httponly=params["httponly"],
-            samesite=params["samesite"],
-            secure=params["secure"],
-            path=params["path"],
-            max_age=params["max_age"],
-        )
+        _set_session_cookie(resp, session_val, request)
         return resp
 
     resp = JSONResponse(
@@ -271,16 +284,7 @@ async def auth_login(request: Request, body: LoginRequest):
         )
 
     resp = JSONResponse(content={"ok": True})
-    params = _cookie_params(request)
-    resp.set_cookie(
-        key=COOKIE_NAME,
-        value=session_val,
-        httponly=params["httponly"],
-        samesite=params["samesite"],
-        secure=params["secure"],
-        path=params["path"],
-        max_age=params["max_age"],
-    )
+    _set_session_cookie(resp, session_val, request)
     return resp
 
 

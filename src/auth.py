@@ -69,7 +69,8 @@ def _get_credential_path() -> Path:
 def _is_auth_enabled_from_env() -> bool:
     """Read ADMIN_AUTH_ENABLED from .env file."""
     _ensure_env_loaded()
-    env_path = Path(__file__).resolve().parent.parent / ".env"
+    env_file = os.getenv("ENV_FILE")
+    env_path = Path(env_file) if env_file else Path(__file__).resolve().parent.parent / ".env"
     if not env_path.exists():
         return False
     values = dotenv_values(env_path)
@@ -165,8 +166,9 @@ def _load_credential_from_file() -> bool:
 
 def refresh_auth_state() -> None:
     """Reload auth-related state from disk and env."""
-    global _auth_enabled
+    global _auth_enabled, _session_secret
     _auth_enabled = None
+    _session_secret = None
     _load_credential_from_file()
 
 
