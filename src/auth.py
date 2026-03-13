@@ -78,7 +78,7 @@ def _is_auth_enabled_from_env() -> bool:
     return val in ("true", "1", "yes")
 
 
-def rotate_session_secret() -> None:
+def rotate_session_secret() -> bool:
     """Rotate the session signing secret to invalidate all active sessions."""
     global _session_secret
     data_dir = _get_data_dir()
@@ -92,8 +92,10 @@ def rotate_session_secret() -> None:
         tmp_path.replace(secret_path)
         _session_secret = new_secret
         logger.info("Session secret rotated successfully")
+        return True
     except OSError as e:
         logger.error("Failed to rotate .session_secret: %s", e)
+        return False
 
 
 def _load_session_secret() -> Optional[bytes]:

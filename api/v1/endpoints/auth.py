@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
+from api.deps import get_system_config_service
 from src.auth import (
     COOKIE_NAME,
     SESSION_MAX_AGE_HOURS_DEFAULT,
@@ -93,14 +94,27 @@ def _cookie_params(request: Request) -> dict:
     }
 
 
-def _apply_auth_enabled(enabled: bool) -> None:
+def _apply_auth_enabled(enabled: bool, request: Request | None = None) -> None:
     """Persist auth toggle to .env and reload runtime config."""
-    manager = ConfigManager()
-    manager.apply_updates(
-        updates=[("ADMIN_AUTH_ENABLED", "true" if enabled else "false")],
-        sensitive_keys=set(),
-        mask_token="******",
-    )
+    manager_applied = False
+    if request is not None:
+        try:
+            service = get_system_config_service(request)
+            service.apply_simple_updates(
+                updates=[("ADMIN_AUTH_ENABLED", "true" if enabled else "false")],
+                mask_token="******",
+            )
+            manager_applied = True
+        except Exception:
+            manager_applied = False
+
+    if not manager_applied:
+        manager = ConfigManager()
+        manager.apply_updates(
+            updates=[("ADMIN_AUTH_ENABLED", "true" if enabled else "false")],
+            sensitive_keys=set(),
+            mask_token="******",
+        )
     Config.reset_instance()
     setup_env(override=True)
     refresh_auth_state()
@@ -263,14 +277,18 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 clear_rate_limit(ip)
 
     if target_enabled != current_enabled:
-        rotate_session_secret()
+        if not rotate_session_secret():
+            return JSONResponse(
+                status_code=500,
+                content={"error": "internal_error", "message": "Failed to rotate session secret"},
+            )
 
-    _apply_auth_enabled(target_enabled)
+    _apply_auth_enabled(target_enabled, request=request)
 
     if target_enabled:
         session_val = create_session()
         if not session_val:
-            _apply_auth_enabled(current_enabled)
+            _apply_auth_enabled(current_enabled, request=request)
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to create session"},

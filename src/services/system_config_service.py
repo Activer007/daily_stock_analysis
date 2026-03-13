@@ -159,6 +159,18 @@ class SystemConfigService:
             "warnings": warnings,
         }
 
+    def apply_simple_updates(
+        self,
+        updates: Sequence[Tuple[str, str]],
+        mask_token: str = "******",
+    ) -> None:
+        """Apply raw key updates without validation (internal service use only)."""
+        self._manager.apply_updates(
+            updates=updates,
+            sensitive_keys=set(),
+            mask_token=mask_token,
+        )
+
     def _collect_issues(self, items: Sequence[Dict[str, str]], mask_token: str) -> List[Dict[str, Any]]:
         """Collect field-level and cross-field validation issues."""
         current_map = self._manager.read_config_map()

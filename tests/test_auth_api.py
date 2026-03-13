@@ -380,6 +380,21 @@ class AuthApiTestCase(unittest.TestCase):
         self.assertIn(b'"error":"current_required"', response.body)
         self.assertIn("ADMIN_AUTH_ENABLED=true", self.env_path.read_text(encoding="utf-8"))
 
+    def test_auth_settings_toggle_fails_when_secret_rotation_fails(self) -> None:
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            auth.set_initial_password("passwd6")
+            with patch.object(auth_endpoint, "rotate_session_secret", return_value=False):
+                response = asyncio.run(
+                    auth_endpoint.auth_update_settings(
+                        self._build_request(),
+                        auth_endpoint.AuthSettingsRequest(authEnabled=False, currentPassword="passwd6"),
+                    )
+                )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(b'"error":"internal_error"', response.body)
+        self.assertIn("ADMIN_AUTH_ENABLED=true", self.env_path.read_text(encoding="utf-8"))
+
     def test_auth_settings_enable_with_existing_password_reuses_stored_password(self) -> None:
         with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
             auth.set_initial_password("passwd6")
