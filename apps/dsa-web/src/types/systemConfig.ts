@@ -110,6 +110,25 @@ export interface ValidateSystemConfigResponse {
   issues: ConfigValidationIssue[];
 }
 
+export interface TestLLMChannelRequest {
+  name: string;
+  protocol: string;
+  baseUrl?: string;
+  apiKey?: string;
+  models: string[];
+  enabled?: boolean;
+  timeoutSeconds?: number;
+}
+
+export interface TestLLMChannelResponse {
+  success: boolean;
+  message: string;
+  error?: string | null;
+  resolvedProtocol?: string | null;
+  resolvedModel?: string | null;
+  latencyMs?: number | null;
+}
+
 export interface SystemConfigValidationErrorResponse {
   error: string;
   message: string;

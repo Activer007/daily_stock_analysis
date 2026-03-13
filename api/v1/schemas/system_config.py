@@ -116,6 +116,29 @@ class ValidateSystemConfigResponse(BaseModel):
     issues: List[ConfigValidationIssue]
 
 
+class TestLLMChannelRequest(BaseModel):
+    """Request payload for testing one LLM channel."""
+
+    name: str = "channel"
+    protocol: str = "openai"
+    base_url: str = ""
+    api_key: str = ""
+    models: List[str] = Field(default_factory=list)
+    enabled: bool = True
+    timeout_seconds: float = 20.0
+
+
+class TestLLMChannelResponse(BaseModel):
+    """Response payload for one LLM channel connectivity test."""
+
+    success: bool
+    message: str
+    error: Optional[str] = None
+    resolved_protocol: Optional[str] = None
+    resolved_model: Optional[str] = None
+    latency_ms: Optional[int] = None
+
+
 class SystemConfigValidationErrorResponse(BaseModel):
     """Error payload for failed update validation."""
 

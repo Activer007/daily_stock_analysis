@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 import litellm
 from litellm import Router
 
-from src.config import get_config, get_api_keys_for_model, extra_litellm_params
+from src.config import get_config, get_api_keys_for_model, extra_litellm_params, get_configured_llm_models
 
 logger = logging.getLogger(__name__)
 
@@ -256,14 +256,17 @@ class LLMToolAdapter:
 
         # Use Router for primary model (multi-key), direct litellm for others
         use_channel_router = self._has_channel_config()
-        if use_channel_router and self._router:
-            # Channel / YAML path: Router manages all models
+        _router_model_names = set(get_configured_llm_models(self._config.llm_model_list))
+        if use_channel_router and self._router and model in _router_model_names:
+            # Channel / YAML path: Router manages all models in its model_list
             response = self._router.completion(**call_kwargs)
-        elif self._router and model == self._config.litellm_model:
+        elif self._router and model == self._config.litellm_model and not use_channel_router:
             # Legacy path: Router for primary model multi-key
             response = self._router.completion(**call_kwargs)
         else:
-            # Legacy path: direct call for fallback/other models
+            # Legacy/direct-env path: direct call (also handles direct-env
+            # providers like groq/ or bedrock/ that are not in the Router
+            # model_list even when channel mode is active)
             keys = get_api_keys_for_model(model, self._config)
             if keys:
                 call_kwargs["api_key"] = keys[0]
@@ -273,13 +276,8 @@ class LLMToolAdapter:
         return self._parse_litellm_response(response, model)
 
     def _get_temperature(self, model: str) -> float:
-        """Return temperature from config based on provider prefix."""
-        config = self._config
-        if model.startswith("gemini/") or model.startswith("vertex_ai/"):
-            return config.gemini_temperature
-        if model.startswith("anthropic/"):
-            return config.anthropic_temperature
-        return config.openai_temperature
+        """Return unified temperature from config."""
+        return self._config.llm_temperature
 
     def _convert_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Convert internal message format to OpenAI-compatible format for litellm."""
