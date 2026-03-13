@@ -190,6 +190,17 @@ class AuthSetPasswordTestCase(unittest.TestCase):
 
         self._run_with_patch(run)
 
+    def test_verify_stored_password_when_auth_disabled(self) -> None:
+        def run():
+            err = auth.set_initial_password("password123")
+            self.assertIsNone(err)
+
+            auth._auth_enabled = False
+            self.assertTrue(auth.verify_stored_password("password123"))
+            self.assertFalse(auth.verify_stored_password("wrongpass"))
+
+        self._run_with_patch(run)
+
     def test_is_auth_enabled_from_env_respects_env_file(self) -> None:
         custom_env = self.data_dir / "custom.env"
         custom_env.write_text("ADMIN_AUTH_ENABLED=true\n", encoding="utf-8")

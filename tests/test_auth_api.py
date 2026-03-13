@@ -351,14 +351,84 @@ class AuthApiTestCase(unittest.TestCase):
             enable_response = asyncio.run(
                 auth_endpoint.auth_update_settings(
                     self._build_request(),
-                    auth_endpoint.AuthSettingsRequest(authEnabled=True),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=True, currentPassword="passwd6"),
                 )
             )
 
         self.assertEqual(enable_response.status_code, 200)
         self.assertIn(b'"authEnabled":true', enable_response.body)
         self.assertIn(b'"passwordSet":true', enable_response.body)
+        self.assertIn(b'"loggedIn":true', enable_response.body)
         self.assertIn("dsa_session=", enable_response.headers["set-cookie"])
+
+    def test_auth_settings_enable_with_existing_password_requires_current_password(self) -> None:
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            auth.set_initial_password("passwd6")
+            disable_response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=False),
+                )
+            )
+        self.assertEqual(disable_response.status_code, 200)
+
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=True),
+                )
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'"error":"current_required"', response.body)
+        self.assertIn("ADMIN_AUTH_ENABLED=false", self.env_path.read_text(encoding="utf-8"))
+
+    def test_auth_settings_enable_with_existing_password_rejects_wrong_current_password(self) -> None:
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            auth.set_initial_password("passwd6")
+            disable_response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=False),
+                )
+            )
+        self.assertEqual(disable_response.status_code, 200)
+
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            response = asyncio.run(
+                auth_endpoint.auth_update_settings(
+                    self._build_request(),
+                    auth_endpoint.AuthSettingsRequest(authEnabled=True, currentPassword="wrongpass"),
+                )
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'"error":"invalid_password"', response.body)
+        self.assertIn("ADMIN_AUTH_ENABLED=false", self.env_path.read_text(encoding="utf-8"))
+
+    def test_auth_settings_enable_rolls_back_when_session_creation_fails(self) -> None:
+        self.env_path.write_text(
+            "STOCK_LIST=600519\nGEMINI_API_KEY=test\nADMIN_AUTH_ENABLED=false\n",
+            encoding="utf-8",
+        )
+        with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):
+            auth.refresh_auth_state()
+            with patch.object(auth_endpoint, "create_session", return_value=""):
+                response = asyncio.run(
+                    auth_endpoint.auth_update_settings(
+                        self._build_request(),
+                        auth_endpoint.AuthSettingsRequest(
+                            authEnabled=True,
+                            password="initpass123",
+                            passwordConfirm="initpass123",
+                        ),
+                    )
+                )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(b'"error":"internal_error"', response.body)
+        self.assertIn("ADMIN_AUTH_ENABLED=false", self.env_path.read_text(encoding="utf-8"))
 
     def test_auth_settings_rejects_overwriting_existing_password(self) -> None:
         with patch.object(auth, "_is_auth_enabled_from_env", side_effect=self._read_auth_enabled_from_env):

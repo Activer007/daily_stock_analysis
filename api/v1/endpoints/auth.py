@@ -26,6 +26,7 @@ from src.auth import (
     refresh_auth_state,
     set_initial_password,
     verify_password,
+    verify_stored_password,
     verify_session,
 )
 from src.config import Config, setup_env
@@ -63,6 +64,7 @@ class AuthSettingsRequest(BaseModel):
     auth_enabled: bool = Field(alias="authEnabled")
     password: str = Field(default="")
     password_confirm: str | None = Field(default=None, alias="passwordConfirm")
+    current_password: str = Field(default="", alias="currentPassword")
 
 
 def _cookie_params(request: Request) -> dict:
@@ -145,15 +147,21 @@ async def auth_status(request: Request):
 @router.post(
     "/settings",
     summary="Update auth settings",
-    description="Enable or disable password login. When enabling without an existing password, password + passwordConfirm are required.",
+    description=(
+        "Enable or disable password login. When enabling without an existing password, "
+        "password + passwordConfirm are required. When re-enabling with a stored password, "
+        "currentPassword is required."
+    ),
 )
 async def auth_update_settings(request: Request, body: AuthSettingsRequest):
     """Manage auth enablement from the settings page."""
     target_enabled = body.auth_enabled
+    current_enabled = is_auth_enabled()
     stored_password_exists = has_stored_password()
 
     password = (body.password or "").strip()
     confirm = (body.password_confirm or "").strip()
+    current_password = (body.current_password or "").strip()
 
     if target_enabled:
         if password or confirm:
@@ -186,12 +194,35 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                 status_code=400,
                 content={"error": "password_required", "message": "开启密码登录前请先设置密码"},
             )
+        elif not current_enabled:
+            if not current_password:
+                return JSONResponse(
+                    status_code=400,
+                    content={"error": "current_required", "message": "重新开启认证前请输入当前密码"},
+                )
+            ip = get_client_ip(request)
+            if not check_rate_limit(ip):
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "error": "rate_limited",
+                        "message": "Too many failed attempts. Please try again later.",
+                    },
+                )
+            if not verify_stored_password(current_password):
+                record_login_failure(ip)
+                return JSONResponse(
+                    status_code=401,
+                    content={"error": "invalid_password", "message": "当前密码错误"},
+                )
+            clear_rate_limit(ip)
 
     _apply_auth_enabled(target_enabled)
 
     if target_enabled:
         session_val = create_session()
         if not session_val:
+            _apply_auth_enabled(current_enabled)
             return JSONResponse(
                 status_code=500,
                 content={"error": "internal_error", "message": "Failed to create session"},

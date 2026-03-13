@@ -186,6 +186,13 @@ def has_stored_password() -> bool:
     return _load_credential_from_file()
 
 
+def verify_stored_password(password: str) -> bool:
+    """Verify password against stored credential even when auth is disabled."""
+    if not has_stored_password():
+        return False
+    return _verify_password_hash(password, _password_hash_salt, _password_hash_stored)
+
+
 def is_password_set() -> bool:
     """Return whether initial password has been set (credential file exists and valid)."""
     if not is_auth_enabled():
@@ -254,9 +261,7 @@ def verify_password(password: str) -> bool:
     """Verify password against stored credential. Constant-time where applicable."""
     if not is_auth_enabled():
         return True
-    if not is_password_set():
-        return False
-    return _verify_password_hash(password, _password_hash_salt, _password_hash_stored)
+    return verify_stored_password(password)
 
 
 def change_password(current: str, new: str) -> Optional[str]:
