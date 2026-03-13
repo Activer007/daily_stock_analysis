@@ -5,11 +5,16 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi import HTTPException
 
+from tests.litellm_stub import ensure_litellm_stub
+
+ensure_litellm_stub()
+
 from api.v1.endpoints import system_config
-from api.v1.schemas.system_config import UpdateSystemConfigRequest
+from api.v1.schemas.system_config import TestLLMChannelRequest, UpdateSystemConfigRequest
 from src.config import Config
 from src.core.config_manager import ConfigManager
 from src.services.system_config_service import SystemConfigService
@@ -118,6 +123,34 @@ class SystemConfigApiTestCase(unittest.TestCase):
         self.assertIn("# Base settings\n", env_content)
         self.assertIn("\n\n# Secrets\n", env_content)
         self.assertIn("STOCK_LIST=600519,300750\n", env_content)
+
+    def test_test_llm_channel_endpoint_returns_service_payload(self) -> None:
+        with patch.object(
+            self.service,
+            "test_llm_channel",
+            return_value={
+                "success": True,
+                "message": "LLM channel test succeeded",
+                "error": None,
+                "resolved_protocol": "openai",
+                "resolved_model": "openai/gpt-4o-mini",
+                "latency_ms": 123,
+            },
+        ) as mock_test:
+            payload = system_config.test_llm_channel(
+                request=TestLLMChannelRequest(
+                    name="primary",
+                    protocol="openai",
+                    base_url="https://api.example.com/v1",
+                    api_key="sk-test",
+                    models=["gpt-4o-mini"],
+                ),
+                service=self.service,
+            ).model_dump()
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["resolved_model"], "openai/gpt-4o-mini")
+        mock_test.assert_called_once()
 
 
 if __name__ == "__main__":

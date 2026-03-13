@@ -55,6 +55,8 @@ from api.v1.schemas.system_config import (
     ValidateSystemConfigRequest,
     ConfigValidationIssue,
     ValidateSystemConfigResponse,
+    TestLLMChannelRequest,
+    TestLLMChannelResponse,
     SystemConfigValidationErrorResponse,
     SystemConfigConflictResponse,
 )
@@ -102,6 +104,8 @@ __all__ = [
     "ValidateSystemConfigRequest",
     "ConfigValidationIssue",
     "ValidateSystemConfigResponse",
+    "TestLLMChannelRequest",
+    "TestLLMChannelResponse",
     "SystemConfigValidationErrorResponse",
     "SystemConfigConflictResponse",
 ]

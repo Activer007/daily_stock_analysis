@@ -40,6 +40,173 @@ class ConfigIssue:
 
 
 _MANAGED_LITELLM_KEY_PROVIDERS = {"gemini", "vertex_ai", "anthropic", "openai", "deepseek"}
+SUPPORTED_LLM_CHANNEL_PROTOCOLS = ("openai", "anthropic", "gemini", "vertex_ai", "deepseek", "ollama")
+_FALSEY_ENV_VALUES = {"0", "false", "no", "off"}
+
+
+def parse_env_bool(value: Optional[str], default: bool = False) -> bool:
+    """Parse common truthy/falsey environment-style values."""
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if not normalized:
+        return default
+    return normalized not in _FALSEY_ENV_VALUES
+
+
+def canonicalize_llm_channel_protocol(value: Optional[str]) -> str:
+    """Normalize a protocol label into a LiteLLM provider identifier."""
+    candidate = (value or "").strip().lower().replace("-", "_")
+    aliases = {
+        "openai_compatible": "openai",
+        "openai_compat": "openai",
+        "claude": "anthropic",
+        "google": "gemini",
+        "vertex": "vertex_ai",
+        "vertexai": "vertex_ai",
+    }
+    return aliases.get(candidate, candidate)
+
+
+def resolve_llm_channel_protocol(
+    protocol: Optional[str],
+    *,
+    base_url: Optional[str] = None,
+    models: Optional[List[str]] = None,
+    channel_name: Optional[str] = None,
+) -> str:
+    """Resolve the effective protocol for a channel."""
+    explicit = canonicalize_llm_channel_protocol(protocol)
+    if explicit in SUPPORTED_LLM_CHANNEL_PROTOCOLS:
+        return explicit
+
+    for model in models or []:
+        if "/" not in model:
+            continue
+        prefix = canonicalize_llm_channel_protocol(model.split("/", 1)[0])
+        if prefix in SUPPORTED_LLM_CHANNEL_PROTOCOLS:
+            return prefix
+
+    # Infer from channel name (e.g. "deepseek" -> deepseek, "gemini" -> gemini)
+    if channel_name:
+        name_protocol = canonicalize_llm_channel_protocol(channel_name)
+        if name_protocol in SUPPORTED_LLM_CHANNEL_PROTOCOLS:
+            return name_protocol
+
+    if base_url:
+        parsed = urlparse(base_url)
+        if parsed.hostname in {"127.0.0.1", "localhost", "0.0.0.0"}:
+            # Default to openai for local servers (vLLM, LM Studio, LocalAI, etc.).
+            # Ollama users should set PROTOCOL=ollama explicitly or name the channel "ollama".
+            return "openai"
+        return "openai"
+
+    return ""
+
+
+def channel_allows_empty_api_key(protocol: Optional[str], base_url: Optional[str]) -> bool:
+    """Return True when a channel can run without an API key."""
+    resolved_protocol = resolve_llm_channel_protocol(protocol, base_url=base_url)
+    if resolved_protocol == "ollama":
+        return True
+    parsed = urlparse(base_url or "")
+    return parsed.hostname in {"127.0.0.1", "localhost", "0.0.0.0"}
+
+
+def normalize_llm_channel_model(model: str, protocol: Optional[str], base_url: Optional[str] = None) -> str:
+    """Attach a provider prefix when the model omits it."""
+    normalized_model = model.strip()
+    if not normalized_model:
+        return normalized_model
+
+    resolved_protocol = resolve_llm_channel_protocol(protocol, base_url=base_url, models=[normalized_model])
+
+    if "/" in normalized_model:
+        # The model already has a slash, e.g. 'deepseek-ai/DeepSeek-V3'.
+        # Check if the prefix is a known LiteLLM provider; if so, keep it.
+        # Otherwise (e.g. HuggingFace-style IDs on SiliconFlow), prepend
+        # the resolved protocol so LiteLLM routes via the correct handler.
+        raw_prefix, remainder = normalized_model.split("/", 1)
+        prefix = raw_prefix.lower()
+        canonical_prefix = canonicalize_llm_channel_protocol(prefix)
+        known_providers = _MANAGED_LITELLM_KEY_PROVIDERS | set(SUPPORTED_LLM_CHANNEL_PROTOCOLS) | {
+            "cohere", "huggingface", "bedrock", "sagemaker", "azure",
+            "replicate", "together_ai", "palm", "text-completion-openai",
+            "command-r", "groq", "cerebras", "fireworks_ai", "friendliai",
+        }
+        if prefix in known_providers:
+            return normalized_model
+        if canonical_prefix in known_providers:
+            return f"{canonical_prefix}/{remainder}"
+        # Not a real provider prefix — add one so LiteLLM routes correctly.
+        if resolved_protocol:
+            return f"{resolved_protocol}/{normalized_model}"
+        return normalized_model
+
+    if not resolved_protocol:
+        return normalized_model
+    return f"{resolved_protocol}/{normalized_model}"
+
+
+def get_configured_llm_models(model_list: List[Dict[str, Any]]) -> List[str]:
+    """Return non-legacy model names declared in Router model_list order.
+
+    Uses the top-level ``model_name`` (the routing alias that users set in
+    LITELLM_MODEL) rather than ``litellm_params.model`` (the wire-level
+    model identifier).  For channel-built entries both are identical, but
+    YAML configs may define a friendly alias that differs from the
+    underlying provider/model path.
+    """
+    models: List[str] = []
+    seen: set = set()
+    for entry in model_list or []:
+        # Prefer top-level model_name (router routing key); fall back to
+        # litellm_params.model for entries that omit it.
+        name = str(entry.get("model_name") or "").strip()
+        if not name:
+            params = entry.get("litellm_params", {}) or {}
+            name = str(params.get("model") or "").strip()
+        if not name or name.startswith("__legacy_") or name in seen:
+            continue
+        seen.add(name)
+        models.append(name)
+    return models
+
+
+def resolve_unified_llm_temperature(model: str) -> float:
+    """Resolve the unified LLM temperature with backward-compatible fallbacks."""
+    llm_temperature_raw = os.getenv("LLM_TEMPERATURE")
+    if llm_temperature_raw and llm_temperature_raw.strip():
+        try:
+            return float(llm_temperature_raw)
+        except (ValueError, TypeError):
+            pass
+
+    provider_temperature_env = {
+        "gemini": "GEMINI_TEMPERATURE",
+        "vertex_ai": "GEMINI_TEMPERATURE",
+        "anthropic": "ANTHROPIC_TEMPERATURE",
+        "openai": "OPENAI_TEMPERATURE",
+        "deepseek": "OPENAI_TEMPERATURE",
+    }
+    preferred_env = provider_temperature_env.get(_get_litellm_provider(model))
+    if preferred_env:
+        preferred_value = os.getenv(preferred_env)
+        if preferred_value and preferred_value.strip():
+            try:
+                return float(preferred_value)
+            except (ValueError, TypeError):
+                pass
+
+    for env_name in ("GEMINI_TEMPERATURE", "ANTHROPIC_TEMPERATURE", "OPENAI_TEMPERATURE"):
+        env_value = os.getenv(env_name)
+        if env_value and env_value.strip():
+            try:
+                return float(env_value)
+            except (ValueError, TypeError):
+                continue
+
+    return 0.7
 
 
 def _get_litellm_provider(model: str) -> str:
@@ -102,6 +269,9 @@ class Config:
     # LiteLLM unified model config (provider/model format, e.g. gemini/gemini-2.5-flash)
     litellm_model: str = ""  # Primary model; must include provider prefix when set explicitly
     litellm_fallback_models: List[str] = field(default_factory=list)  # Cross-model fallback list
+
+    # Unified temperature for all LLM calls (LLM_TEMPERATURE); legacy per-provider temps are fallback only
+    llm_temperature: float = 0.7
 
     # --- Multi-channel LLM config (new) ---
     # LITELLM_CONFIG: path to a standard litellm_config.yaml file (most powerful)
@@ -624,6 +794,7 @@ class Config:
             tushare_token=os.getenv('TUSHARE_TOKEN'),
             litellm_model=litellm_model,
             litellm_fallback_models=litellm_fallback_models,
+            llm_temperature=resolve_unified_llm_temperature(litellm_model),
             litellm_config_path=litellm_config_path,
             llm_models_source=llm_models_source,
             llm_channels=llm_channels,
@@ -849,9 +1020,11 @@ class Config:
 
         Format:
             LLM_CHANNELS=aihubmix,deepseek,gemini
+            LLM_AIHUBMIX_PROTOCOL=openai
             LLM_AIHUBMIX_BASE_URL=https://aihubmix.com/v1
             LLM_AIHUBMIX_API_KEY=sk-xxx           (or LLM_AIHUBMIX_API_KEYS=k1,k2)
-            LLM_AIHUBMIX_MODELS=openai/gpt-4o-mini,openai/claude-3-5-sonnet
+            LLM_AIHUBMIX_MODELS=gpt-4o-mini,claude-3-5-sonnet
+            LLM_AIHUBMIX_ENABLED=true
         """
         import logging
         _logger = logging.getLogger(__name__)
@@ -864,6 +1037,8 @@ class Config:
             ch_upper = ch_name.upper()
 
             base_url = os.getenv(f'LLM_{ch_upper}_BASE_URL', '').strip() or None
+            protocol_raw = os.getenv(f'LLM_{ch_upper}_PROTOCOL', '').strip()
+            enabled = parse_env_bool(os.getenv(f'LLM_{ch_upper}_ENABLED'), default=True)
 
             # API keys: LLM_{NAME}_API_KEYS (multi) > LLM_{NAME}_API_KEY (single)
             api_keys_raw = os.getenv(f'LLM_{ch_upper}_API_KEYS', '')
@@ -875,12 +1050,9 @@ class Config:
 
             # Models
             models_raw = os.getenv(f'LLM_{ch_upper}_MODELS', '')
-            models = [m.strip() for m in models_raw.split(',') if m.strip()]
-            # Auto-prefix: models without provider prefix in channels with base_url → openai/
-            models = [
-                (f'openai/{m}' if '/' not in m and base_url else m)
-                for m in models
-            ]
+            raw_models = [m.strip() for m in models_raw.split(',') if m.strip()]
+            protocol = resolve_llm_channel_protocol(protocol_raw, base_url=base_url, models=raw_models, channel_name=ch_name)
+            models = [normalize_llm_channel_model(m, protocol, base_url) for m in raw_models]
 
             # Extra headers (JSON string, optional)
             extra_headers_raw = os.getenv(f'LLM_{ch_upper}_EXTRA_HEADERS', '').strip()
@@ -891,6 +1063,21 @@ class Config:
                 except json.JSONDecodeError:
                     _logger.warning(f"LLM_{ch_upper}_EXTRA_HEADERS: invalid JSON, ignored")
 
+            if not enabled:
+                _logger.info(f"LLM channel '{ch_name}': disabled, skipped")
+                continue
+
+            if protocol_raw and canonicalize_llm_channel_protocol(protocol_raw) not in SUPPORTED_LLM_CHANNEL_PROTOCOLS:
+                _logger.warning(
+                    "LLM_%s_PROTOCOL=%s is unsupported; auto-detected protocol=%s",
+                    ch_upper,
+                    protocol_raw,
+                    protocol or "unknown",
+                )
+
+            if not api_keys and channel_allows_empty_api_key(protocol, base_url):
+                api_keys = [""]
+
             if not api_keys:
                 _logger.warning(f"LLM channel '{ch_name}': no API key configured, skipped")
                 continue
@@ -900,6 +1087,8 @@ class Config:
 
             channels.append({
                 'name': ch_name.lower(),
+                'protocol': protocol,
+                'enabled': enabled,
                 'base_url': base_url,
                 'api_keys': api_keys,
                 'models': models,
@@ -918,8 +1107,9 @@ class Config:
                 for api_key in ch['api_keys']:
                     litellm_params: Dict[str, Any] = {
                         'model': model_name,
-                        'api_key': api_key,
                     }
+                    if api_key:
+                        litellm_params['api_key'] = api_key
                     if ch['base_url']:
                         litellm_params['api_base'] = ch['base_url']
                     # Auto-inject aihubmix sponsored header
@@ -1182,6 +1372,52 @@ class Config:
                 ),
                 field="LITELLM_MODEL",
             ))
+
+        available_router_models = get_configured_llm_models(self.llm_model_list)
+        available_router_model_set = set(available_router_models)
+        if available_router_model_set:
+            if (
+                self.litellm_model
+                and not _uses_direct_env_provider(self.litellm_model)
+                and self.litellm_model not in available_router_model_set
+            ):
+                issues.append(ConfigIssue(
+                    severity="error",
+                    message=(
+                        "LITELLM_MODEL 已配置，但当前渠道/配置文件中不存在该模型。"
+                        f" 当前可用模型：{', '.join(available_router_models[:6])}"
+                    ),
+                    field="LITELLM_MODEL",
+                ))
+
+            invalid_fallbacks = [
+                model for model in (self.litellm_fallback_models or [])
+                if model and model not in available_router_model_set
+                and not _uses_direct_env_provider(model)
+            ]
+            if invalid_fallbacks:
+                issues.append(ConfigIssue(
+                    severity="warning",
+                    message=(
+                        "LITELLM_FALLBACK_MODELS 中包含未在当前渠道声明的模型："
+                        f"{', '.join(invalid_fallbacks[:3])}"
+                    ),
+                    field="LITELLM_FALLBACK_MODELS",
+                ))
+
+            if (
+                self.vision_model
+                and not _uses_direct_env_provider(self.vision_model)
+                and self.vision_model not in available_router_model_set
+            ):
+                issues.append(ConfigIssue(
+                    severity="warning",
+                    message=(
+                        "VISION_MODEL 未出现在当前渠道声明中。"
+                        f" 当前可用模型：{', '.join(available_router_models[:6])}"
+                    ),
+                    field="VISION_MODEL",
+                ))
 
         # --- Search engine (informational only) ---
         if not (
