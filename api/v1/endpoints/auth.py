@@ -184,6 +184,14 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                     status_code=400,
                     content={"error": "password_mismatch", "message": "两次输入的密码不一致"},
                 )
+            if has_stored_password():
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": "password_already_set",
+                        "message": "已存在管理员密码，请启用认证后通过修改密码功能更新",
+                    },
+                )
             err = set_initial_password(password)
             if err:
                 return JSONResponse(
@@ -209,6 +217,33 @@ async def auth_update_settings(request: Request, body: AuthSettingsRequest):
                     return JSONResponse(
                         status_code=400,
                         content={"error": "current_required", "message": "重新开启认证前请输入当前密码"},
+                    )
+                ip = get_client_ip(request)
+                if not check_rate_limit(ip):
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": "rate_limited",
+                            "message": "Too many failed attempts. Please try again later.",
+                        },
+                    )
+                if not verify_stored_password(current_password):
+                    record_login_failure(ip)
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "invalid_password", "message": "当前密码错误"},
+                    )
+                clear_rate_limit(ip)
+    else:
+        if current_enabled:
+            cookie_val = request.cookies.get(COOKIE_NAME)
+            is_valid_session = cookie_val and verify_session(cookie_val)
+
+            if not is_valid_session:
+                if not current_password:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "current_required", "message": "关闭认证前请输入当前密码"},
                     )
                 ip = get_client_ip(request)
                 if not check_rate_limit(ip):
