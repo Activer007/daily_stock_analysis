@@ -3,7 +3,7 @@ import type React from 'react';
 import type { ParsedApiError } from '../../api/error';
 import { getParsedApiError } from '../../api/error';
 import { systemConfigApi } from '../../api/systemConfig';
-import { ApiErrorAlert, EyeToggleIcon, Select } from '../common';
+import { ApiErrorAlert, Badge, Button, EyeToggleIcon, Input, Select } from '../common';
 
 type ChannelProtocol = 'openai' | 'deepseek' | 'gemini' | 'anthropic' | 'vertex_ai' | 'ollama';
 
@@ -192,11 +192,18 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
   const displayName = preset?.label || channel.name;
   const modelCount = splitModels(channel.models).length;
   const hasKey = channel.apiKey.length > 0;
+  const statusVariant = testState?.status === 'success'
+    ? 'success'
+    : testState?.status === 'error'
+      ? 'danger'
+      : testState?.status === 'loading'
+        ? 'warning'
+        : 'default';
 
   return (
-    <div className="overflow-hidden rounded-lg border border-white/8 bg-card/40">
+    <div className="mb-2 overflow-hidden rounded-xl border border-white/8 bg-card/40 shadow-soft-card">
       <div
-        className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.03]"
+        className="flex cursor-pointer select-none items-center gap-2.5 px-4 py-3 transition-colors hover:bg-white/[0.03]"
         onClick={() => onToggleExpand(index)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -207,7 +214,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
         role="button"
         tabIndex={0}
       >
-        <span className="w-4 shrink-0 text-[11px] text-muted-text">{expanded ? '▼' : '▶'}</span>
+        <span className={`w-4 shrink-0 text-[11px] text-muted-text transition-transform ${expanded ? 'rotate-90' : ''}`}>▶</span>
 
         <input
           type="checkbox"
@@ -218,28 +225,35 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
           onChange={(e) => onUpdate(index, 'enabled', e.target.checked)}
         />
 
-        <span className="min-w-[100px] truncate text-sm font-medium text-white">{displayName}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
+            <Badge variant="info" className="hidden sm:inline-flex">
+              {channel.protocol}
+            </Badge>
+          </div>
+          <p className="mt-0.5 truncate text-[11px] text-secondary-text">
+            {modelCount > 0 ? `${modelCount} 个模型已配置` : '未配置模型'}
+          </p>
+        </div>
 
-        <span className="hidden rounded bg-white/8 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-text sm:inline">
-          {channel.protocol}
-        </span>
-
-        <span className="flex-1 truncate text-[11px] text-muted-text">
-          {modelCount > 0 ? `${modelCount} 个模型` : '未配置模型'}
-        </span>
-
-        <span className="flex shrink-0 items-center gap-1.5">
+        <span className="flex shrink-0 items-center gap-2">
           {testState?.status === 'success' ? <span className="h-2 w-2 rounded-full bg-emerald-400" title="连接正常" /> : null}
           {testState?.status === 'error' ? <span className="h-2 w-2 rounded-full bg-rose-400" title="连接失败" /> : null}
           {testState?.status === 'loading' ? <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" title="测试中" /> : null}
-          {!hasKey && channel.protocol !== 'ollama' ? (
-            <span className="text-[10px] text-amber-400/80">未填 Key</span>
+          {!hasKey && channel.protocol !== 'ollama' ? <Badge variant="warning">未填 Key</Badge> : null}
+          {testState?.status !== 'idle' ? (
+            <Badge variant={statusVariant}>
+              {testState?.status === 'success' ? '连接正常' : testState?.status === 'error' ? '连接失败' : '测试中'}
+            </Badge>
           ) : null}
         </span>
 
-        <button
+        <Button
           type="button"
-          className="shrink-0 px-1 text-xs text-muted-text transition-colors hover:text-rose-300"
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 px-2 text-xs text-muted-text hover:text-rose-300"
           disabled={busy}
           onClick={(e) => {
             e.stopPropagation();
@@ -248,24 +262,22 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
           title="删除渠道"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {expanded ? (
-        <div className="space-y-2.5 border-t border-white/6 bg-card/20 px-3 py-3">
+        <div className="space-y-4 border-t border-white/6 bg-card/20 px-4 py-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <label className="mb-0.5 block text-[11px] text-muted-text">渠道名称</label>
-              <input
-                className="input-terminal text-sm"
-                value={channel.name}
-                disabled={busy}
-                onChange={(e) => onUpdate(index, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                placeholder="primary"
-              />
-            </div>
-            <div>
-              <label className="mb-0.5 block text-[11px] text-muted-text">协议</label>
+            <Input
+              label="渠道名称"
+              value={channel.name}
+              disabled={busy}
+              onChange={(e) => onUpdate(index, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+              placeholder="primary"
+              className="h-10"
+            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">协议</label>
               <Select
                 value={channel.protocol}
                 onChange={(v) => onUpdate(index, 'protocol', normalizeProtocol(v))}
@@ -276,65 +288,65 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="mb-0.5 block text-[11px] text-muted-text">Base URL</label>
-            <input
-              className="input-terminal text-sm"
-              value={channel.baseUrl}
-              disabled={busy}
-              onChange={(e) => onUpdate(index, 'baseUrl', e.target.value)}
-              placeholder={
-                channel.protocol === 'gemini' || channel.protocol === 'anthropic'
-                  ? '官方接口可留空'
-                  : preset?.baseUrl || 'https://api.example.com/v1'
-              }
-            />
-          </div>
+          <Input
+            label="Base URL"
+            value={channel.baseUrl}
+            disabled={busy}
+            onChange={(e) => onUpdate(index, 'baseUrl', e.target.value)}
+            placeholder={
+              channel.protocol === 'gemini' || channel.protocol === 'anthropic'
+                ? '官方接口可留空'
+                : preset?.baseUrl || 'https://api.example.com/v1'
+            }
+            className="h-10"
+          />
 
-          <div>
-            <label className="mb-0.5 block text-[11px] text-muted-text">API Key</label>
-            <div className="flex items-center gap-1.5">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">API Key</label>
+            <div className="relative">
               <input
                 type={visibleKey ? 'text' : 'password'}
-                className="input-terminal flex-1 text-sm"
+                className="h-10 w-full rounded-xl border border-white/10 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-white/18"
                 value={channel.apiKey}
                 disabled={busy}
                 onChange={(e) => onUpdate(index, 'apiKey', e.target.value)}
                 placeholder={channel.protocol === 'ollama' ? '本地 Ollama 可留空' : '支持多个 Key 逗号分隔'}
               />
-              <button
+              <Button
                 type="button"
-                className="btn-secondary !p-1.5"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1 h-8 px-2"
                 disabled={busy}
                 onClick={() => onToggleKeyVisibility(index)}
                 title={visibleKey ? '隐藏' : '显示'}
                 aria-label={visibleKey ? '隐藏 API Key' : '显示 API Key'}
               >
                 <EyeToggleIcon visible={visibleKey} />
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div>
-            <label className="mb-0.5 block text-[11px] text-muted-text">模型（逗号分隔）</label>
-            <input
-              className="input-terminal text-sm"
-              value={channel.models}
-              disabled={busy}
-              onChange={(e) => onUpdate(index, 'models', e.target.value)}
-              placeholder={preset?.placeholder || MODEL_PLACEHOLDERS[channel.protocol]}
-            />
-          </div>
+          <Input
+            label="模型（逗号分隔）"
+            value={channel.models}
+            disabled={busy}
+            onChange={(e) => onUpdate(index, 'models', e.target.value)}
+            placeholder={preset?.placeholder || MODEL_PLACEHOLDERS[channel.protocol]}
+            className="h-10"
+          />
 
           <div className="flex items-center gap-2 pt-1">
-            <button
+            <Button
               type="button"
-              className="btn-secondary text-xs"
+              variant="secondary"
+              size="sm"
+              className="text-xs"
               disabled={busy}
               onClick={() => onTest(channel, index)}
             >
               {testState?.status === 'loading' ? '测试中...' : '测试连接'}
-            </button>
+            </Button>
             {testState?.text ? (
               <span className={`text-xs ${
                 testState.status === 'success'
@@ -862,15 +874,18 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-cyan/20 bg-elevated/50 p-4">
+    <div className="rounded-2xl border border-cyan/20 bg-elevated/60 p-5 shadow-soft-card">
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
         onClick={() => setIsCollapsed((previous) => !previous)}
       >
-        <div>
-          <h3 className="text-sm font-semibold text-white">AI 模型配置</h3>
-          <p className="mt-0.5 text-xs text-muted-text">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-semibold text-foreground">AI 模型配置</h3>
+            <Badge variant="info">渠道管理</Badge>
+          </div>
+          <p className="text-xs text-muted-text">
             添加服务商渠道，填入 API Key 和模型名称即可。配置会自动同步到 .env 文件。
           </p>
         </div>
@@ -879,24 +894,33 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
 
       {!isCollapsed ? (
         <div className="mt-4 space-y-5">
-          <div className="flex items-center gap-2">
-            <button type="button" className="btn-secondary whitespace-nowrap" disabled={busy} onClick={addChannel}>
-              + 添加渠道
-            </button>
-            <Select
-              value={addPreset}
-              onChange={setAddPreset}
-              options={Object.entries(CHANNEL_PRESETS).map(([value, preset]) => ({
-                value,
-                label: preset.label,
-              }))}
-              disabled={busy}
-              placeholder="选择服务商"
-              className="flex-1"
-            />
+          <div className="rounded-xl border border-white/8 bg-card/30 p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-foreground">快速添加渠道</h4>
+                <p className="mt-1 text-xs text-secondary-text">先选择预设服务商，再一键创建配置草稿。</p>
+              </div>
+              <Badge variant="default">{channels.length} 个渠道</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="gradient" className="whitespace-nowrap" disabled={busy} onClick={addChannel}>
+                + 添加渠道
+              </Button>
+              <Select
+                value={addPreset}
+                onChange={setAddPreset}
+                options={Object.entries(CHANNEL_PRESETS).map(([value, preset]) => ({
+                  value,
+                  label: preset.label,
+                }))}
+                disabled={busy}
+                placeholder="选择服务商"
+                className="flex-1"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-text">渠道列表</span>
               {channels.length > 0 ? (
@@ -905,8 +929,9 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
             </div>
 
             {channels.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-white/10 bg-card/20 px-4 py-6 text-center text-xs text-muted-text">
-                还没有渠道，选择服务商后点击「添加渠道」
+              <div className="rounded-xl border border-dashed border-white/10 bg-card/20 px-4 py-8 text-center">
+                <p className="text-sm font-medium text-secondary-text">还没有渠道</p>
+                <p className="mt-1 text-xs text-muted-text">选择服务商预设后点击“添加渠道”即可开始配置。</p>
               </div>
             ) : channels.map((channel, index) => (
               <ChannelRow
@@ -927,12 +952,13 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {managesRuntimeConfig ? (
-            <div className="rounded-lg border border-white/8 bg-card/30 p-3">
-              <div className="mb-3 flex items-center justify-between">
+            <div className="rounded-xl border border-white/8 bg-card/30 p-4">
+              <div className="mb-4 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-medium uppercase tracking-wider text-muted-text">运行时参数</span>
-                  <p className="mt-0.5 text-[11px] text-secondary-text">留空时自动推断</p>
+                  <p className="mt-1 text-[11px] text-secondary-text">主模型、Fallback、Vision 与 Temperature 会直接写入运行时配置。</p>
                 </div>
+                <Badge variant="default">Runtime</Badge>
               </div>
 
               <div className="mb-4">
@@ -1006,21 +1032,22 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
               当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；
               这里仅保存渠道条目，不会覆盖 YAML 运行时选择。
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
               type="button"
-              className="btn-primary"
+              variant="primary"
+              glow
               disabled={busy || !hasChanges}
               onClick={() => void handleSave()}
             >
               {isSaving ? '保存中...' : managesRuntimeConfig ? '保存 AI 配置' : '保存渠道配置'}
-            </button>
+            </Button>
             {!hasChanges ? <span className="text-xs text-muted-text">当前没有未保存的改动</span> : null}
           </div>
 
