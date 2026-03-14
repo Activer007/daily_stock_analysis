@@ -108,7 +108,7 @@ const SettingsPage: React.FC = () => {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-xl font-semibold text-white">系统设置</h1>
-            <p className="text-sm text-secondary-text">
+            <p className="text-sm text-secondary">
               默认使用 .env 中的配置
             </p>
           </div>
@@ -152,7 +152,7 @@ const SettingsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
           <aside className="rounded-2xl border border-white/8 bg-card/60 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-xs uppercase tracking-wide text-muted-text">配置分类</p>
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted">配置分类</p>
             <div className="space-y-2">
               {categories.map((category) => {
                 const isActive = category.category === activeCategory;
@@ -167,15 +167,15 @@ const SettingsPage: React.FC = () => {
                     className={`w-full rounded-lg border px-3 py-2 text-left transition ${
                       isActive
                         ? 'border-accent bg-cyan/10 text-white'
-                        : 'border-white/8 bg-elevated/40 text-secondary-text hover:border-white/16 hover:text-white'
+                        : 'border-white/8 bg-elevated/40 text-secondary hover:border-white/16 hover:text-white'
                     }`}
                     onClick={() => setActiveCategory(category.category)}
                   >
                     <span className="flex items-center justify-between text-sm font-medium">
                       {title}
-                      <span className="text-xs text-muted-text">{count}</span>
+                      <span className="text-xs text-muted">{count}</span>
                     </span>
-                    {description ? <span className="mt-1 block text-xs text-muted-text">{description}</span> : null}
+                    {description ? <span className="mt-1 block text-xs text-muted">{description}</span> : null}
                   </button>
                 );
               })}
@@ -198,7 +198,11 @@ const SettingsPage: React.FC = () => {
             ) : null}
             {activeCategory === 'ai_model' ? (
               <LLMChannelEditor
-                busy={isSaving || isLoading}
+                items={rawActiveItems}
+                configVersion={configVersion}
+                maskToken={maskToken}
+                onSaved={() => void load()}
+                disabled={isSaving || isLoading}
               />
             ) : null}
             {activeCategory === 'system' && passwordChangeable ? (
@@ -218,7 +222,7 @@ const SettingsPage: React.FC = () => {
                 />
               ))
             ) : (
-              <div className="rounded-xl border border-white/8 bg-elevated/40 p-5 text-sm text-secondary-text">
+              <div className="rounded-xl border border-white/8 bg-elevated/40 p-5 text-sm text-secondary">
                 当前分类下暂无配置项。
               </div>
             )}

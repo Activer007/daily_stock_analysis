@@ -42,9 +42,11 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = items.filter((item) => selectedIds.has(item.id)).length;
   const allVisibleSelected = items.length > 0 && selectedCount === items.length;
+  const someVisibleSelected = selectedCount > 0 && !allVisibleSelected;
 
   // 使用 IntersectionObserver 检测滚动到底部
   const handleObserver = useCallback(
@@ -75,6 +77,12 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     return () => observer.disconnect();
   }, [handleObserver]);
 
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someVisibleSelected;
+    }
+  }, [someVisibleSelected]);
+
   return (
     <aside className={`glass-card overflow-hidden flex flex-col ${className}`}>
       <div ref={scrollContainerRef} className="p-4 flex-1 overflow-y-auto">
@@ -97,10 +105,12 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             <div className="flex items-center gap-2">
               <div className="flex-1 flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
                 <input
+                  ref={selectAllRef}
                   type="checkbox"
                   checked={allVisibleSelected}
                   onChange={onToggleSelectAll}
                   disabled={isDeleting}
+                  aria-label="全选当前已加载历史记录"
                   className="w-3.5 h-3.5 rounded border-white/20 bg-transparent text-purple focus:ring-purple/40 cursor-pointer disabled:opacity-50"
                 />
                 <span className="text-[11px] text-muted-text select-none">全选当前</span>
@@ -148,13 +158,16 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                 <button
                   type="button"
                   onClick={() => onItemClick(item.id)}
-                  className={`history-item flex-1 text-left p-2.5 rounded-xl transition-all duration-200 border ${
+                  className={`flex-1 text-left p-2.5 rounded-xl transition-all duration-200 border relative overflow-hidden group/item ${
                     selectedId === item.id 
-                      ? 'bg-purple/10 border-purple/30 shadow-[0_0_15px_rgba(111,97,241,0.15)]' 
+                      ? 'bg-purple/10 border-purple/30 border-cyan shadow-[0_0_15px_rgba(111,97,241,0.15)]' 
                       : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="absolute inset-0 opacity-0 group-hover/item:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute inset-0 p-[1px] rounded-xl bg-gradient-to-br from-purple/15 via-transparent to-cyan/10" style={{ mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'exclude' }} />
+                  </div>
+                  <div className="flex items-center gap-2.5 relative z-10">
                     {item.sentimentScore !== undefined && (
                       <div 
                         className="w-1 h-8 rounded-full flex-shrink-0"
@@ -183,11 +196,11 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-muted-text font-mono opacity-80">
+                        <span className="text-[11px] text-secondary-text font-mono">
                           {item.stockCode}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-white/10" />
-                        <span className="text-[11px] text-muted-text opacity-60">
+                        <span className="text-[11px] text-muted-text">
                           {formatDateTime(item.createdAt)}
                         </span>
                       </div>
