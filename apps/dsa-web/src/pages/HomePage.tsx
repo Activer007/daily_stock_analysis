@@ -394,7 +394,7 @@ const HomePage: React.FC = () => {
         onToggleItemSelection={handleToggleHistorySelection}
         onToggleSelectAll={handleToggleSelectAllHistory}
         onDeleteSelected={confirmDeleteHistory}
-        className="max-h-[62vh] md:max-h-[62vh] flex-1 overflow-hidden"
+        className="max-h-[80vh] md:max-h-[80vh] flex-1 overflow-hidden"
       />
     </div>
   );
