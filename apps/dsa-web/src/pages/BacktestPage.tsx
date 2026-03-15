@@ -233,11 +233,11 @@ const BacktestPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] flex flex-col rounded-[1.5rem] bg-transparent">
+    <div className="min-h-full flex flex-col rounded-[1.5rem] bg-transparent">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-white/5 px-4 py-3">
-        <div className="flex items-center gap-2 max-w-4xl">
-          <div className="flex-1 relative">
+      <header className="flex-shrink-0 border-b border-white/5 px-3 py-3 sm:px-4">
+        <div className="flex max-w-5xl flex-wrap items-center gap-2">
+          <div className="relative min-w-0 flex-[1_1_220px]">
             <input
               type="text"
               value={codeFilter}
@@ -319,9 +319,9 @@ const BacktestPage: React.FC = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex flex-1 gap-3 overflow-hidden p-3">
+      <main className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 lg:flex-row">
         {/* Left sidebar - Performance */}
-        <div className="flex w-60 flex-shrink-0 flex-col gap-3 overflow-y-auto">
+        <div className="flex max-h-[38vh] flex-col gap-3 overflow-y-auto lg:max-h-none lg:w-60 lg:flex-shrink-0">
           {isLoadingPerf ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-8 h-8 border-2 border-cyan/20 border-t-cyan rounded-full animate-spin" />
@@ -342,7 +342,7 @@ const BacktestPage: React.FC = () => {
         </div>
 
         {/* Right content - Results table */}
-        <section className="flex-1 overflow-y-auto">
+        <section className="min-h-0 flex-1 overflow-y-auto">
           {pageError ? (
             <ApiErrorAlert error={pageError} className="mb-3" />
           ) : null}

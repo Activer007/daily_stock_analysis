@@ -76,4 +76,20 @@ test.describe('web smoke', () => {
     await expect(page.getByRole('link', { name: '回测' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: '切换主题' })).toBeVisible();
   });
+
+  test('settings page renders title and save actions after login', async ({ page }) => {
+    await openWithLogin(page, '/settings');
+
+    await expect(page.getByRole('heading', { name: '系统设置' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '重置' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /保存配置/ })).toBeVisible();
+  });
+
+  test('backtest page renders filter controls after login', async ({ page }) => {
+    await openWithLogin(page, '/backtest');
+
+    await expect(page.getByPlaceholder('Filter by stock code (leave empty for all)')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Filter' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run Backtest' })).toBeVisible();
+  });
 });

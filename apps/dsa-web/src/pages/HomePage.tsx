@@ -398,14 +398,14 @@ const HomePage: React.FC = () => {
         onToggleItemSelection={handleToggleHistorySelection}
         onToggleSelectAll={handleToggleSelectAllHistory}
         onDeleteSelected={confirmDeleteHistory}
-        className="max-h-[80vh] md:max-h-[80vh] flex-1 overflow-hidden"
+        className="flex-1 overflow-hidden"
       />
     </div>
   );
 
   return (
     <div
-      className="min-h-full flex flex-col md:grid overflow-hidden w-full"
+      className="flex min-h-0 w-full flex-col overflow-hidden md:grid md:h-full"
       style={{ gridTemplateColumns: 'minmax(12px, 1fr) 256px 24px minmax(auto, 896px) minmax(12px, 1fr)', gridTemplateRows: 'auto 1fr' }}
     >
       {/* Top Input Bar */}

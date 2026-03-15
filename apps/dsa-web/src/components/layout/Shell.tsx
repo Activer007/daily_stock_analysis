@@ -60,7 +60,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           <SidebarNav collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
         </aside>
 
-        <main className="min-h-0 min-w-0 flex-1 lg:pl-3">
+        <main className="min-h-0 min-w-0 flex-1 pt-14 lg:pl-3 lg:pt-0">
           {children ?? <Outlet />}
         </main>
       </div>

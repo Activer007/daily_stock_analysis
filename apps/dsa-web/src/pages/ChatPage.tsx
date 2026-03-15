@@ -402,7 +402,7 @@ const ChatPage: React.FC = () => {
   return (
     <div
       data-testid="chat-workspace"
-      className="flex h-[calc(100vh-1.5rem)] w-full min-w-0 gap-4 overflow-hidden pt-12 md:pt-0"
+      className="flex h-[calc(100vh-1.5rem)] w-full min-w-0 gap-4 overflow-hidden"
     >
       {/* Desktop sidebar */}
       <div className="hidden h-full w-64 flex-shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/8 bg-card/82 shadow-soft-card md:flex">
