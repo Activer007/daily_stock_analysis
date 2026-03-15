@@ -483,7 +483,7 @@ const HomePage: React.FC = () => {
       )}
 
       {/* Right Report Detail */}
-      <section className="md:col-start-4 md:row-start-2 flex-1 overflow-y-auto overflow-x-auto px-3 md:px-0 md:pl-1 min-w-0 min-h-0">
+      <section className="md:col-start-4 md:row-start-2 flex-1 overflow-y-auto overflow-x-auto px-3 py-4 md:px-0 md:py-5 md:pl-2 md:pr-1 min-w-0 min-h-0">
         {analysisError ? (
           <ApiErrorAlert
             error={analysisError}
@@ -496,9 +496,9 @@ const HomePage: React.FC = () => {
             <p className="mt-3 text-secondary-text text-sm">加载报告中...</p>
           </div>
         ) : selectedReport ? (
-          <div className="max-w-4xl">
+          <div className="max-w-[980px] pb-8">
             {/* Action buttons */}
-            <div className="flex items-center justify-end mb-2 gap-2">
+            <div className="mb-3 flex items-center justify-end gap-2">
               <button
                 disabled={selectedReport.meta.id === undefined}
                 onClick={() => {
