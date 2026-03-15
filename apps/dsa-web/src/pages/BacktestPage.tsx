@@ -21,9 +21,9 @@ function outcomeBadge(outcome?: string) {
   if (!outcome) return <Badge variant="default">--</Badge>;
   switch (outcome) {
     case 'win':
-      return <Badge variant="success">WIN</Badge>;
+      return <Badge variant="success" glow>WIN</Badge>;
     case 'loss':
-      return <Badge variant="danger">LOSS</Badge>;
+      return <Badge variant="danger" glow>LOSS</Badge>;
     case 'neutral':
       return <Badge variant="warning">NEUTRAL</Badge>;
     default:

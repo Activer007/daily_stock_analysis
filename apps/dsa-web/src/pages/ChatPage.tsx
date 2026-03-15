@@ -302,18 +302,24 @@ const ChatPage: React.FC = () => {
           <div className="p-4 text-center text-xs text-muted-text">暂无历史对话</div>
         ) : (
           sessions.map((s) => (
-            <button
+            <div
               key={s.session_id}
-              onClick={() => handleSwitchSession(s.session_id)}
               className={`w-full text-left px-3 py-2.5 border-b border-white/5 hover:bg-white/5 transition-colors group ${
                 s.session_id === sessionId ? 'bg-white/10' : ''
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm text-secondary-text group-hover:text-white truncate flex-1">
-                  {s.title}
-                </span>
                 <button
+                  type="button"
+                  onClick={() => handleSwitchSession(s.session_id)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <span className="block truncate text-sm text-secondary-text group-hover:text-white">
+                    {s.title}
+                  </span>
+                </button>
+                <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeleteConfirmId(s.session_id);
@@ -341,7 +347,7 @@ const ChatPage: React.FC = () => {
                 {s.last_active &&
                   ` · ${new Date(s.last_active).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
               </div>
-            </button>
+            </div>
           ))
         )}
       </div>

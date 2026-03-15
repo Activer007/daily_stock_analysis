@@ -1,26 +1,29 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { Button } from '../Button';
 
-describe('Button component', () => {
-  it('renders children correctly', () => {
+describe('Button', () => {
+  it('renders children', () => {
     render(<Button>Click me</Button>);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
   });
 
-  it('applies variant classes correctly', () => {
-    const { container } = render(<Button variant="danger">Danger</Button>);
-    expect(container.firstChild).toHaveClass('bg-destructive');
+  it('uses button type by default and exposes the selected variant', () => {
+    render(<Button variant="danger">Delete</Button>);
+
+    const button = screen.getByRole('button', { name: 'Delete' });
+    expect(button).toHaveAttribute('type', 'button');
+    expect(button).toHaveAttribute('data-variant', 'danger');
+    expect(button.className).toContain('bg-danger');
   });
 
-  it('disables button when disabled prop is passed', () => {
-    render(<Button disabled>Disabled</Button>);
-    expect(screen.getByRole('button')).toBeDisabled();
-  });
+  it('disables the button when loading and shows loading text', () => {
+    render(<Button isLoading loadingText="Saving">Save</Button>);
 
-  it('shows loading state and disables button when isLoading is true', () => {
-    render(<Button isLoading>Submit</Button>);
-    expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByText('处理中...')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /saving/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('Saving')).toBeInTheDocument();
   });
 });

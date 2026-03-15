@@ -11,6 +11,9 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
+/**
+ * Card component with terminal-inspired variants and optional hover styling.
+ */
 export const Card: React.FC<CardProps> = ({
   title,
   subtitle,
@@ -28,17 +31,37 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const variantStyles = {
-    default: 'border border-border bg-card shadow-sm',
-    bordered: 'border border-border bg-card shadow-sm',
-    gradient: 'border border-primary/20 bg-card shadow-sm ring-1 ring-primary/10',
+    default: 'terminal-card',
+    bordered: 'terminal-card terminal-card-hover',
+    gradient: 'gradient-border-card',
   };
 
+  const hoverStyles = hoverable ? 'terminal-card-hover cursor-pointer' : '';
+
+  if (variant === 'gradient') {
+    return (
+      <div className={cn(variantStyles.gradient, className)}>
+        <div className={cn('gradient-border-card-inner', paddingStyles[padding])}>
+          {(title || subtitle) && (
+            <div className="mb-3">
+              {subtitle ? <span className="label-uppercase">{subtitle}</span> : null}
+              {title ? <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3> : null}
+            </div>
+          )}
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('rounded-2xl', variantStyles[variant], hoverable && 'transition-all hover:-translate-y-0.5 hover:shadow-md', paddingStyles[padding], className)}>
+    <div
+      className={cn('rounded-2xl', variantStyles[variant], hoverStyles, paddingStyles[padding], className)}
+    >
       {(title || subtitle) && (
         <div className="mb-3">
           {subtitle ? <span className="label-uppercase">{subtitle}</span> : null}
-          {title ? <h3 className="mt-1 text-lg font-semibold text-foreground">{title}</h3> : null}
+          {title ? <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3> : null}
         </div>
       )}
       {children}

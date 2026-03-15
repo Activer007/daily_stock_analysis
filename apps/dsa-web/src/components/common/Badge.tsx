@@ -7,28 +7,50 @@ interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
   size?: 'sm' | 'md';
+  glow?: boolean;
   className?: string;
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'border-border bg-muted text-muted-foreground',
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
-  warning: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
-  danger: 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300',
-  info: 'border-primary/20 bg-primary/10 text-primary',
-  history: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300',
+  default: 'border-border/40 bg-elevated/40 text-secondary-text',
+  success: 'border-success/20 bg-success/10 text-success',
+  warning: 'border-warning/20 bg-warning/10 text-warning',
+  danger: 'border-danger/20 bg-danger/10 text-danger',
+  info: 'border-cyan/20 bg-cyan/10 text-cyan',
+  history: 'border-purple/20 bg-purple/10 text-purple',
 };
 
+const glowStyles: Record<BadgeVariant, string> = {
+  default: '',
+  success: 'shadow-success/20',
+  warning: 'shadow-warning/20',
+  danger: 'shadow-danger/20',
+  info: 'shadow-cyan/20',
+  history: 'shadow-purple/20',
+};
+
+/**
+ * Badge component with multiple variants and optional glow styling.
+ */
 export const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'default',
   size = 'sm',
+  glow = false,
   className = '',
 }) => {
-  const sizeStyles = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm';
+  const sizeStyles = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
 
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full border font-medium', sizeStyles, variantStyles[variant], className)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full border font-medium backdrop-blur-sm',
+        sizeStyles,
+        variantStyles[variant],
+        glow && `shadow-lg ${glowStyles[variant]}`,
+        className,
+      )}
+    >
       {children}
     </span>
   );
