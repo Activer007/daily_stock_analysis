@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAgentChatStore } from '../../stores/agentChatStore';
 import { cn } from '../../utils/cn';
+import { ThemeToggle } from '../theme/ThemeToggle';
 
 type SidebarNavProps = {
   collapsed?: boolean;
@@ -33,15 +34,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-6 flex items-center gap-3 px-2">
+      <div className={cn('mb-4 flex items-center gap-2 px-1', collapsed ? 'justify-center' : '')}>
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-gradient text-[hsl(var(--primary-foreground))] shadow-[0_12px_28px_rgba(0,212,255,0.24)]">
           <BarChart3 className="h-5 w-5" />
         </div>
         {!collapsed ? (
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Daily Stock Analysis</p>
-            <p className="mt-0.5 text-xs text-secondary-text">Terminal Workspace</p>
-          </div>
+          <p className="min-w-0 truncate text-sm font-semibold text-foreground">DSA</p>
         ) : null}
       </div>
 
@@ -58,7 +56,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
                 'group relative flex h-11 items-center gap-3 rounded-2xl border px-3 text-sm transition-all',
                 collapsed ? 'justify-center px-2' : '',
                 isActive
-                  ? 'border-cyan/25 bg-cyan/10 text-foreground shadow-[0_12px_28px_rgba(0,212,255,0.12)]'
+                  ? 'border-white/60 bg-white/6 text-foreground shadow-[0_10px_24px_rgba(255,255,255,0.06)]'
                   : 'border-transparent text-secondary-text hover:border-border/70 hover:bg-hover hover:text-foreground'
               )
             }
@@ -83,6 +81,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
         ))}
       </nav>
 
+      <div className={cn('mt-4 mb-2', collapsed ? 'flex justify-center' : '')}>
+        <ThemeToggle />
+      </div>
+
       {authEnabled ? (
         <button
           type="button"
@@ -96,7 +98,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
           )}
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed ? <span>退出登录</span> : null}
+          {!collapsed ? <span>退出</span> : null}
         </button>
       ) : null}
     </div>

@@ -67,8 +67,9 @@ test.describe('web smoke', () => {
     await openWithLogin(page, '/');
 
     await page.getByRole('button', { name: '打开导航菜单' }).click();
-    await expect(page.getByRole('dialog', { name: '导航菜单' })).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: '导航菜单' });
+    await expect(dialog).toBeVisible();
     await expect(page.getByRole('link', { name: '回测' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '切换主题' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: '切换主题' })).toBeVisible();
   });
 });

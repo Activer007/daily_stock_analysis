@@ -53,9 +53,9 @@ function boolIcon(value?: boolean | null) {
 // ============ Metric Row ============
 
 const MetricRow: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
-  <div className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
+  <div className="flex items-center justify-between border-b border-white/5 py-1.5 last:border-0">
     <span className="text-xs text-secondary-text">{label}</span>
-    <span className={`text-sm font-mono font-semibold ${accent ? 'text-cyan' : 'text-foreground'}`}>{value}</span>
+    <span className={`text-sm font-mono font-semibold ${accent ? 'text-cyan' : 'text-white'}`}>{value}</span>
   </div>
 );
 
@@ -95,8 +95,8 @@ const PerformanceCard: React.FC<{ metrics: PerformanceMetrics; title: string }> 
 // ============ Run Summary ============
 
 const RunSummary: React.FC<{ data: BacktestRunResponse }> = ({ data }) => (
-  <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-elevated px-3 py-2 text-xs font-mono animate-fade-in">
-    <span className="text-secondary-text">Processed: <span className="text-foreground">{data.processed}</span></span>
+  <div className="flex items-center gap-4 rounded-lg border border-white/5 bg-elevated px-3 py-2 text-xs font-mono animate-fade-in">
+    <span className="text-secondary-text">Processed: <span className="text-white">{data.processed}</span></span>
     <span className="text-secondary-text">Saved: <span className="text-cyan">{data.saved}</span></span>
     <span className="text-secondary-text">Completed: <span className="text-emerald-400">{data.completed}</span></span>
     <span className="text-secondary-text">Insufficient: <span className="text-amber-400">{data.insufficient}</span></span>
@@ -233,9 +233,9 @@ const BacktestPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full flex flex-col">
+    <div className="min-h-[calc(100vh-1.5rem)] flex flex-col rounded-[1.5rem] bg-transparent">
       {/* Header */}
-      <header className="flex-shrink-0 px-4 py-3 border-b border-border/40">
+      <header className="flex-shrink-0 border-b border-white/5 px-4 py-3">
         <div className="flex items-center gap-2 max-w-4xl">
           <div className="flex-1 relative">
             <input
@@ -278,7 +278,7 @@ const BacktestPage: React.FC = () => {
               transition-all duration-200 whitespace-nowrap border cursor-pointer
               ${forceRerun
                 ? 'border-cyan/40 bg-cyan/10 text-cyan shadow-[0_0_8px_rgba(0,212,255,0.15)]'
-                : 'border-border/70 bg-transparent text-muted-text hover:border-border hover:text-secondary-text'
+                : 'border-white/10 bg-transparent text-muted-text hover:border-white/20 hover:text-secondary-text'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
@@ -319,9 +319,9 @@ const BacktestPage: React.FC = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex overflow-hidden p-3 gap-3">
+      <main className="flex flex-1 gap-3 overflow-hidden p-3">
         {/* Left sidebar - Performance */}
-        <div className="flex flex-col gap-3 w-64 flex-shrink-0 overflow-y-auto">
+        <div className="flex w-60 flex-shrink-0 flex-col gap-3 overflow-y-auto">
           {isLoadingPerf ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-8 h-8 border-2 border-cyan/20 border-t-cyan rounded-full animate-spin" />
@@ -365,7 +365,7 @@ const BacktestPage: React.FC = () => {
             </div>
           ) : (
             <div className="animate-fade-in">
-              <div className="overflow-x-auto rounded-xl border border-border/50">
+              <div className="overflow-x-auto rounded-xl border border-white/6 bg-card/72">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-elevated text-left">
@@ -384,7 +384,7 @@ const BacktestPage: React.FC = () => {
                     {results.map((row) => (
                       <tr
                         key={row.analysisHistoryId}
-                        className="border-t border-border/40 hover:bg-hover transition-colors"
+                        className="border-t border-white/5 transition-colors hover:bg-hover"
                       >
                         <td className="px-3 py-2 font-mono text-cyan text-xs">{row.code}</td>
                         <td className="px-3 py-2 text-xs text-secondary-text">{row.analysisDate || '--'}</td>

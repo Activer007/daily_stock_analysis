@@ -318,11 +318,11 @@ const ChatPage: React.FC = () => {
 
   const sidebarContent = (
     <>
-      <div className="p-3 border-b border-border/40 flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">历史对话</span>
+      <div className="flex items-center justify-between border-b border-white/5 p-3">
+        <span className="text-sm font-medium text-white">历史对话</span>
         <button
           onClick={handleStartNewChat}
-          className="p-1.5 rounded-lg hover:bg-hover transition-colors text-secondary-text hover:text-foreground"
+          className="rounded-lg p-1.5 text-secondary-text transition-colors hover:bg-white/10 hover:text-white"
           title="新对话"
         >
           <svg
@@ -349,8 +349,8 @@ const ChatPage: React.FC = () => {
           sessions.map((s) => (
             <div
               key={s.session_id}
-              className={`w-full text-left px-3 py-2.5 border-b border-border/40 transition-colors group ${
-                s.session_id === sessionId ? 'bg-hover/90' : 'hover:bg-hover/70'
+              className={`group w-full border-b border-white/5 px-3 py-2.5 text-left transition-colors ${
+                s.session_id === sessionId ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -359,7 +359,7 @@ const ChatPage: React.FC = () => {
                   onClick={() => handleSwitchSession(s.session_id)}
                   className="min-w-0 flex-1 text-left"
                 >
-                  <span className="block truncate text-sm text-secondary-text group-hover:text-foreground">
+                  <span className="block truncate text-sm text-secondary-text group-hover:text-white">
                     {s.title}
                   </span>
                 </button>
@@ -369,7 +369,7 @@ const ChatPage: React.FC = () => {
                     e.stopPropagation();
                     setDeleteConfirmId(s.session_id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-hover text-muted-text hover:text-red-400 transition-all flex-shrink-0"
+                  className="flex-shrink-0 rounded p-0.5 text-muted-text opacity-0 transition-all hover:bg-white/10 hover:text-red-400 group-hover:opacity-100"
                   title="删除"
                 >
                   <svg
@@ -400,9 +400,9 @@ const ChatPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] max-w-6xl mx-auto w-full p-4 md:p-6 gap-4">
+    <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-6xl gap-4 rounded-[1.5rem] bg-transparent p-3 md:p-4">
       {/* Desktop sidebar */}
-      <div className="hidden md:flex flex-col w-64 flex-shrink-0 glass-card overflow-hidden">
+      <div className="hidden w-64 flex-shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/8 bg-card/82 shadow-soft-card md:flex">
         {sidebarContent}
       </div>
 
@@ -414,7 +414,7 @@ const ChatPage: React.FC = () => {
         >
           <div className="absolute inset-0 bg-black/60" />
           <div
-            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-border/70 shadow-2xl"
+            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-white/10 bg-card/90 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {sidebarContent}
@@ -429,10 +429,10 @@ const ChatPage: React.FC = () => {
           onClick={() => setDeleteConfirmId(null)}
         >
           <div
-            className="bg-elevated border border-border/70 rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
+            className="bg-elevated border border-white/10 rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-foreground font-medium mb-2">删除对话</h3>
+            <h3 className="text-white font-medium mb-2">删除对话</h3>
             <p className="text-sm text-secondary-text mb-5">
               删除后，该对话将不可恢复，确认删除吗？
             </p>
@@ -592,7 +592,7 @@ const ChatPage: React.FC = () => {
           )}
         </header>
 
-        <div className="flex-1 flex flex-col glass-card overflow-hidden min-h-0 relative z-10">
+        <div className="flex-1 flex flex-col glass-card overflow-hidden min-h-0 relative z-10 border border-white/6 bg-card/78">
           {/* Messages */}
           <div
             ref={messagesViewportRef}
@@ -654,7 +654,7 @@ const ChatPage: React.FC = () => {
                     className={`min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden rounded-2xl px-5 py-3.5 ${
                       msg.role === 'user'
                         ? 'bg-cyan/10 text-white border border-cyan/20 rounded-tr-sm'
-                        : 'bg-card/70 text-secondary-text border border-border/70 rounded-tl-sm'
+                        : 'bg-card/72 text-secondary-text border border-white/6 rounded-tl-sm'
                     }`}
                   >
                     {msg.role === 'assistant' && msg.strategyName && (
@@ -728,7 +728,7 @@ const ChatPage: React.FC = () => {
                 <div className="w-8 h-8 rounded-full bg-elevated text-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
                   AI
                 </div>
-                <div className="min-w-[200px] max-w-[min(100%,48rem)] overflow-hidden rounded-2xl rounded-tl-sm border border-border/70 bg-card/70 px-5 py-4">
+                <div className="min-w-[200px] max-w-[min(100%,48rem)] overflow-hidden rounded-2xl rounded-tl-sm border border-white/6 bg-card/72 px-5 py-4">
                   <div className="flex items-center gap-2.5 text-sm text-secondary-text">
                     <div className="relative w-4 h-4 flex-shrink-0">
                       <div className="absolute inset-0 rounded-full border-2 border-cyan/20" />
@@ -746,7 +746,7 @@ const ChatPage: React.FC = () => {
           </div>
 
           {/* Input area */}
-          <div className="p-4 md:p-6 border-t border-border/40 bg-card/85 relative z-20">
+          <div className="p-4 md:p-6 border-t border-white/6 bg-card/88 relative z-20">
             {chatError ? (
               <ApiErrorAlert error={chatError} className="mb-3" />
             ) : null}

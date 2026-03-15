@@ -44,9 +44,9 @@ describe('Shell', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('button', { name: '切换主题' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '切换主题' }).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: '问股' })).toBeInTheDocument();
     expect(screen.getByTestId('chat-completion-badge')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '退出登录' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '退出' })).toBeInTheDocument();
   });
 });
