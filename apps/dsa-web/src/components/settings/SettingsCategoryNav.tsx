@@ -18,7 +18,7 @@ export const SettingsCategoryNav: React.FC<SettingsCategoryNavProps> = ({
   onSelect,
 }) => {
   return (
-    <div className="h-full rounded-[1.5rem] border border-white/8 bg-card/88 p-4 shadow-soft-card">
+    <div className="h-full rounded-[1.5rem] border border-border/65 bg-card/90 p-4 shadow-soft-card">
       <div className="mb-4">
         <p className="text-s uppercase tracking-[0.3em] text-muted-text">配置分类</p>
         <p className="mt-1 text-sm leading-6 text-secondary-text">按模块整理系统设置与认证能力。</p>
@@ -38,8 +38,8 @@ export const SettingsCategoryNav: React.FC<SettingsCategoryNavProps> = ({
               className={cn(
                 'w-full rounded-[1.1rem] border px-3 py-3 text-left transition-all shadow-soft-card',
                 isActive
-                  ? 'border-cyan bg-white/[0.06]'
-                  : 'border-white/8 bg-white/[0.03] hover:border-white/12 hover:bg-white/[0.08]',
+                  ? 'border-cyan bg-elevated/92'
+                  : 'border-border/65 bg-elevated/58 hover:border-border/80 hover:bg-hover/60',
               )}
               onClick={() => onSelect(category.category)}
             >

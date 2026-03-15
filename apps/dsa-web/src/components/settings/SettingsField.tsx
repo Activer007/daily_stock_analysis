@@ -53,7 +53,7 @@ function renderFieldControl(
   controlId: string,
 ) {
   const schema = item.schema;
-  const commonClass = 'input-terminal';
+  const commonClass = 'input-terminal border-border/55 bg-card/94 hover:border-border/75';
   const controlType = schema?.uiControl ?? 'text';
   const isMultiValue = isMultiValueField(item);
 
@@ -122,7 +122,7 @@ function renderFieldControl(
               />
               <button
                 type="button"
-                className="btn-secondary !p-2"
+                className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-2 py-2 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
                 disabled={disabled || !schema?.isEditable}
                 onClick={onToggleSecretVisible}
                 title={isSecretVisible ? '隐藏' : '显示'}
@@ -132,7 +132,7 @@ function renderFieldControl(
               </button>
               <button
                 type="button"
-                className="btn-secondary !px-3 !py-2 text-xs"
+                className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-3 py-2 text-xs text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
                 disabled={disabled || !schema?.isEditable || values.length <= 1}
                 onClick={() => {
                   const nextValues = values.filter((_, rowIndex) => rowIndex !== index);
@@ -147,7 +147,7 @@ function renderFieldControl(
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn-secondary !px-3 !py-2 text-xs"
+              className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-3 py-2 text-xs text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
               disabled={disabled || !schema?.isEditable}
               onClick={() => onChange(serializeMultiValues([...values, '']))}
             >
@@ -172,7 +172,7 @@ function renderFieldControl(
         />
         <button
           type="button"
-          className="btn-secondary !p-2"
+          className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-2 py-2 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
           disabled={disabled || !schema?.isEditable}
           onClick={onToggleSecretVisible}
           title={isSecretVisible ? '隐藏' : '显示'}
@@ -217,8 +217,8 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   return (
     <div
       className={cn(
-        'rounded-[1.15rem] border bg-elevated/60 p-4 shadow-soft-card',
-        hasError ? 'border-danger/35' : 'border-white/6',
+        'rounded-[1.15rem] border bg-elevated/78 p-4 shadow-soft-card',
+        hasError ? 'border-danger/35' : 'border-border/40',
       )}
     >
       <div className="mb-2 flex flex-wrap items-center gap-2">

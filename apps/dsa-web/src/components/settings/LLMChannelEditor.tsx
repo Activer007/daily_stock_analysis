@@ -874,10 +874,10 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/55 p-5 shadow-soft-card">
+    <div className="space-y-5">
       <button
         type="button"
-        className="flex w-full items-center justify-between text-left"
+        className="flex w-full items-center justify-between rounded-2xl border border-border/35 bg-elevated/65 px-5 py-4 text-left shadow-soft-card"
         onClick={() => setIsCollapsed((previous) => !previous)}
       >
         <div className="space-y-1">
@@ -893,8 +893,8 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
       </button>
 
       {!isCollapsed ? (
-        <div className="mt-4 space-y-5">
-          <div className="rounded-xl border border-border/50 bg-elevated/35 p-4">
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-border/40 bg-elevated/62 p-4 shadow-soft-card">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-foreground">快速添加渠道</h4>
@@ -929,7 +929,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
             </div>
 
             {channels.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border/50 bg-elevated/25 px-4 py-8 text-center">
+              <div className="rounded-2xl border border-dashed border-border/35 bg-background/18 px-4 py-10 text-center shadow-soft-card">
                 <p className="text-sm font-medium text-secondary-text">还没有渠道</p>
                 <p className="mt-1 text-xs text-muted-text">选择服务商预设后点击“添加渠道”即可开始配置。</p>
               </div>
@@ -952,7 +952,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {managesRuntimeConfig ? (
-            <div className="rounded-xl border border-border/50 bg-elevated/35 p-4">
+            <div className="rounded-2xl border border-border/40 bg-elevated/62 p-4 shadow-soft-card">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-medium uppercase tracking-wider text-muted-text">运行时参数</span>
@@ -1033,7 +1033,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               )}
             </div>
           ) : (
-            <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs text-warning">
+            <div className="rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 text-xs text-warning shadow-soft-card">
               当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；
               这里仅保存渠道条目，不会覆盖 YAML 运行时选择。
             </div>

@@ -282,7 +282,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border/50 bg-card/45 p-4 shadow-soft-card">
+      <div className="rounded-xl border border-border/38 bg-elevated/62 p-4 shadow-soft-card">
         <p className="text-sm font-medium text-foreground">支持图片、CSV/Excel 文件与剪贴板文本</p>
         <p className="mt-1 text-xs leading-5 text-secondary-text">
           图片识别需预先配置 Vision 模型。建议先人工核对解析结果，再合并到自选股。
@@ -294,18 +294,18 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
         className={`flex min-h-[96px] flex-col gap-4 rounded-xl border border-dashed p-4 transition-colors ${
-          isDragging ? 'border-cyan/40 bg-cyan/6' : 'border-border/60 bg-elevated/30'
+          isDragging ? 'border-cyan/40 bg-cyan/6' : 'border-border/45 bg-background/22'
         } ${disabled || isLoading ? 'cursor-not-allowed opacity-60' : ''}`}
       >
         <div className="flex flex-wrap items-center gap-2">
           <label className="cursor-pointer">
-            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-card px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
+            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-elevated px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
               选择图片
             </span>
             <input type="file" accept=".jpg,.jpeg,.png,.webp,.gif" className="hidden" onChange={onImageInput} disabled={disabled || isLoading} />
           </label>
           <label className="cursor-pointer">
-            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-card px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
+            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-elevated px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
               选择文件
             </span>
             <input type="file" accept=".csv,.xlsx,.txt" className="hidden" onChange={onDataFileInput} disabled={disabled || isLoading} />
@@ -314,7 +314,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
         <div className="flex flex-col gap-2 sm:flex-row">
           <textarea
             placeholder="或粘贴 CSV/Excel 复制的文本..."
-            className="min-h-[72px] w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2 text-sm text-foreground shadow-soft-card transition-colors placeholder:text-muted-text focus:border-cyan/35 focus:outline-none focus:ring-4 focus:ring-cyan/10"
+            className="min-h-[72px] w-full rounded-xl border border-border/60 bg-card/92 px-3 py-2 text-sm text-foreground shadow-soft-card transition-colors placeholder:text-muted-text focus:border-cyan/35 focus:outline-none focus:ring-4 focus:ring-cyan/10"
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
             disabled={disabled || isLoading}
@@ -357,7 +357,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
               </button>
             </div>
           </div>
-          <div className="max-h-[220px] space-y-1 overflow-y-auto rounded-xl border border-border/50 bg-card/35 p-2">
+          <div className="max-h-[220px] space-y-1 overflow-y-auto rounded-xl border border-border/40 bg-background/18 p-2">
             {items.map((it) => {
               const confidence = normalizeConfidence(it.confidence);
               const confidenceMeta = getConfidenceMeta(confidence);
@@ -366,7 +366,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
                 <div
                   key={it.id}
                   className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
-                    it.code ? 'border-border/50 bg-elevated/40' : 'border-danger/25 bg-danger/10'
+                    it.code ? 'border-border/40 bg-elevated/62' : 'border-danger/25 bg-danger/10'
                   }`}
                 >
                   <input
