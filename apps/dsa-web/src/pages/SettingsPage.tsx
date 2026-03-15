@@ -103,7 +103,7 @@ const SettingsPage: React.FC = () => {
       : rawActiveItems;
 
   return (
-    <div className="min-h-screen px-4 pb-6 pt-4 md:px-6">
+    <div className="min-h-full px-4 pb-6 pt-4 md:px-6">
       <header className="mb-4 rounded-2xl border border-white/8 bg-card/80 p-4 backdrop-blur-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

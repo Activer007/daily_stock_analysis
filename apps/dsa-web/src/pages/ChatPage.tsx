@@ -400,7 +400,7 @@ const ChatPage: React.FC = () => {
   );
 
   return (
-    <div className="h-screen flex max-w-6xl mx-auto w-full p-4 md:p-6 gap-4">
+    <div className="flex h-[calc(100vh-8rem)] max-w-6xl mx-auto w-full p-4 md:p-6 gap-4">
       {/* Desktop sidebar */}
       <div className="hidden md:flex flex-col w-64 flex-shrink-0 glass-card overflow-hidden">
         {sidebarContent}

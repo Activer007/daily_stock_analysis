@@ -233,7 +233,7 @@ const BacktestPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-full flex flex-col">
       {/* Header */}
       <header className="flex-shrink-0 px-4 py-3 border-b border-border/40">
         <div className="flex items-center gap-2 max-w-4xl">
