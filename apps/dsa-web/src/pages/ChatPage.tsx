@@ -349,20 +349,26 @@ const ChatPage: React.FC = () => {
           sessions.map((s) => (
             <div
               key={s.session_id}
-              className={`group w-full border-b border-white/5 px-3 py-2.5 text-left transition-colors ${
+              role="button"
+              tabIndex={0}
+              onClick={() => handleSwitchSession(s.session_id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSwitchSession(s.session_id);
+                }
+              }}
+              className={`group w-full border-b border-white/25 px-3 py-2.5 text-left transition-colors ${
                 s.session_id === sessionId ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
+              aria-label={`切换到对话 ${s.title}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSwitchSession(s.session_id)}
-                  className="min-w-0 flex-1 text-left"
-                >
+                <div className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-secondary-text group-hover:text-white">
                     {s.title}
                   </span>
-                </button>
+                </div>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -402,7 +408,7 @@ const ChatPage: React.FC = () => {
   return (
     <div
       data-testid="chat-workspace"
-      className="flex h-[calc(100vh-1.5rem)] w-full min-w-0 gap-4 overflow-hidden"
+      className="flex h-[calc(100vh-5rem)] w-full min-w-0 gap-4 overflow-hidden sm:h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-2rem)]"
     >
       {/* Desktop sidebar */}
       <div className="hidden h-full w-64 flex-shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/8 bg-card/82 shadow-soft-card md:flex">

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { Badge, Button, Card, EyeToggleIcon, Input } from '../components/common';
+import { Button, Card, EyeToggleIcon, Input } from '../components/common';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ParsedApiError } from '../api/error';
 import { isParsedApiError } from '../api/error';
@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4">
       <Card className="w-full max-w-md" padding="lg" variant="bordered">
-        <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="mb-6">
           <div>
             <h1 className="mb-2 text-xl font-semibold text-foreground">
               {isFirstTime ? '设置初始密码' : '管理员登录'}
@@ -58,9 +58,6 @@ const LoginPage: React.FC = () => {
                 : '请输入当前管理员密码以继续访问系统设置与工作台。'}
             </p>
           </div>
-          <Badge variant={isFirstTime ? 'warning' : 'info'} size="sm">
-            {isFirstTime ? '首次设置' : '需要登录'}
-          </Badge>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -52,7 +52,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         <aside
           className={cn(
             'sticky top-3 hidden shrink-0 overflow-visible rounded-[1.5rem] border border-border/60 bg-card/72 p-2 shadow-soft-card backdrop-blur-sm transition-[width] duration-200 lg:flex',
-            'max-h-[calc(100vh-1.5rem)] self-start',
+            'max-h-[calc(100vh-1.5rem)] self-start sm:top-4 sm:max-h-[calc(100vh-2rem)]',
             collapsed ? 'w-[64px]' : 'w-[116px]'
           )}
           aria-label="桌面侧边导航"

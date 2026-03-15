@@ -3,7 +3,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import type { HistoryItem } from '../../types/analysis';
 import { getSentimentColor } from '../../types/analysis';
 import { formatDateTime } from '../../utils/format';
-import { Button, Badge } from '../common';
+import { Badge, Button, ScrollArea } from '../common';
 
 interface HistoryListProps {
   items: HistoryItem[];
@@ -105,7 +105,11 @@ export const HistoryList: React.FC<HistoryListProps> = ({
 
   return (
     <aside className={`glass-card overflow-hidden flex flex-col ${className}`}>
-      <div ref={scrollContainerRef} className="p-4 flex-1 overflow-y-auto">
+      <ScrollArea
+        viewportRef={scrollContainerRef}
+        viewportClassName="p-4"
+        testId="home-history-list-scroll"
+      >
         <div className="mb-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-semibold text-purple uppercase tracking-widest flex items-center gap-2">
@@ -251,7 +255,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             )}
           </div>
         )}
-      </div>
+      </ScrollArea>
     </aside>
   );
 };

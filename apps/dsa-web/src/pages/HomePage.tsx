@@ -405,7 +405,7 @@ const HomePage: React.FC = () => {
 
   return (
     <div
-      className="flex min-h-0 w-full flex-col overflow-hidden md:grid md:h-full"
+      className="flex min-h-0 w-full flex-col overflow-hidden md:grid md:h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-2rem)]"
       style={{ gridTemplateColumns: 'minmax(12px, 1fr) 256px 24px minmax(auto, 896px) minmax(12px, 1fr)', gridTemplateRows: 'auto 1fr' }}
     >
       {/* Top Input Bar */}
