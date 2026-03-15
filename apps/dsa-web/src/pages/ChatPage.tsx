@@ -13,6 +13,7 @@ import {
   type ProgressStep,
 } from '../stores/agentChatStore';
 import { downloadSession, formatSessionAsMarkdown } from '../utils/chatExport';
+import { isNearBottom } from '../utils/chatScroll';
 
 interface FollowUpContext {
   stock_code: string;
@@ -47,9 +48,12 @@ const ChatPage: React.FC = () => {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialFollowUpHandled = useRef(false);
   const followUpContextRef = useRef<FollowUpContext | null>(null);
+  const shouldStickToBottomRef = useRef(true);
+  const pendingScrollBehaviorRef = useRef<ScrollBehavior>('auto');
 
   const {
     messages,
@@ -66,13 +70,51 @@ const ChatPage: React.FC = () => {
     clearCompletionBadge,
   } = useAgentChatStore();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const syncScrollState = useCallback(() => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    shouldStickToBottomRef.current = isNearBottom({
+      scrollTop: viewport.scrollTop,
+      clientHeight: viewport.clientHeight,
+      scrollHeight: viewport.scrollHeight,
+    });
+  }, []);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  const requestScrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    shouldStickToBottomRef.current = true;
+    pendingScrollBehaviorRef.current = behavior;
+  }, []);
+
+  const handleMessagesScroll = useCallback(() => {
+    syncScrollState();
+  }, [syncScrollState]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, progressSteps]);
+    syncScrollState();
+  }, [syncScrollState, sessionId]);
+
+  useEffect(() => {
+    const behavior = pendingScrollBehaviorRef.current;
+    const shouldAutoScroll = shouldStickToBottomRef.current;
+    if (!shouldAutoScroll) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      scrollToBottom(behavior);
+      pendingScrollBehaviorRef.current = loading ? 'auto' : 'smooth';
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, progressSteps, loading, sessionId, scrollToBottom]);
+
+  useEffect(() => {
+    if (!loading) {
+      pendingScrollBehaviorRef.current = 'smooth';
+    }
+  }, [loading]);
 
   useEffect(() => {
     clearCompletionBadge();
@@ -95,14 +137,16 @@ const ChatPage: React.FC = () => {
 
   const handleStartNewChat = useCallback(() => {
     followUpContextRef.current = null;
+    requestScrollToBottom('auto');
     useAgentChatStore.getState().startNewChat();
     setSidebarOpen(false);
-  }, []);
+  }, [requestScrollToBottom]);
 
   const handleSwitchSession = useCallback((targetSessionId: string) => {
+    requestScrollToBottom('auto');
     switchSession(targetSessionId);
     setSidebarOpen(false);
-  }, [switchSession]);
+  }, [requestScrollToBottom, switchSession]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteConfirmId) return;
@@ -159,9 +203,10 @@ const ChatPage: React.FC = () => {
       followUpContextRef.current = null;
 
       setInput('');
+      requestScrollToBottom('smooth');
       await startStream(payload, { strategyName: usedStrategyName });
     },
-    [input, loading, selectedStrategy, strategies, sessionId, startStream],
+    [input, loading, requestScrollToBottom, selectedStrategy, strategies, sessionId, startStream],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -549,7 +594,11 @@ const ChatPage: React.FC = () => {
 
         <div className="flex-1 flex flex-col glass-card overflow-hidden min-h-0 relative z-10">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar relative z-10">
+          <div
+            ref={messagesViewportRef}
+            onScroll={handleMessagesScroll}
+            className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar relative z-10"
+          >
             {messages.length === 0 && !loading ? (
               <div className="h-full flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
@@ -602,7 +651,7 @@ const ChatPage: React.FC = () => {
                     {msg.role === 'user' ? 'U' : 'AI'}
                   </div>
                   <div
-                    className={`max-w-[80%] rounded-2xl px-5 py-3.5 ${
+                    className={`min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden rounded-2xl px-5 py-3.5 ${
                       msg.role === 'user'
                         ? 'bg-cyan/10 text-white border border-cyan/20 rounded-tr-sm'
                         : 'bg-white/5 text-secondary-text border border-white/10 rounded-tl-sm'
@@ -638,17 +687,19 @@ const ChatPage: React.FC = () => {
                         className="prose prose-invert prose-sm max-w-none
                       prose-headings:text-white prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1.5
                       prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
-                      prose-p:leading-relaxed prose-p:mb-2 prose-p:last:mb-0
+                      prose-p:mb-2 prose-p:last:mb-0 prose-p:leading-7 prose-p:break-words
                       prose-strong:text-white prose-strong:font-semibold
-                      prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5
-                      prose-code:text-cyan prose-code:bg-white/5 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
-                      prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg prose-pre:p-3
+                      prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-li:break-words
+                      prose-code:text-cyan prose-code:bg-white/5 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:break-all
+                      prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg prose-pre:p-3
                       prose-table:w-full prose-table:text-sm
                       prose-th:text-white prose-th:font-medium prose-th:border-white/20 prose-th:px-3 prose-th:py-1.5 prose-th:bg-white/5
                       prose-td:border-white/10 prose-td:px-3 prose-td:py-1.5
                       prose-hr:border-white/10 prose-hr:my-3
                       prose-a:text-cyan prose-a:no-underline hover:prose-a:underline
                       prose-blockquote:border-cyan/30 prose-blockquote:text-secondary-text
+                      [&_table]:block [&_table]:overflow-x-auto [&_table]:whitespace-nowrap
+                      [&_img]:max-w-full
                     "
                       >
                         <Markdown remarkPlugins={[remarkGfm]}>
@@ -677,7 +728,7 @@ const ChatPage: React.FC = () => {
                 <div className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
                   AI
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm px-5 py-4 min-w-[200px] max-w-[80%]">
+                <div className="min-w-[200px] max-w-[min(100%,48rem)] overflow-hidden rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 px-5 py-4">
                   <div className="flex items-center gap-2.5 text-sm text-secondary-text">
                     <div className="relative w-4 h-4 flex-shrink-0">
                       <div className="absolute inset-0 rounded-full border-2 border-cyan/20" />
