@@ -38,8 +38,8 @@ export const SettingsCategoryNav: React.FC<SettingsCategoryNavProps> = ({
               className={cn(
                 'w-full rounded-xl border px-3 py-3 text-left transition-all',
                 isActive
-                  ? 'border-cyan/35 bg-cyan/10 shadow-soft-card'
-                  : 'border-border/60 bg-elevated/35 hover:border-cyan/20 hover:bg-hover',
+                  ? 'border-cyan/35 bg-cyan/9 shadow-soft-card'
+                  : 'border-border/50 bg-card/45 hover:border-cyan/18 hover:bg-hover/80',
               )}
               onClick={() => onSelect(category.category)}
             >

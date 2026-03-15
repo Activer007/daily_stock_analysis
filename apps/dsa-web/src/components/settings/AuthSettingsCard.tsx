@@ -98,13 +98,13 @@ export const AuthSettingsCard: React.FC = () => {
       }
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="rounded-xl border border-border/60 bg-elevated/35 p-4">
+        <div className="rounded-xl border border-border/50 bg-card/45 p-4 shadow-soft-card">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">管理员认证</p>
               <p className="text-sm leading-6 text-secondary-text">{helperText}</p>
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-border/60 bg-card px-3 py-2">
+            <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-border/60 bg-background/45 px-3 py-2 shadow-soft-card">
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-border/70 bg-base text-cyan focus:ring-cyan/20"
@@ -133,7 +133,7 @@ export const AuthSettingsCard: React.FC = () => {
                 trailingAction={(
                   <button
                     type="button"
-                    className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
                     onClick={() => setShowCurrentPassword((previous) => !previous)}
                     aria-label={showCurrentPassword ? '隐藏当前密码' : '显示当前密码'}
                   >
@@ -156,7 +156,7 @@ export const AuthSettingsCard: React.FC = () => {
                   trailingAction={(
                     <button
                       type="button"
-                      className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
                       onClick={() => setShowPassword((previous) => !previous)}
                       aria-label={showPassword ? '隐藏新密码' : '显示新密码'}
                     >
@@ -182,7 +182,7 @@ export const AuthSettingsCard: React.FC = () => {
                 trailingAction={(
                   <button
                     type="button"
-                    className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
                     onClick={() => setShowPasswordConfirm((previous) => !previous)}
                     aria-label={showPasswordConfirm ? '隐藏确认密码' : '显示确认密码'}
                   >

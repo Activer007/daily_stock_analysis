@@ -201,9 +201,9 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
         : 'default';
 
   return (
-    <div className="mb-2 overflow-hidden rounded-xl border border-white/8 bg-card/40 shadow-soft-card">
+    <div className="mb-2 overflow-hidden rounded-xl border border-border/50 bg-elevated/35 shadow-soft-card">
       <div
-        className="flex cursor-pointer select-none items-center gap-2.5 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+        className="flex cursor-pointer select-none items-center gap-2.5 px-4 py-3 transition-colors hover:bg-hover/80"
         onClick={() => onToggleExpand(index)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -220,7 +220,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
           type="checkbox"
           checked={channel.enabled}
           disabled={busy}
-          className="h-4 w-4 shrink-0 rounded border-white/10 bg-card text-cyan focus:ring-cyan/20"
+          className="h-4 w-4 shrink-0 rounded border-border/70 bg-base text-cyan focus:ring-cyan/20"
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => onUpdate(index, 'enabled', e.target.checked)}
         />
@@ -266,7 +266,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
       </div>
 
       {expanded ? (
-        <div className="space-y-4 border-t border-white/6 bg-card/20 px-4 py-4">
+        <div className="space-y-4 border-t border-border/50 bg-background/15 px-4 py-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <Input
               label="渠道名称"
@@ -306,7 +306,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             <div className="relative">
               <input
                 type={visibleKey ? 'text' : 'password'}
-                className="h-10 w-full rounded-xl border border-white/10 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-white/18"
+                className="h-10 w-full rounded-xl border border-border/60 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-border/80"
                 value={channel.apiKey}
                 disabled={busy}
                 onChange={(e) => onUpdate(index, 'apiKey', e.target.value)}
@@ -350,9 +350,9 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             {testState?.text ? (
               <span className={`text-xs ${
                 testState.status === 'success'
-                  ? 'text-emerald-300'
+                  ? 'text-success'
                   : testState.status === 'error'
-                    ? 'text-rose-300'
+                    ? 'text-danger'
                     : 'text-muted-text'
               }`}
               >
@@ -874,7 +874,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
   };
 
   return (
-    <div className="rounded-2xl border border-cyan/20 bg-elevated/60 p-5 shadow-soft-card">
+    <div className="rounded-2xl border border-border/60 bg-card/55 p-5 shadow-soft-card">
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
@@ -894,7 +894,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
 
       {!isCollapsed ? (
         <div className="mt-4 space-y-5">
-          <div className="rounded-xl border border-white/8 bg-card/30 p-3">
+          <div className="rounded-xl border border-border/50 bg-elevated/35 p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-medium text-foreground">快速添加渠道</h4>
@@ -929,7 +929,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
             </div>
 
             {channels.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/10 bg-card/20 px-4 py-8 text-center">
+              <div className="rounded-xl border border-dashed border-border/50 bg-elevated/25 px-4 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-text">还没有渠道</p>
                 <p className="mt-1 text-xs text-muted-text">选择服务商预设后点击“添加渠道”即可开始配置。</p>
               </div>
@@ -952,7 +952,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {managesRuntimeConfig ? (
-            <div className="rounded-xl border border-white/8 bg-card/30 p-4">
+            <div className="rounded-xl border border-border/50 bg-elevated/35 p-4">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-medium uppercase tracking-wider text-muted-text">运行时参数</span>
@@ -972,7 +972,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                     value={runtimeConfig.temperature}
                     disabled={busy}
                     onChange={(event) => setRuntimeConfig((previous) => ({ ...previous, temperature: event.target.value }))}
-                    className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-cyan"
+                    className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border/60 accent-cyan"
                   />
                   <span className="w-8 text-right text-sm text-secondary-text">{runtimeConfig.temperature}</span>
                 </div>
@@ -982,7 +982,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               </div>
 
               {availableModels.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-white/10 bg-card/20 px-3 py-2 text-xs text-muted-text">
+                <div className="rounded-lg border border-dashed border-border/50 bg-background/20 px-3 py-2 text-xs text-muted-text">
                   先添加至少一个已启用渠道并填写模型，下面的主模型 / fallback / Vision 选项才会出现。
                 </div>
               ) : (
@@ -1000,7 +1000,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
 
                   <div>
                     <label className="mb-2 block text-xs text-muted-text">Fallback 模型</label>
-                    <div className="space-y-2 rounded-lg border border-white/8 bg-card/20 p-3">
+                    <div className="space-y-2 rounded-lg border border-border/50 bg-background/20 p-3">
                       {availableModels.map((model) => (
                         <label key={model} className="flex items-center gap-2 text-sm text-secondary-text">
                           <input
@@ -1008,6 +1008,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                             checked={runtimeConfig.fallbackModels.includes(model)}
                             disabled={busy || model === runtimeConfig.primaryModel}
                             onChange={() => toggleFallbackModel(model)}
+                            className="h-4 w-4 rounded border-border/70 bg-base text-cyan focus:ring-cyan/20"
                           />
                           <span>{model}</span>
                         </label>
@@ -1032,7 +1033,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               )}
             </div>
           ) : (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+            <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs text-warning">
               当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；
               这里仅保存渠道条目，不会覆盖 YAML 运行时选择。
             </div>
@@ -1052,13 +1053,13 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {saveMessage?.type === 'success' ? (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+            <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
               {saveMessage.text}
             </div>
           ) : null}
 
           {saveMessage?.type === 'local-error' ? (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
               {saveMessage.text}
             </div>
           ) : null}
