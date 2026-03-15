@@ -51,7 +51,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
       <div className="mx-auto flex min-h-screen w-full max-w-[1680px] px-3 py-3 sm:px-4 sm:py-4 lg:px-5">
         <aside
           className={cn(
-            'sticky top-3 hidden shrink-0 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card/72 p-2 shadow-soft-card backdrop-blur-sm transition-[width] duration-200 lg:flex',
+            'sticky top-3 hidden shrink-0 overflow-visible rounded-[1.5rem] border border-border/60 bg-card/72 p-2 shadow-soft-card backdrop-blur-sm transition-[width] duration-200 lg:flex',
             'max-h-[calc(100vh-1.5rem)] self-start',
             collapsed ? 'w-[64px]' : 'w-[116px]'
           )}
@@ -60,7 +60,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           <SidebarNav collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
         </aside>
 
-        <main className="min-w-0 flex-1 lg:pl-3">
+        <main className="min-h-0 min-w-0 flex-1 lg:pl-3">
           {children ?? <Outlet />}
         </main>
       </div>

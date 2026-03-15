@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { agentApi } from '../api/agent';
-import { ApiErrorAlert, Button } from '../components/common';
+import { ApiErrorAlert, Button, ConfirmDialog, ScrollArea } from '../components/common';
 import { getParsedApiError } from '../api/error';
 import type { StrategyInfo } from '../api/agent';
 import { historyApi } from '../api/history';
@@ -340,7 +340,7 @@ const ChatPage: React.FC = () => {
           </svg>
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <ScrollArea testId="chat-session-list-scroll">
         {sessionsLoading ? (
           <div className="p-4 text-center text-xs text-muted-text">加载中...</div>
         ) : sessions.length === 0 ? (
@@ -395,14 +395,17 @@ const ChatPage: React.FC = () => {
             </div>
           ))
         )}
-      </div>
+      </ScrollArea>
     </>
   );
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-6xl gap-4 rounded-[1.5rem] bg-transparent p-3 md:p-4">
+    <div
+      data-testid="chat-workspace"
+      className="flex h-[calc(100vh-1.5rem)] w-full min-w-0 gap-4 overflow-hidden pt-12 md:pt-0"
+    >
       {/* Desktop sidebar */}
-      <div className="hidden w-64 flex-shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/8 bg-card/82 shadow-soft-card md:flex">
+      <div className="hidden h-full w-64 flex-shrink-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/8 bg-card/82 shadow-soft-card md:flex">
         {sidebarContent}
       </div>
 
@@ -423,39 +426,19 @@ const ChatPage: React.FC = () => {
       )}
 
       {/* Delete confirmation dialog */}
-      {deleteConfirmId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setDeleteConfirmId(null)}
-        >
-          <div
-            className="bg-elevated border border-white/10 rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-white font-medium mb-2">删除对话</h3>
-            <p className="text-sm text-secondary-text mb-5">
-              删除后，该对话将不可恢复，确认删除吗？
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-1.5 rounded-lg text-sm text-secondary-text hover:text-foreground hover:bg-hover border border-border/70 transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-1.5 rounded-lg text-sm text-foreground bg-red-500/80 hover:bg-red-500 transition-colors"
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={Boolean(deleteConfirmId)}
+        title="删除对话"
+        message="删除后，该对话将不可恢复，确认删除吗？"
+        confirmText="删除"
+        cancelText="取消"
+        isDanger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+      />
 
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
         <header className="mb-4 flex-shrink-0">
           <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
             <button
@@ -592,12 +575,14 @@ const ChatPage: React.FC = () => {
           )}
         </header>
 
-        <div className="flex-1 flex flex-col glass-card overflow-hidden min-h-0 relative z-10 border border-white/6 bg-card/78">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden border border-white/6 bg-card/78 glass-card">
           {/* Messages */}
-          <div
-            ref={messagesViewportRef}
+          <ScrollArea
+            className="relative z-10 flex-1"
+            viewportRef={messagesViewportRef}
             onScroll={handleMessagesScroll}
-            className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar relative z-10"
+            viewportClassName="space-y-6 p-4 md:p-6"
+            testId="chat-message-scroll"
           >
             {messages.length === 0 && !loading ? (
               <div className="h-full flex flex-col items-center justify-center text-center">
@@ -743,7 +728,7 @@ const ChatPage: React.FC = () => {
             )}
 
             <div ref={messagesEndRef} />
-          </div>
+          </ScrollArea>
 
           {/* Input area */}
           <div className="p-4 md:p-6 border-t border-white/6 bg-card/88 relative z-20">

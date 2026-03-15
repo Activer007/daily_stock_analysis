@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { cn } from '../../utils/cn';
 
 type ThemeOption = 'light' | 'dark' | 'system';
+type ThemeToggleVariant = 'default' | 'nav';
 
 const THEME_OPTIONS: Array<{
   value: ThemeOption;
@@ -27,7 +28,15 @@ function resolveThemeLabel(theme: string | undefined) {
   }
 }
 
-export const ThemeToggle: React.FC = () => {
+interface ThemeToggleProps {
+  variant?: ThemeToggleVariant;
+  collapsed?: boolean;
+}
+
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({
+  variant = 'default',
+  collapsed = false,
+}) => {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -52,26 +61,42 @@ export const ThemeToggle: React.FC = () => {
   const activeTheme = (theme as ThemeOption | undefined) ?? 'system';
   const visualTheme = resolvedTheme ?? 'dark';
   const TriggerIcon = visualTheme === 'light' ? Sun : Moon;
+  const isNavVariant = variant === 'nav';
 
   return (
     <div className="relative" ref={containerRef}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card/80 px-3 text-sm text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
+        data-state={open ? 'open' : 'closed'}
+        className={cn(
+          isNavVariant
+            ? 'group relative flex h-11 w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-all hover:border-border/70 hover:bg-hover hover:text-foreground data-[state=open]:border-border/70 data-[state=open]:bg-hover data-[state=open]:text-foreground'
+            : 'inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-border/70 bg-card/80 px-3 text-sm text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground',
+          isNavVariant && collapsed ? 'justify-center px-2' : ''
+        )}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="切换主题"
       >
-        <TriggerIcon className="h-4 w-4" />
-        <span className="hidden sm:inline">{resolveThemeLabel(activeTheme)}</span>
+        <TriggerIcon className={cn('shrink-0', isNavVariant ? 'h-5 w-5' : 'h-4 w-4')} />
+        {isNavVariant ? (
+          collapsed ? null : <span className="truncate">主题</span>
+        ) : (
+          <span className="hidden sm:inline">{resolveThemeLabel(activeTheme)}</span>
+        )}
       </button>
 
       {open ? (
         <div
           role="menu"
           aria-label="主题模式"
-          className="absolute right-0 z-50 mt-2 min-w-40 overflow-hidden rounded-2xl border border-border/70 bg-elevated/95 p-1.5 shadow-[0_24px_48px_rgba(3,8,20,0.32)] backdrop-blur-xl"
+          className={cn(
+            'z-50 min-w-40 overflow-hidden rounded-2xl border border-border/70 bg-elevated p-1.5 shadow-[0_24px_48px_rgba(3,8,20,0.32)] backdrop-blur-xl',
+            isNavVariant
+              ? 'absolute bottom-full left-0 mb-2 w-max min-w-[11rem]'
+              : 'absolute right-0 mt-2'
+          )}
         >
           {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
             const isActive = activeTheme === value;

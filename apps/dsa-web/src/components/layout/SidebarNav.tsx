@@ -81,8 +81,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
         ))}
       </nav>
 
-      <div className={cn('mt-4 mb-2', collapsed ? 'flex justify-center' : '')}>
-        <ThemeToggle />
+      <div className="mt-4 mb-2">
+        <ThemeToggle variant="nav" collapsed={collapsed} />
       </div>
 
       {authEnabled ? (
@@ -93,7 +93,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
             void logout();
           }}
           className={cn(
-            'mt-5 flex h-11 items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-colors hover:border-border/70 hover:bg-hover hover:text-foreground',
+            'mt-5 flex h-11 w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-all hover:border-border/70 hover:bg-hover hover:text-foreground',
             collapsed ? 'justify-center px-2' : ''
           )}
         >

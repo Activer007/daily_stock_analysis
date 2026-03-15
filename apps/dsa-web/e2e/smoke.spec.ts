@@ -50,6 +50,10 @@ test.describe('web smoke', () => {
   test('chat page allows entering a question and starts a request', async ({ page }) => {
     await openWithLogin(page, '/chat');
 
+    await expect(page.getByTestId('chat-workspace')).toBeVisible();
+    await expect(page.getByTestId('chat-session-list-scroll')).toBeVisible();
+    await expect(page.getByTestId('chat-message-scroll')).toBeVisible();
+
     const input = page.getByPlaceholder('例如：分析 600519 / 茅台现在适合买入吗？ (Enter 发送, Shift+Enter 换行)');
     await expect(input).toBeVisible();
     await expect(page.getByText('策略', { exact: true })).toBeVisible();
