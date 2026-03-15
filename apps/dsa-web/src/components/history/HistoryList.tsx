@@ -83,6 +83,26 @@ export const HistoryList: React.FC<HistoryListProps> = ({
     }
   }, [someVisibleSelected]);
 
+  const getOperationBadgeLabel = (advice?: string) => {
+    const normalized = advice?.trim();
+    if (!normalized) {
+      return '情绪';
+    }
+    if (normalized.includes('减仓')) {
+      return '减仓';
+    }
+    if (normalized.includes('卖')) {
+      return '卖出';
+    }
+    if (normalized.includes('观望') || normalized.includes('等待')) {
+      return '观望';
+    }
+    if (normalized.includes('买') || normalized.includes('布局')) {
+      return '买入';
+    }
+    return normalized.split(/[，。；、\s]/)[0] || '建议';
+  };
+
   return (
     <aside className={`glass-card overflow-hidden flex flex-col ${className}`}>
       <div ref={scrollContainerRef} className="p-4 flex-1 overflow-y-auto">
@@ -146,10 +166,10 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {items.map((item) => (
-              <div key={item.id} className="flex items-start gap-2.5 group">
-                <div className="pt-4">
+              <div key={item.id} className="flex items-start gap-2 group">
+                <div className="pt-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(item.id)}
@@ -161,61 +181,53 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                 <button
                   type="button"
                   onClick={() => onItemClick(item.id)}
-                  className={`flex-1 text-left p-3.5 rounded-2xl transition-all duration-200 border relative overflow-hidden group/item ${
+                  className={`flex-1 text-left px-3 py-2 rounded-2xl transition-all duration-200 border relative overflow-hidden group/item ${
                     selectedId === item.id 
-                      ? 'bg-cyan/8 border-cyan/25 shadow-soft-card'
-                      : 'bg-elevated/55 border-white/6 hover:bg-hover/80 hover:border-white/12'
+                      ? 'bg-cyan/8 border-cyan/55 shadow-soft-card'
+                      : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
                   }`}
                 >
                   <div className="absolute inset-0 opacity-0 group-hover/item:opacity-100 transition-opacity pointer-events-none">
                     <div className="absolute inset-0 p-[1px] rounded-2xl bg-gradient-to-br from-cyan/12 via-transparent to-purple/10" style={{ mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'exclude' }} />
                   </div>
-                  <div className="flex items-start gap-3 relative z-10">
+                  <div className="flex items-start gap-2.5 relative z-10">
                     {item.sentimentScore !== undefined && (
                       <div 
-                        className="mt-0.5 w-1 h-11 rounded-full flex-shrink-0"
+                        className="mt-0.5 w-1 h-9 rounded-full flex-shrink-0"
                         style={{ 
                           backgroundColor: getSentimentColor(item.sentimentScore),
                           boxShadow: `0 0 10px ${getSentimentColor(item.sentimentScore)}40` 
                         }}
                       />
                     )}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <span className="block font-semibold text-white truncate text-[15px] leading-5 tracking-tight">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <span className="block font-semibold text-white truncate text-[13px] leading-5 tracking-tight">
                             {item.stockName || item.stockCode}
                           </span>
-                          <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                            <span className="rounded-full border border-cyan/18 bg-cyan/10 px-2 py-0.5 font-mono text-cyan">
+                          <div className="flex items-center gap-1.5 overflow-hidden text-[10px] whitespace-nowrap">
+                            <span className="rounded-full border border-cyan/45 bg-cyan/10 px-1.5 py-0.5 font-mono leading-none text-cyan">
                               {item.stockCode}
-                            </span>
-                            <span className="text-muted-text">
-                              {formatDateTime(item.createdAt)}
                             </span>
                           </div>
                         </div>
                         {item.sentimentScore !== undefined && (
                           <span 
-                            className="mt-0.5 shrink-0 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full border"
+                            className="mt-0.5 shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border leading-none sm:text-[11px]"
                             style={{ 
                               color: getSentimentColor(item.sentimentScore),
                               borderColor: `${getSentimentColor(item.sentimentScore)}30`,
                               backgroundColor: `${getSentimentColor(item.sentimentScore)}10`
                             }}
                           >
-                            情绪 {item.sentimentScore}
+                            {getOperationBadgeLabel(item.operationAdvice)} {item.sentimentScore}
                           </span>
                         )}
                       </div>
-                      {item.operationAdvice && (
-                        <p
-                          className="text-xs leading-5 text-secondary-text overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
-                          title={item.operationAdvice}
-                        >
-                          {item.operationAdvice}
-                        </p>
-                      )}
+                      <div className="text-[9px] leading-none text-muted-text sm:text-[10px]">
+                        {formatDateTime(item.createdAt)}
+                      </div>
                     </div>
                   </div>
                 </button>

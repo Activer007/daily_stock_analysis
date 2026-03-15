@@ -22,7 +22,7 @@ const items: HistoryItem[] = [
     stockCode: '600519',
     stockName: '贵州茅台',
     sentimentScore: 82,
-    operationAdvice: '等待回踩后分批布局，关注量能变化。',
+    operationAdvice: '买入',
     createdAt: '2026-03-15T08:00:00Z',
   },
 ];
@@ -51,7 +51,7 @@ describe('HistoryList', () => {
     );
 
     expect(screen.getByText('已选 1')).toBeInTheDocument();
-    expect(screen.getByText('情绪 82')).toBeInTheDocument();
+    expect(screen.getByText('买入 82')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /贵州茅台/i }));
     expect(onItemClick).toHaveBeenCalledWith(1);

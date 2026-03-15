@@ -410,7 +410,7 @@ const HomePage: React.FC = () => {
     >
       {/* Top Input Bar */}
       <header
-        className="md:col-start-2 md:col-end-5 md:row-start-1 py-3 px-3 md:px-0 border-b border-border/40 flex-shrink-0 flex items-center min-w-0 overflow-hidden"
+        className="md:col-start-2 md:col-end-5 md:row-start-1 py-3 px-3 md:px-0 flex-shrink-0 flex items-center min-w-0 overflow-hidden"
       >
         <div className="flex items-center gap-2 w-full min-w-0 flex-1" style={{ maxWidth: 'min(100%, 1168px)' }}>
           {/* Mobile hamburger */}
