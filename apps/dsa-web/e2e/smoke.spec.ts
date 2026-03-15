@@ -13,15 +13,15 @@ async function openWithLogin(page: Page, targetPath: string) {
     ),
     page.getByRole('button', { name: '登录' }).click(),
   ]);
-  await page.waitForURL(/\/$/, {
+  await page.waitForURL((url) => {
+    const nextPath = `${url.pathname}${url.search}`;
+    return nextPath === targetPath || nextPath === '/';
+  }, {
     timeout: 15_000,
   });
+  await page.goto(targetPath, { waitUntil: 'domcontentloaded' });
 
-  if (targetPath !== '/') {
-    await page.goto(targetPath);
-  }
-
-  await expect(page).toHaveURL(new RegExp(`${targetPath === '/' ? '/$' : targetPath}$`));
+  await expect(page).toHaveURL((url) => `${url.pathname}${url.search}` === targetPath);
 }
 
 test.describe('web smoke', () => {
