@@ -38,6 +38,9 @@ test.describe('web smoke', () => {
 
     const stockInput = page.getByPlaceholder('输入股票代码，如 600519、00700、AAPL');
     await expect(stockInput).toBeVisible();
+    await expect(page.getByRole('button', { name: '切换主题' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '首页' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '问股' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '历史分析' })).toBeVisible();
 
     await stockInput.fill('600519');
@@ -57,5 +60,15 @@ test.describe('web smoke', () => {
 
     await expect(page.locator('p').filter({ hasText: prompt }).last()).toBeVisible();
     await expect(page.getByRole('button', { name: /处理中/ })).toBeDisabled();
+  });
+
+  test('mobile shell opens navigation drawer after login', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openWithLogin(page, '/');
+
+    await page.getByRole('button', { name: '打开导航菜单' }).click();
+    await expect(page.getByRole('dialog', { name: '导航菜单' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '回测' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '切换主题' })).toBeVisible();
   });
 });
