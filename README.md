@@ -405,6 +405,18 @@ npm run lint
 npm run build
 ```
 
+如需运行页面级 smoke test：
+
+```bash
+cd apps/dsa-web
+export DSA_WEB_SMOKE_PASSWORD='<your-admin-password>'
+npm run test:smoke
+```
+
+说明：
+- smoke test 会自动启动本地 FastAPI 后端（`127.0.0.1:8000`）和前端 dev server（`127.0.0.1:4173`）
+- 未设置 `DSA_WEB_SMOKE_PASSWORD` 时，仅登录页可见性用例可跑，登录后的首页/问股用例会自动跳过
+
 ## 📄 License
 [MIT License](LICENSE) © 2026 ZhuLinsen
 
