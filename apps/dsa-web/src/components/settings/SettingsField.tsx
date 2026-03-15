@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type React from 'react';
-import { EyeToggleIcon, Select } from '../common';
+import { Badge, EyeToggleIcon, Select } from '../common';
 import type { ConfigValidationIssue, SystemConfigFieldSchema, SystemConfigItem } from '../../types/systemConfig';
 import { getFieldDescriptionZh, getFieldTitleZh } from '../../utils/systemConfigI18n';
+import { cn } from '../../utils/cn';
 
 function normalizeSelectOptions(options: SystemConfigFieldSchema['options'] = []) {
   return options.map((option) => {
@@ -49,6 +50,7 @@ function renderFieldControl(
   onToggleSecretVisible: () => void,
   isPasswordEditable: boolean,
   onPasswordFocus: () => void,
+  controlId: string,
 ) {
   const schema = item.schema;
   const commonClass = 'input-terminal';
@@ -58,6 +60,7 @@ function renderFieldControl(
   if (controlType === 'textarea') {
     return (
       <textarea
+        id={controlId}
         className={`${commonClass} min-h-[92px] resize-y`}
         value={value}
         disabled={disabled || !schema?.isEditable}
@@ -69,6 +72,7 @@ function renderFieldControl(
   if (controlType === 'select' && schema?.options?.length) {
     return (
         <Select
+          id={controlId}
           value={value}
           onChange={onChange}
           options={normalizeSelectOptions(schema.options)}
@@ -83,6 +87,7 @@ function renderFieldControl(
     return (
       <label className="inline-flex cursor-pointer items-center gap-3">
         <input
+          id={controlId}
           type="checkbox"
           checked={checked}
           disabled={disabled || !schema?.isEditable}
@@ -103,6 +108,7 @@ function renderFieldControl(
             <div className="flex items-center gap-2" key={`${item.key}-${index}`}>
               <input
                 type={isSecretVisible ? 'text' : 'password'}
+                id={index === 0 ? controlId : `${controlId}-${index}`}
                 readOnly={!isPasswordEditable}
                 onFocus={onPasswordFocus}
                 className={`${commonClass} flex-1`}
@@ -156,6 +162,7 @@ function renderFieldControl(
       <div className="flex items-center gap-2">
         <input
           type={isSecretVisible ? 'text' : 'password'}
+          id={controlId}
           readOnly={!isPasswordEditable}
           onFocus={onPasswordFocus}
           className={`${commonClass} flex-1`}
@@ -181,6 +188,7 @@ function renderFieldControl(
 
   return (
     <input
+      id={controlId}
       type={inputType}
       className={commonClass}
       value={value}
@@ -204,25 +212,38 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   const hasError = issues.some((issue) => issue.severity === 'error');
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
+  const controlId = `setting-${item.key}`;
 
   return (
-    <div className={`rounded-xl border p-4 ${hasError ? 'border-red-500/35' : 'border-white/8'} bg-elevated/50`}>
-      <div className="mb-2 flex items-center gap-2">
-        <label className="text-sm font-semibold text-white" htmlFor={`setting-${item.key}`}>
+    <div
+      className={cn(
+        'rounded-xl border bg-elevated/45 p-4 shadow-soft-card',
+        hasError ? 'border-danger/35' : 'border-border/60',
+      )}
+    >
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <label className="text-sm font-semibold text-foreground" htmlFor={controlId}>
           {title}
         </label>
         {schema?.isSensitive ? (
-          <span className="badge badge-purple text-[10px]">敏感</span>
+          <Badge variant="history" size="sm">
+            敏感
+          </Badge>
+        ) : null}
+        {!schema?.isEditable ? (
+          <Badge variant="default" size="sm">
+            只读
+          </Badge>
         ) : null}
       </div>
 
       {description ? (
-        <p className="mb-3 text-xs text-muted-text" title={description}>
+        <p className="mb-3 text-xs leading-5 text-muted-text" title={description}>
           {description}
         </p>
       ) : null}
 
-      <div id={`setting-${item.key}`}>
+      <div>
         {renderFieldControl(
           item,
           value,
@@ -232,11 +253,12 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
           () => setIsSecretVisible((previous) => !previous),
           isPasswordEditable,
           () => setIsPasswordEditable(true),
+          controlId,
         )}
       </div>
 
       {schema?.isSensitive ? (
-        <p className="mt-2 text-[11px] text-secondary-text">
+        <p className="mt-3 text-[11px] leading-5 text-secondary-text">
           密钥默认隐藏，可点击眼睛图标查看明文。
           {isMultiValue ? ' 支持添加多个输入框进行增删。' : ''}
         </p>

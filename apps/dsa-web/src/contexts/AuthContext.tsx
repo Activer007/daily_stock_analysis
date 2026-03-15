@@ -75,13 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ): Promise<{ success: boolean; error?: ParsedApiError }> => {
       try {
         await authApi.login(password, passwordConfirm);
-        setLoggedIn(true);
+        await fetchStatus();
         return { success: true };
       } catch (err: unknown) {
         return { success: false, error: extractLoginError(err) };
       }
     },
-    []
+    [fetchStatus]
   );
 
   const changePassword = useCallback(
@@ -104,9 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authApi.logout();
     } finally {
-      setLoggedIn(false);
+      await fetchStatus();
     }
-  }, []);
+  }, [fetchStatus]);
 
   return (
     <AuthContext.Provider

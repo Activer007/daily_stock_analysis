@@ -20,4 +20,16 @@ describe('Input', () => {
     expect(input).toHaveAttribute('aria-describedby', 'stock_code-error');
     expect(screen.getByRole('alert')).toHaveTextContent('Required');
   });
+
+  it('renders a trailing action when provided', () => {
+    render(
+      <Input
+        label="Password"
+        name="password"
+        trailingAction={<button type="button">显示</button>}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: '显示' })).toBeInTheDocument();
+  });
 });

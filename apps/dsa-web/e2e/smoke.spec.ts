@@ -29,7 +29,7 @@ test.describe('web smoke', () => {
     await page.goto('/login');
 
     await expect(page.getByRole('heading', { name: /管理员登录|设置初始密码/ })).toBeVisible();
-    await expect(page.getByLabel(/密码/)).toBeVisible();
+    await expect(page.getByLabel(/^密码$/)).toBeVisible();
     await expect(page.getByRole('button', { name: /登录|设置密码/ })).toBeVisible();
   });
 
