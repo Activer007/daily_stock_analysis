@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect } from 'react';
 import { useAuth, useSystemConfig } from '../hooks';
-import { ApiErrorAlert, Button, Card } from '../components/common';
+import { ApiErrorAlert, Button } from '../components/common';
 import {
   AuthSettingsCard,
   ChangePasswordCard,
@@ -113,11 +113,11 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-full px-4 pb-6 pt-4 md:px-6">
-      <Card className="mb-4" padding="md" variant="bordered">
+      <div className="mb-5 rounded-[1.7rem] border border-white/8 bg-card/88 px-5 py-5 shadow-soft-card">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">系统设置</h1>
-            <p className="text-sm text-secondary-text">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">系统设置</h1>
+            <p className="text-sm leading-6 text-secondary-text">
               统一管理模型、数据源、通知、安全认证与导入能力。
             </p>
           </div>
@@ -147,7 +147,7 @@ const SettingsPage: React.FC = () => {
             onAction={retryAction === 'save' ? () => void retry() : undefined}
           />
         ) : null}
-      </Card>
+      </div>
 
       {loadError ? (
         <ApiErrorAlert
@@ -161,8 +161,8 @@ const SettingsPage: React.FC = () => {
       {isLoading ? (
         <SettingsLoading />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
-          <aside>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_1fr]">
+          <aside className="lg:sticky lg:top-4 lg:self-start">
             <SettingsCategoryNav
               categories={categories}
               itemsByCategory={itemsByCategory}
@@ -223,7 +223,7 @@ const SettingsPage: React.FC = () => {
                 ))}
               </SettingsSectionCard>
             ) : (
-              <div className="rounded-xl border border-border/60 bg-elevated/35 p-5 text-sm text-secondary-text">
+              <div className="rounded-[1.5rem] border border-white/8 bg-card/84 p-5 text-sm text-secondary-text shadow-soft-card">
                 当前分类下暂无配置项。
               </div>
             )}

@@ -217,8 +217,8 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   return (
     <div
       className={cn(
-        'rounded-xl border bg-elevated/45 p-4 shadow-soft-card',
-        hasError ? 'border-danger/35' : 'border-border/60',
+        'rounded-[1.15rem] border bg-elevated/60 p-4 shadow-soft-card',
+        hasError ? 'border-danger/35' : 'border-white/6',
       )}
     >
       <div className="mb-2 flex flex-wrap items-center gap-2">
