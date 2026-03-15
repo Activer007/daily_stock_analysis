@@ -281,7 +281,7 @@ const ChatPage: React.FC = () => {
   };
 
   const renderThinkingDetails = (steps: ProgressStep[]) => (
-    <div className="mb-3 pl-5 border-l border-white/5 space-y-0.5 animate-fade-in">
+    <div className="mb-3 pl-5 border-l border-border/40 space-y-0.5 animate-fade-in">
       {steps.map((step, idx) => {
         let icon = '⋯';
         let text = '';
@@ -318,11 +318,11 @@ const ChatPage: React.FC = () => {
 
   const sidebarContent = (
     <>
-      <div className="p-3 border-b border-white/5 flex items-center justify-between">
-        <span className="text-sm font-medium text-white">历史对话</span>
+      <div className="p-3 border-b border-border/40 flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">历史对话</span>
         <button
           onClick={handleStartNewChat}
-          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-secondary-text hover:text-white"
+          className="p-1.5 rounded-lg hover:bg-hover transition-colors text-secondary-text hover:text-foreground"
           title="新对话"
         >
           <svg
@@ -349,8 +349,8 @@ const ChatPage: React.FC = () => {
           sessions.map((s) => (
             <div
               key={s.session_id}
-              className={`w-full text-left px-3 py-2.5 border-b border-white/5 hover:bg-white/5 transition-colors group ${
-                s.session_id === sessionId ? 'bg-white/10' : ''
+              className={`w-full text-left px-3 py-2.5 border-b border-border/40 transition-colors group ${
+                s.session_id === sessionId ? 'bg-hover/90' : 'hover:bg-hover/70'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -359,7 +359,7 @@ const ChatPage: React.FC = () => {
                   onClick={() => handleSwitchSession(s.session_id)}
                   className="min-w-0 flex-1 text-left"
                 >
-                  <span className="block truncate text-sm text-secondary-text group-hover:text-white">
+                  <span className="block truncate text-sm text-secondary-text group-hover:text-foreground">
                     {s.title}
                   </span>
                 </button>
@@ -369,7 +369,7 @@ const ChatPage: React.FC = () => {
                     e.stopPropagation();
                     setDeleteConfirmId(s.session_id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-muted-text hover:text-red-400 transition-all flex-shrink-0"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-hover text-muted-text hover:text-red-400 transition-all flex-shrink-0"
                   title="删除"
                 >
                   <svg
@@ -414,7 +414,7 @@ const ChatPage: React.FC = () => {
         >
           <div className="absolute inset-0 bg-black/60" />
           <div
-            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-white/10 shadow-2xl"
+            className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-border/70 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {sidebarContent}
@@ -429,23 +429,23 @@ const ChatPage: React.FC = () => {
           onClick={() => setDeleteConfirmId(null)}
         >
           <div
-            className="bg-elevated border border-white/10 rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
+            className="bg-elevated border border-border/70 rounded-xl p-6 max-w-sm mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-white font-medium mb-2">删除对话</h3>
+            <h3 className="text-foreground font-medium mb-2">删除对话</h3>
             <p className="text-sm text-secondary-text mb-5">
               删除后，该对话将不可恢复，确认删除吗？
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-1.5 rounded-lg text-sm text-secondary-text hover:text-white hover:bg-white/5 border border-white/10 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-sm text-secondary-text hover:text-foreground hover:bg-hover border border-border/70 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-1.5 rounded-lg text-sm text-white bg-red-500/80 hover:bg-red-500 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-sm text-foreground bg-red-500/80 hover:bg-red-500 transition-colors"
               >
                 删除
               </button>
@@ -457,10 +457,10 @@ const ChatPage: React.FC = () => {
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="mb-4 flex-shrink-0">
-          <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-white/10 transition-colors text-secondary-text hover:text-white"
+              className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-hover transition-colors text-secondary-text hover:text-foreground"
               title="历史对话"
             >
               <svg
@@ -500,7 +500,7 @@ const ChatPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => downloadSession(messages)}
-                className="px-3 py-1.5 rounded-lg text-sm text-secondary-text hover:text-white hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg text-sm text-secondary-text hover:text-foreground hover:bg-hover border border-border/70 transition-colors flex items-center gap-1.5"
                 title="导出会话为 Markdown 文件"
               >
                 <svg
@@ -541,7 +541,7 @@ const ChatPage: React.FC = () => {
                   }
                 }}
                 disabled={sending}
-                className="px-3 py-1.5 rounded-lg text-sm text-secondary-text hover:text-white hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 rounded-lg text-sm text-secondary-text hover:text-foreground hover:bg-hover border border-border/70 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="发送到已配置的通知机器人/邮箱"
               >
                 {sending ? (
@@ -601,7 +601,7 @@ const ChatPage: React.FC = () => {
           >
             {messages.length === 0 && !loading ? (
               <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
+                <div className="w-16 h-16 mb-4 rounded-2xl bg-card/70 flex items-center justify-center">
                   <svg
                     className="w-8 h-8 text-muted-text"
                     fill="none"
@@ -616,7 +616,7 @@ const ChatPage: React.FC = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   开始问股
                 </h3>
                 <p className="text-sm text-secondary-text max-w-sm mb-6">
@@ -628,7 +628,7 @@ const ChatPage: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => handleQuickQuestion(q)}
-                      className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-secondary-text hover:text-white hover:border-cyan/40 hover:bg-cyan/5 transition-all"
+                      className="px-3 py-1.5 rounded-full bg-card/70 border border-border/70 text-sm text-secondary-text hover:text-foreground hover:border-cyan/40 hover:bg-cyan/5 transition-all"
                     >
                       {q.label}
                     </button>
@@ -645,7 +645,7 @@ const ChatPage: React.FC = () => {
                     className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                       msg.role === 'user'
                         ? 'bg-cyan text-black'
-                        : 'bg-white/10 text-white'
+                        : 'bg-elevated text-foreground'
                     }`}
                   >
                     {msg.role === 'user' ? 'U' : 'AI'}
@@ -654,7 +654,7 @@ const ChatPage: React.FC = () => {
                     className={`min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden rounded-2xl px-5 py-3.5 ${
                       msg.role === 'user'
                         ? 'bg-cyan/10 text-white border border-cyan/20 rounded-tr-sm'
-                        : 'bg-white/5 text-secondary-text border border-white/10 rounded-tl-sm'
+                        : 'bg-card/70 text-secondary-text border border-border/70 rounded-tl-sm'
                     }`}
                   >
                     {msg.role === 'assistant' && msg.strategyName && (
@@ -685,17 +685,17 @@ const ChatPage: React.FC = () => {
                     {msg.role === 'assistant' ? (
                       <div
                         className="prose prose-invert prose-sm max-w-none
-                      prose-headings:text-white prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1.5
+                      prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1.5
                       prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
                       prose-p:mb-2 prose-p:last:mb-0 prose-p:leading-7 prose-p:break-words
-                      prose-strong:text-white prose-strong:font-semibold
+                      prose-strong:text-foreground prose-strong:font-semibold
                       prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-li:break-words
-                      prose-code:text-cyan prose-code:bg-white/5 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:break-all
-                      prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-lg prose-pre:p-3
+                      prose-code:text-cyan prose-code:bg-card/70 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:break-all
+                      prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:bg-black/30 prose-pre:border prose-pre:border-border/70 prose-pre:rounded-lg prose-pre:p-3
                       prose-table:w-full prose-table:text-sm
-                      prose-th:text-white prose-th:font-medium prose-th:border-white/20 prose-th:px-3 prose-th:py-1.5 prose-th:bg-white/5
-                      prose-td:border-white/10 prose-td:px-3 prose-td:py-1.5
-                      prose-hr:border-white/10 prose-hr:my-3
+                      prose-th:text-foreground prose-th:font-medium prose-th:border-border prose-th:px-3 prose-th:py-1.5 prose-th:bg-card/70
+                      prose-td:border-border/70 prose-td:px-3 prose-td:py-1.5
+                      prose-hr:border-border/70 prose-hr:my-3
                       prose-a:text-cyan prose-a:no-underline hover:prose-a:underline
                       prose-blockquote:border-cyan/30 prose-blockquote:text-secondary-text
                       [&_table]:block [&_table]:overflow-x-auto [&_table]:whitespace-nowrap
@@ -725,10 +725,10 @@ const ChatPage: React.FC = () => {
 
             {loading && (
               <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                <div className="w-8 h-8 rounded-full bg-elevated text-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
                   AI
                 </div>
-                <div className="min-w-[200px] max-w-[min(100%,48rem)] overflow-hidden rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 px-5 py-4">
+                <div className="min-w-[200px] max-w-[min(100%,48rem)] overflow-hidden rounded-2xl rounded-tl-sm border border-border/70 bg-card/70 px-5 py-4">
                   <div className="flex items-center gap-2.5 text-sm text-secondary-text">
                     <div className="relative w-4 h-4 flex-shrink-0">
                       <div className="absolute inset-0 rounded-full border-2 border-cyan/20" />
@@ -746,7 +746,7 @@ const ChatPage: React.FC = () => {
           </div>
 
           {/* Input area */}
-          <div className="p-4 md:p-6 border-t border-white/5 bg-black/20 relative z-20">
+          <div className="p-4 md:p-6 border-t border-border/40 bg-card/85 relative z-20">
             {chatError ? (
               <ApiErrorAlert error={chatError} className="mb-3" />
             ) : null}
@@ -765,7 +765,7 @@ const ChatPage: React.FC = () => {
                     className="w-3.5 h-3.5 accent-cyan"
                   />
                   <span
-                    className={`transition-colors text-sm ${selectedStrategy === '' ? 'text-white font-medium' : 'text-secondary-text group-hover:text-white'}`}
+                    className={`transition-colors text-sm ${selectedStrategy === '' ? 'text-foreground font-medium' : 'text-secondary-text group-hover:text-foreground'}`}
                   >
                     通用分析
                   </span>
@@ -786,13 +786,13 @@ const ChatPage: React.FC = () => {
                       className="w-3.5 h-3.5 accent-cyan"
                     />
                     <span
-                      className={`transition-colors text-sm ${selectedStrategy === s.id ? 'text-white font-medium' : 'text-secondary-text group-hover:text-white'}`}
+                      className={`transition-colors text-sm ${selectedStrategy === s.id ? 'text-foreground font-medium' : 'text-secondary-text group-hover:text-foreground'}`}
                     >
                       {s.name}
                     </span>
                     {showStrategyDesc === s.id && s.description && (
-                      <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-lg bg-elevated border border-white/10 shadow-xl text-xs text-secondary-text leading-relaxed pointer-events-none animate-fade-in">
-                        <p className="font-medium text-white mb-1">{s.name}</p>
+                      <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-lg bg-elevated border border-border/70 shadow-xl text-xs text-secondary-text leading-relaxed pointer-events-none animate-fade-in">
+                        <p className="font-medium text-foreground mb-1">{s.name}</p>
                         <p>{s.description}</p>
                       </div>
                     )}
