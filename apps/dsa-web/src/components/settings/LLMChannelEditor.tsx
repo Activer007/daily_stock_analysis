@@ -266,7 +266,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
       </div>
 
       {expanded ? (
-        <div className="space-y-4 border-t border-border/50 bg-background/15 px-4 py-4">
+        <div className="space-y-4 bg-background/15 px-4 py-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <Input
               label="渠道名称"
@@ -955,7 +955,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                     value={runtimeConfig.temperature}
                     disabled={busy}
                     onChange={(event) => setRuntimeConfig((previous) => ({ ...previous, temperature: event.target.value }))}
-                    className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border/60 accent-cyan"
+                    className="h-1.5 flex-1 cursor-pointer rounded-full bg-border/60 accent-cyan"
                   />
                   <span className="w-8 text-right text-sm text-secondary-text">{runtimeConfig.temperature}</span>
                 </div>

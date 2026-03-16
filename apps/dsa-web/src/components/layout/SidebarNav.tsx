@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { BarChart3, BriefcaseBusiness, Home, LogOut, MessageSquareQuote, Settings2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -55,11 +56,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
             aria-label={label}
             className={({ isActive }) =>
               cn(
-                'group relative flex h-11 items-center gap-3 border-y border-x-0 text-sm transition-all',
-                collapsed ? 'justify-center px-0' : 'px-4',
+                'group relative flex items-center gap-3 border-y border-x-0 text-sm transition-all',
+                'h-[var(--nav-item-height)]',
+                collapsed ? 'justify-center px-0' : 'px-[var(--nav-item-padding-x)]',
                 isActive
                   ? 'border-[var(--nav-active-border)] bg-[var(--nav-active-bg)] text-foreground shadow-[inset_0_0_15px_var(--nav-active-shadow)]'
-                  : 'border-transparent text-secondary-text hover:bg-hover hover:text-foreground'
+                  : 'border-transparent text-secondary-text hover:bg-[var(--nav-hover-bg)] hover:text-foreground'
               )
             }
           >
@@ -68,19 +70,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
                 {isActive && (
                   <motion.div 
                     layoutId="activeIndicator"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-cyan shadow-[0_0_10px_rgba(0,212,255,0.8)]"
+                    className="absolute top-0 bottom-0 left-0 w-[var(--nav-indicator-width)] bg-[var(--nav-indicator-bg)] shadow-[0_0_10px_var(--nav-indicator-shadow)]"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2 }}
                   />
                 )}
-                <Icon className={cn('h-5 w-5 shrink-0 ml-1', isActive ? 'text-cyan' : 'text-current')} />
+                <Icon className={cn('ml-1 h-5 w-5 shrink-0', isActive ? 'text-[var(--nav-icon-active)]' : 'text-current')} />
                 {!collapsed ? <span className="truncate">{label}</span> : null}
                 {badge === 'completion' && completionBadge ? (
                   <span
                     data-testid="chat-completion-badge"
                     className={cn(
-                      'absolute right-3 h-2.5 w-2.5 rounded-full border-2 border-background bg-cyan',
+                      'absolute right-3 h-2.5 w-2.5 rounded-full border-2 border-background bg-[var(--nav-badge-bg)] shadow-[0_0_10px_var(--nav-indicator-shadow)]',
                       collapsed ? 'right-2 top-2' : ''
                     )}
                     aria-label="问股有新消息"

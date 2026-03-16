@@ -472,7 +472,7 @@ const HomePage: React.FC = () => {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-[var(--home-mobile-overlay-bg)]" />
           <div
             className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-border/70 shadow-2xl p-3"
             onClick={(e) => e.stopPropagation()}
@@ -492,7 +492,7 @@ const HomePage: React.FC = () => {
         ) : null}
         {isLoadingReport ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="w-10 h-10 border-3 border-cyan/20 border-t-cyan rounded-full animate-spin" />
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-[var(--home-loading-ring-track)] border-t-[var(--home-loading-ring-head)]" />
             <p className="mt-3 text-secondary-text text-sm">加载报告中...</p>
           </div>
         ) : selectedReport ? (
@@ -507,7 +507,7 @@ const HomePage: React.FC = () => {
                   const rid = selectedReport.meta.id!;
                   navigate(`/chat?stock=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}&recordId=${rid}`);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan/10 border border-cyan/20 text-cyan text-sm hover:bg-cyan/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 bg-[var(--home-action-ai-bg)] border-[var(--home-action-ai-border)] text-[var(--home-action-ai-text)] hover:bg-[var(--home-action-ai-hover-bg)]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -517,7 +517,7 @@ const HomePage: React.FC = () => {
               <button
                 disabled={selectedReport.meta.id === undefined}
                 onClick={() => setShowMarkdownDrawer(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple/10 border border-purple/20 text-purple text-sm hover:bg-purple/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 bg-[var(--home-action-report-bg)] border-[var(--home-action-report-border)] text-[var(--home-action-report-text)] hover:bg-[var(--home-action-report-hover-bg)]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
