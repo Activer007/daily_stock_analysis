@@ -96,9 +96,24 @@ const LoginPage: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex flex-col items-center justify-center mb-10"
+          className="flex flex-col items-center justify-center mb-10 relative"
         >
-          {/* Logo Icon */}
+          {/* Large Interactive Background Logo */}
+          <motion.div
+            style={{
+              x: useTransform(smoothX, [-0.5, 0.5], [-30, 30]),
+              y: useTransform(smoothY, [-0.5, 0.5], [-30, 30]),
+              rotate: useTransform(smoothX, [-0.5, 0.5], [-5, 5]),
+            }}
+            className="absolute -top-24 -z-10 opacity-30 pointer-events-none"
+          >
+            <div className="relative flex h-64 w-64 items-center justify-center rounded-[3rem] bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/20 shadow-[0_0_100px_rgba(6,182,212,0.15)] blur-[2px]">
+              <Cpu className="h-40 w-40 text-cyan-400/50" />
+              <TrendingUp className="absolute h-16 w-16 text-emerald-400/40 translate-x-12 translate-y-12" />
+            </div>
+          </motion.div>
+
+          {/* Small Logo Icon for context */}
           <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0B0E14] border border-slate-800 shadow-[0_0_30px_rgba(6,182,212,0.15)] group">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <Cpu className="absolute h-7 w-7 text-cyan-400 opacity-80 group-hover:scale-110 transition-transform duration-500" />
@@ -130,7 +145,6 @@ const LoginPage: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
           className="relative group z-20 pointer-events-auto"
         >
           {/* Card Border Glow */}
