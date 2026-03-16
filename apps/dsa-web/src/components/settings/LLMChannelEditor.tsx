@@ -201,9 +201,9 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
         : 'default';
 
   return (
-    <div className="mb-2 overflow-hidden rounded-xl border border-border/50 bg-elevated/35 shadow-soft-card">
+    <div className="mb-2 overflow-hidden rounded-xl border border-white/10 bg-white/2 shadow-soft-card transition-all hover:bg-white/5">
       <div
-        className="flex cursor-pointer select-none items-center gap-2.5 px-4 py-3 transition-colors hover:bg-hover/80"
+        className="flex cursor-pointer select-none items-center gap-2.5 px-4 py-3 transition-colors hover:bg-white/5"
         onClick={() => onToggleExpand(index)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -274,7 +274,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
               disabled={busy}
               onChange={(e) => onUpdate(index, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
               placeholder="primary"
-              className="h-10"
+              className="input-terminal"
             />
             <div className="space-y-2">
               <label className="block text-sm font-medium text-foreground">协议</label>
@@ -298,7 +298,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
                 ? '官方接口可留空'
                 : preset?.baseUrl || 'https://api.example.com/v1'
             }
-            className="h-10"
+            className="input-terminal"
           />
 
           <div className="space-y-2">
@@ -306,7 +306,7 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             <div className="relative">
               <input
                 type={visibleKey ? 'text' : 'password'}
-                className="h-10 w-full rounded-xl border border-border/60 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-border/80"
+                className="input-terminal h-10 w-full rounded-xl border border-border/60 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-border/80"
                 value={channel.apiKey}
                 disabled={busy}
                 onChange={(e) => onUpdate(index, 'apiKey', e.target.value)}
@@ -333,15 +333,15 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             disabled={busy}
             onChange={(e) => onUpdate(index, 'models', e.target.value)}
             placeholder={preset?.placeholder || MODEL_PLACEHOLDERS[channel.protocol]}
-            className="h-10"
+            className="input-terminal"
           />
 
           <div className="flex items-center gap-2 pt-1">
             <Button
               type="button"
-              variant="secondary"
+              variant="gradient"
               size="sm"
-              className="text-xs"
+              className="px-3 text-[11px] border-cyan/20 shadow-none"
               disabled={busy}
               onClick={() => onTest(channel, index)}
             >

@@ -98,21 +98,21 @@ export const AuthSettingsCard: React.FC = () => {
       }
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="rounded-xl border border-border/50 bg-card/45 p-4 shadow-soft-card">
+        <div className="rounded-xl border border-white/10 bg-white/2 p-4 shadow-soft-card-strong transition-all hover:bg-white/5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">管理员认证</p>
-              <p className="text-sm leading-6 text-secondary-text">{helperText}</p>
+              <p className="text-sm font-semibold text-white">管理员认证</p>
+              <p className="text-xs leading-6 text-muted-text">{helperText}</p>
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-border/60 bg-background/45 px-3 py-2 shadow-soft-card">
+            <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-soft-card-strong transition-all hover:bg-white/10">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-border/70 bg-base text-cyan focus:ring-cyan/20"
+                className="h-4 w-4 rounded border-white/20 bg-base text-cyan focus:ring-cyan/20"
                 checked={desiredEnabled}
                 onChange={(event) => setDesiredEnabled(event.target.checked)}
                 disabled={isSubmitting}
               />
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-xs font-medium text-white">
                 {desiredEnabled ? '开启' : '关闭'}
               </span>
             </label>
@@ -125,6 +125,7 @@ export const AuthSettingsCard: React.FC = () => {
               <Input
                 label={desiredEnabled && !authEnabled ? '当前密码（重新开启时使用）' : '当前密码'}
                 type={showCurrentPassword ? 'text' : 'password'}
+                className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 autoComplete="current-password"
@@ -133,7 +134,7 @@ export const AuthSettingsCard: React.FC = () => {
                 trailingAction={(
                   <button
                     type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                     onClick={() => setShowCurrentPassword((previous) => !previous)}
                     aria-label={showCurrentPassword ? '隐藏当前密码' : '显示当前密码'}
                   >
@@ -148,6 +149,7 @@ export const AuthSettingsCard: React.FC = () => {
                 <Input
                   label="新密码"
                   type={showPassword ? 'text' : 'password'}
+                  className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="new-password"
@@ -156,7 +158,7 @@ export const AuthSettingsCard: React.FC = () => {
                   trailingAction={(
                     <button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                       onClick={() => setShowPassword((previous) => !previous)}
                       aria-label={showPassword ? '隐藏新密码' : '显示新密码'}
                     >
@@ -175,6 +177,7 @@ export const AuthSettingsCard: React.FC = () => {
               <Input
                 label="确认新密码"
                 type={showPasswordConfirm ? 'text' : 'password'}
+                className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
                 value={passwordConfirm}
                 onChange={(event) => setPasswordConfirm(event.target.value)}
                 autoComplete="new-password"
@@ -182,7 +185,7 @@ export const AuthSettingsCard: React.FC = () => {
                 trailingAction={(
                   <button
                     type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                     onClick={() => setShowPasswordConfirm((previous) => !previous)}
                     aria-label={showPasswordConfirm ? '隐藏确认密码' : '显示确认密码'}
                   >

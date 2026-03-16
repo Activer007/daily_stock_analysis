@@ -123,7 +123,13 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="secondary" onClick={() => void load()} disabled={isLoading || isSaving}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="border-white/10 bg-white/20 hover:border-white/20"
+              onClick={() => void load()}
+              disabled={isLoading || isSaving}
+            >
               重置
             </Button>
             <Button

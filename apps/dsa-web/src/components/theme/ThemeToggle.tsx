@@ -67,17 +67,18 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     <div className="relative" ref={containerRef}>
       <button
         type="button"
+        disabled
         onClick={() => setOpen((value) => !value)}
         data-state={open ? 'open' : 'closed'}
         className={cn(
           isNavVariant
-            ? 'group relative flex h-11 w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-all hover:border-border/70 hover:bg-hover hover:text-foreground data-[state=open]:border-border/70 data-[state=open]:bg-hover data-[state=open]:text-foreground'
-            : 'inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-border/70 bg-card/80 px-3 text-sm text-secondary-text shadow-soft-card transition-colors hover:bg-hover hover:text-foreground',
+            ? 'group relative flex h-11 w-full select-none items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-all data-[state=open]:border-border/70 data-[state=open]:bg-hover data-[state=open]:text-foreground opacity-50 cursor-not-allowed'
+            : 'inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card/80 px-3 text-sm text-secondary-text shadow-soft-card transition-colors opacity-50 cursor-not-allowed',
           isNavVariant && collapsed ? 'justify-center px-2' : ''
         )}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="切换主题"
+        aria-label="切换主题 (暂时禁用)"
       >
         <TriggerIcon className={cn('shrink-0', isNavVariant ? 'h-5 w-5' : 'h-4 w-4')} />
         {isNavVariant ? (
@@ -92,9 +93,9 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           role="menu"
           aria-label="主题模式"
           className={cn(
-            'z-50 min-w-40 overflow-hidden rounded-2xl border border-border/70 bg-elevated p-1.5 shadow-[0_24px_48px_rgba(3,8,20,0.32)] backdrop-blur-xl',
+            'z-[100] min-w-[8rem] overflow-hidden rounded-2xl border border-border/70 bg-elevated p-1.5 shadow-[0_24px_48px_rgba(3,8,20,0.32)] backdrop-blur-xl',
             isNavVariant
-              ? 'absolute bottom-full left-0 mb-2 w-max min-w-[11rem]'
+              ? 'absolute bottom-full left-0 mb-2 w-max min-w-[9rem]'
               : 'absolute right-0 mt-2'
           )}
         >

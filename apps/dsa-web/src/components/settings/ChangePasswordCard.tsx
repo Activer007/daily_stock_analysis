@@ -72,6 +72,7 @@ export const ChangePasswordCard: React.FC = () => {
             <Input
               id="change-pass-current"
               type={showCurrent ? 'text' : 'password'}
+              className="input-terminal border-border/55 border-cyan/40 transition-all duration-200"
               label="当前密码"
               placeholder="输入当前密码"
               value={currentPassword}
@@ -81,7 +82,7 @@ export const ChangePasswordCard: React.FC = () => {
               trailingAction={(
                 <button
                   type="button"
-                  className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                   disabled={isSubmitting}
                   onClick={() => setShowCurrent((v) => !v)}
                   title={showCurrent ? '隐藏' : '显示'}
@@ -97,6 +98,7 @@ export const ChangePasswordCard: React.FC = () => {
             <Input
               id="change-pass-new"
               type={showNew ? 'text' : 'password'}
+              className="input-terminal border-border/55 transition-all duration-200"
               label="新密码"
               hint="至少 6 位。"
               placeholder="输入新密码"
@@ -107,7 +109,7 @@ export const ChangePasswordCard: React.FC = () => {
               trailingAction={(
                 <button
                   type="button"
-                  className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                   disabled={isSubmitting}
                   onClick={() => setShowNew((v) => !v)}
                   title={showNew ? '隐藏' : '显示'}
@@ -124,6 +126,7 @@ export const ChangePasswordCard: React.FC = () => {
           <Input
             id="change-pass-confirm"
             type={showConfirm ? 'text' : 'password'}
+            className="input-terminal border-cyan/40 transition-all duration-200"
             label="确认新密码"
             placeholder="再次输入新密码"
             value={newPasswordConfirm}
@@ -133,7 +136,7 @@ export const ChangePasswordCard: React.FC = () => {
             trailingAction={(
               <button
                 type="button"
-                className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
                 disabled={isSubmitting}
                 onClick={() => setShowConfirm((v) => !v)}
                 title={showConfirm ? '隐藏' : '显示'}
