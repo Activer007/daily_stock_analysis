@@ -133,8 +133,7 @@ const SettingsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="secondary"
-              className="border-border/50 bg-muted/30 hover:border-border/70"
+              variant="settings-secondary"
               onClick={resetDraft}
               disabled={isLoading || isSaving}
             >
@@ -142,7 +141,7 @@ const SettingsPage: React.FC = () => {
             </Button>
             <Button
               type="button"
-              variant="primary"
+              variant="settings-primary"
               onClick={() => void save()}
               disabled={!hasDirty || isSaving || isLoading}
               isLoading={isSaving}

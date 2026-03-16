@@ -267,6 +267,7 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
       await onMerged(value);
     } catch (e) {
       if (e instanceof SystemConfigConflictError) {
+        await onMerged(value);
         setError('配置已更新，请再次点击「合并到自选股」');
       } else {
         setError(e instanceof Error ? e.message : '合并保存失败');
@@ -298,15 +299,15 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
       >
         <div className="flex flex-wrap items-center gap-2">
           <label className="cursor-pointer">
-            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-elevated px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
+            <Button type="button" variant="settings-secondary" disabled={disabled || isLoading}>
               选择图片
-            </span>
+            </Button>
             <input type="file" accept=".jpg,.jpeg,.png,.webp,.gif" className="hidden" onChange={onImageInput} disabled={disabled || isLoading} />
           </label>
           <label className="cursor-pointer">
-            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border/70 bg-elevated px-4 text-sm font-medium text-foreground shadow-soft-card transition-colors hover:bg-hover">
+            <Button type="button" variant="settings-secondary" disabled={disabled || isLoading}>
               选择文件
-            </span>
+            </Button>
             <input type="file" accept=".csv,.xlsx,.txt" className="hidden" onChange={onDataFileInput} disabled={disabled || isLoading} />
           </label>
         </div>

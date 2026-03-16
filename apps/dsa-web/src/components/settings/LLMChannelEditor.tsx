@@ -1025,7 +1025,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
-              variant="primary"
+              variant="settings-primary"
               glow
               disabled={busy || !hasChanges}
               onClick={() => void handleSave()}

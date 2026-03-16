@@ -32,7 +32,7 @@ describe('IntelligentImport', () => {
     vi.clearAllMocks();
   });
 
-  it('does not apply merged stock list after a config version conflict', async () => {
+  it('refreshes config state after a config version conflict', async () => {
     parseImport.mockResolvedValue({
       items: [{ code: 'SZ000001', name: 'Ping An Bank', confidence: 'high' }],
       codes: [],
@@ -62,7 +62,9 @@ describe('IntelligentImport', () => {
     await waitFor(() => {
       expect(update).toHaveBeenCalled();
     });
-    expect(onMerged).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onMerged).toHaveBeenCalledWith('SH600000,SZ000001');
+    });
     expect(await screen.findByText('配置已更新，请再次点击「合并到自选股」')).toBeInTheDocument();
   });
 });
