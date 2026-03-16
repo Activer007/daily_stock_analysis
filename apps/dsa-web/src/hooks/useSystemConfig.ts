@@ -166,17 +166,41 @@ export function useSystemConfig() {
   }, [validationIssues]);
 
   const applyServerPayload = useCallback(
-    (items: SystemConfigItem[], version: string, token: string) => {
+    (
+      items: SystemConfigItem[],
+      version: string,
+      token: string,
+      options?: { preserveDirty?: boolean; committedKeys?: string[] },
+    ) => {
       const sorted = sortItemsByOrder(items);
+      const previousServerMap = serverItemByKey;
+      const committedKeys = new Set(options?.committedKeys ?? []);
+      const preserveDirty = options?.preserveDirty ?? false;
+
       setServerItems(sorted);
       setConfigVersion(version);
       setMaskToken(token || '******');
 
-      const draft: Record<string, string> = {};
-      for (const item of sorted) {
-        draft[item.key] = item.value;
-      }
-      setDraftValues(draft);
+      setDraftValues((prevDraft) => {
+        const nextDraft: Record<string, string> = {};
+        for (const item of sorted) {
+          if (committedKeys.has(item.key)) {
+            nextDraft[item.key] = item.value;
+            continue;
+          }
+
+          if (preserveDirty) {
+            const previousServerValue = previousServerMap[item.key]?.value;
+            const hasDraft = prevDraft[item.key] !== undefined;
+            const wasDirty = hasDraft && prevDraft[item.key] !== previousServerValue;
+            nextDraft[item.key] = wasDirty ? prevDraft[item.key] : item.value;
+            continue;
+          }
+
+          nextDraft[item.key] = item.value;
+        }
+        return nextDraft;
+      });
 
       const defaultCategory = sorted[0]?.schema?.category || 'base';
       setActiveCategory((current) => {
@@ -185,7 +209,7 @@ export function useSystemConfig() {
       });
       setValidationIssues([]);
     },
-    [],
+    [serverItemByKey],
   );
 
   const load = useCallback(async () => {
@@ -214,6 +238,27 @@ export function useSystemConfig() {
     setValidationIssues([]);
     setSaveError(null);
   }, [serverItems]);
+
+  const applyPartialUpdate = useCallback((updatedItems: Array<{ key: string; value: string }>) => {
+    setDraftValues((prevDraft) => {
+      const nextDraft = { ...prevDraft };
+      for (const item of updatedItems) {
+        nextDraft[item.key] = item.value;
+      }
+      return nextDraft;
+    });
+  }, []);
+
+  const refreshAfterExternalSave = useCallback(
+    async (committedKeys: string[]) => {
+      const config = await systemConfigApi.getConfig(true);
+      applyServerPayload(config.items, config.configVersion, config.maskToken, {
+        preserveDirty: true,
+        committedKeys,
+      });
+    },
+    [applyServerPayload],
+  );
 
   const setDraftValue = useCallback((key: string, value: string) => {
     setDraftValues((previous) => ({
@@ -359,5 +404,7 @@ export function useSystemConfig() {
     save,
     resetDraft,
     setDraftValue,
+    applyPartialUpdate,
+    refreshAfterExternalSave,
   };
 }
