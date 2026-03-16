@@ -69,7 +69,23 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col justify-center overflow-hidden bg-[#030712] py-12 font-sans selection:bg-cyan-500/30 sm:px-6 lg:px-8 [perspective:1500px]">
+    <div 
+      style={{
+        // Scoped tokens for LoginPage to ensure UI consistency without breaking the unique visual style
+        '--login-bg-main': '#030712',
+        '--login-bg-card': '#0B0E14',
+        '--login-border-card': 'rgba(255, 255, 255, 0.05)',
+        '--login-border-input': 'rgba(255, 255, 255, 0.1)',
+        '--login-border-focus': 'rgba(6, 182, 212, 0.5)',
+        '--login-error-text': '#f87171', // red-400
+        '--login-error-bg': 'rgba(239, 68, 68, 0.1)', // red-500/10
+        '--login-error-border': 'rgba(239, 68, 68, 0.2)', // red-500/20
+        '--login-text-primary': '#ffffff',
+        '--login-text-secondary': '#94a3b8', // slate-400
+        '--login-text-muted': '#64748b', // slate-500
+      } as React.CSSProperties}
+      className="relative flex min-h-screen flex-col justify-center overflow-hidden bg-[var(--login-bg-main)] py-12 font-sans selection:bg-cyan-500/30 sm:px-6 lg:px-8 [perspective:1500px]"
+    >
       {/* Dynamic Background */}
       <ParticleBackground />
 
@@ -115,11 +131,11 @@ const LoginPage: React.FC = () => {
           </motion.div>
 
           <div className="mt-8 flex flex-col items-center">
-            <h2 className="text-4xl font-extrabold tracking-tighter text-white sm:text-6xl">
-              <span className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">DAILY </span>
+            <h2 className="text-4xl font-extrabold tracking-tighter text-[var(--login-text-primary)] sm:text-6xl">
+              <span className="bg-gradient-to-r from-[var(--login-text-primary)] via-[var(--login-text-primary)] to-[var(--login-text-secondary)] bg-clip-text text-transparent">DAILY </span>
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent shadow-cyan-500/20 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">STOCK</span>
             </h2>
-            <h3 className="mt-1 text-xl font-bold uppercase tracking-[0.5em] text-slate-500">
+            <h3 className="mt-1 text-xl font-bold uppercase tracking-[0.5em] text-[var(--login-text-muted)]">
               Analysis Engine
             </h3>
           </div>
@@ -144,13 +160,13 @@ const LoginPage: React.FC = () => {
           {/* Card Border Glow */}
           <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-b from-cyan-500/20 to-blue-600/20 opacity-50 blur-sm transition duration-1000 group-hover:opacity-100 group-hover:duration-200 pointer-events-none" />
 
-          <div className="pointer-events-auto relative flex flex-col overflow-hidden rounded-3xl border border-white/5 bg-[#0B0E14]/80 p-8 shadow-2xl backdrop-blur-xl">
+          <div className="pointer-events-auto relative flex flex-col overflow-hidden rounded-3xl border border-[var(--login-border-card)] bg-[var(--login-bg-card)]/80 p-8 shadow-2xl backdrop-blur-xl">
             {/* Inner corner glow */}
             <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[50px]" />
             <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-blue-600/10 blur-[50px]" />
 
             <div className="mb-8">
-              <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white">
+              <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-[var(--login-text-primary)]">
                 {isFirstTime ? (
                   <>
                     <ShieldCheck className="h-6 w-6 text-emerald-400" />
@@ -163,7 +179,7 @@ const LoginPage: React.FC = () => {
                   </>
                 )}
               </h1>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[var(--login-text-secondary)]">
                 {isFirstTime
                   ? '首次启用认证，请为系统工作台设置管理员密码。'
                   : '访问 DSA 量化决策引擎需要有效的身份凭证。'}
@@ -184,7 +200,7 @@ const LoginPage: React.FC = () => {
                   disabled={isSubmitting}
                   autoFocus
                   autoComplete={isFirstTime ? 'new-password' : 'current-password'}
-                  className="!bg-white/5 !border-white/10 focus:!border-cyan-500/50"
+                  className="!bg-[var(--login-border-card)] !border-[var(--login-border-input)] focus:!border-[var(--login-border-focus)]"
                 />
 
                 {isFirstTime && (
@@ -199,7 +215,7 @@ const LoginPage: React.FC = () => {
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     disabled={isSubmitting}
                     autoComplete="new-password"
-                    className="!bg-white/5 !border-white/10 focus:!border-cyan-500/50"
+                    className="!bg-[var(--login-border-card)] !border-[var(--login-border-input)] focus:!border-[var(--login-border-focus)]"
                   />
                 )}
               </div>
@@ -214,7 +230,7 @@ const LoginPage: React.FC = () => {
                     title={isFirstTime ? '配置失败' : '验证未通过'}
                     message={isParsedApiError(error) ? error.message : error}
                     variant="error"
-                    className="!border-red-500/20 !bg-red-500/10 !text-red-400"
+                    className="!border-[var(--login-error-border)] !bg-[var(--login-error-bg)] !text-[var(--login-error-text)]"
                   />
                 </motion.div>
               )}
@@ -248,7 +264,7 @@ const LoginPage: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-8 text-center font-mono text-xs uppercase tracking-wider text-slate-500"
+          className="mt-8 text-center font-mono text-xs uppercase tracking-wider text-[var(--login-text-muted)]"
         >
           Secure Connection Established via DSA-V3-TLS
         </motion.p>

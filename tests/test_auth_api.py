@@ -143,6 +143,30 @@ class AuthApiTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertIn("dsa_session=", response.headers["set-cookie"])
 
+    def test_logout_invalidates_existing_session(self) -> None:
+        login_response = asyncio.run(
+            auth_endpoint.auth_login(
+                self._build_request(),
+                auth_endpoint.LoginRequest(password="passwd6", passwordConfirm="passwd6"),
+            )
+        )
+        self.assertEqual(login_response.status_code, 200)
+        cookie_header = login_response.headers["set-cookie"]
+        session_cookie = cookie_header.split("dsa_session=", 1)[1].split(";", 1)[0]
+        self.assertTrue(auth.verify_session(session_cookie))
+
+        logout_response = asyncio.run(auth_endpoint.auth_logout(self._build_request()))
+
+        self.assertEqual(logout_response.status_code, 204)
+        self.assertFalse(auth.verify_session(session_cookie))
+
+    def test_logout_returns_500_when_session_invalidation_fails(self) -> None:
+        with patch.object(auth_endpoint, "rotate_session_secret", return_value=False):
+            response = asyncio.run(auth_endpoint.auth_logout(self._build_request()))
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(b'"error":"internal_error"', response.body)
+
     def test_change_password_requires_session(self) -> None:
         first_response = asyncio.run(
             auth_endpoint.auth_login(

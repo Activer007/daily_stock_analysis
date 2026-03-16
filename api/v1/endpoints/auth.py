@@ -467,6 +467,11 @@ async def auth_change_password(body: ChangePasswordRequest):
 )
 async def auth_logout(request: Request):
     """Clear session cookie."""
+    if is_auth_enabled() and not rotate_session_secret():
+        return JSONResponse(
+            status_code=500,
+            content={"error": "internal_error", "message": "Failed to invalidate session"},
+        )
     resp = Response(status_code=204)
     resp.delete_cookie(key=COOKIE_NAME, path="/")
     return resp
