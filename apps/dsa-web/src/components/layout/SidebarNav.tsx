@@ -37,7 +37,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
   return (
     <div className="flex h-full flex-col">
       <div className={cn('mb-4 flex items-center gap-2 px-1', collapsed ? 'justify-center' : '')}>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-gradient text-[hsl(var(--primary-foreground))] shadow-[0_12px_28px_rgba(0,212,255,0.24)]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-gradient text-[hsl(var(--primary-foreground))] shadow-[0_12px_28px_var(--nav-brand-shadow)]">
           <BarChart3 className="h-5 w-5" />
         </div>
         {!collapsed ? (
@@ -55,17 +55,26 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed = false, onNav
             aria-label={label}
             className={({ isActive }) =>
               cn(
-                'group relative flex h-11 items-center gap-3 rounded-2xl border px-3 text-sm transition-all',
-                collapsed ? 'justify-center px-2' : '',
+                'group relative flex h-11 items-center gap-3 border-y border-x-0 text-sm transition-all',
+                collapsed ? 'justify-center px-0' : 'px-4',
                 isActive
-                  ? 'border-white/60 bg-white/6 text-foreground shadow-[0_10px_24px_rgba(255,255,255,0.06)]'
-                  : 'border-transparent text-secondary-text hover:border-border/70 hover:bg-hover hover:text-foreground'
+                  ? 'border-[var(--nav-active-border)] bg-[var(--nav-active-bg)] text-foreground shadow-[inset_0_0_15px_var(--nav-active-shadow)]'
+                  : 'border-transparent text-secondary-text hover:bg-hover hover:text-foreground'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-cyan' : 'text-current')} />
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeIndicator"
+                    className="absolute left-0 top-0 bottom-0 w-1 bg-cyan shadow-[0_0_10px_rgba(0,212,255,0.8)]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+                <Icon className={cn('h-5 w-5 shrink-0 ml-1', isActive ? 'text-cyan' : 'text-current')} />
                 {!collapsed ? <span className="truncate">{label}</span> : null}
                 {badge === 'completion' && completionBadge ? (
                   <span

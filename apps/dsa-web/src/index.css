@@ -67,6 +67,10 @@
   --text-primary: hsl(var(--foreground));
   --text-secondary-text: hsl(var(--secondary-text));
   --text-muted-text: hsl(var(--muted-text));
+  --nav-active-bg: rgba(0, 168, 204, 0.09);
+  --nav-active-border: rgba(0, 168, 204, 0.24);
+  --nav-active-shadow: rgba(0, 168, 204, 0.04);
+  --nav-brand-shadow: rgba(0, 168, 204, 0.2);
   --shadow-soft-card: 0 18px 48px rgba(15, 23, 42, 0.08);
   --shadow-soft-card-strong: 0 24px 56px rgba(15, 23, 42, 0.12);
   --input-surface-bg: var(--bg-card);
@@ -122,6 +126,10 @@
   --text-primary: #ffffff;
   --text-secondary-text: #a0a0b0;
   --text-muted-text: #606070;
+  --nav-active-bg: rgba(0, 212, 255, 0.11);
+  --nav-active-border: rgba(0, 212, 255, 0.3);
+  --nav-active-shadow: rgba(0, 212, 255, 0.05);
+  --nav-brand-shadow: rgba(0, 212, 255, 0.24);
   --shadow-soft-card: 0 18px 48px rgba(3, 8, 20, 0.18);
   --shadow-soft-card-strong: 0 24px 56px rgba(3, 8, 20, 0.26);
   --input-surface-bg: var(--bg-card);

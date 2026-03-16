@@ -72,7 +72,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         data-state={open ? 'open' : 'closed'}
         className={cn(
           isNavVariant
-            ? 'group relative flex h-11 w-full select-none items-center gap-3 rounded-2xl border border-transparent px-3 text-sm text-secondary-text transition-all data-[state=open]:border-border/70 data-[state=open]:bg-hover data-[state=open]:text-foreground opacity-50 cursor-not-allowed'
+            ? 'group relative flex h-12 w-full select-none items-center gap-3 rounded-[1.35rem] border border-transparent px-4 text-sm text-secondary-text transition-all duration-300 data-[state=open]:border-white/8 data-[state=open]:bg-white/[0.03] data-[state=open]:text-foreground opacity-50 cursor-not-allowed'
             : 'inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-card/80 px-3 text-sm text-secondary-text shadow-soft-card transition-colors opacity-50 cursor-not-allowed',
           isNavVariant && collapsed ? 'justify-center px-2' : ''
         )}
@@ -82,7 +82,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       >
         <TriggerIcon className={cn('shrink-0', isNavVariant ? 'h-5 w-5' : 'h-4 w-4')} />
         {isNavVariant ? (
-          collapsed ? null : <span className="truncate">主题</span>
+          collapsed ? null : <span className="truncate text-[1.02rem] font-medium">主题</span>
         ) : (
           <span className="hidden sm:inline">{resolveThemeLabel(activeTheme)}</span>
         )}
