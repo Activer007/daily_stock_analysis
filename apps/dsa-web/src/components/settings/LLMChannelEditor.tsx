@@ -874,16 +874,16 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <button
         type="button"
-        className="flex w-full items-center justify-between rounded-2xl border border-border/35 bg-elevated/65 px-5 py-4 text-left shadow-soft-card"
+        className="flex w-full items-center justify-between rounded-[1.35rem] border border-white/10 bg-white/2 px-5 py-4 text-left transition-all duration-200 hover:bg-white/5"
         onClick={() => setIsCollapsed((previous) => !previous)}
       >
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-foreground">AI 模型配置</h3>
-            <Badge variant="info">渠道管理</Badge>
+            <h3 className="text-base font-semibold text-white">AI 模型配置</h3>
+            <Badge variant="info" className="bg-cyan/10 text-cyan border-cyan/20">渠道管理</Badge>
           </div>
           <p className="text-xs text-muted-text">
             添加服务商渠道，填入 API Key 和模型名称即可。配置会自动同步到 .env 文件。
@@ -893,14 +893,14 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
       </button>
 
       {!isCollapsed ? (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-border/40 bg-elevated/62 p-4 shadow-soft-card">
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/2 p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-medium text-foreground">快速添加渠道</h4>
+                <h4 className="text-sm font-medium text-white">快速添加渠道</h4>
                 <p className="mt-1 text-xs text-secondary-text">先选择预设服务商，再一键创建配置草稿。</p>
               </div>
-              <Badge variant="default">{channels.length} 个渠道</Badge>
+              <Badge variant="default" className="border-white/10 bg-white/5 text-muted-text">{channels.length} 个渠道</Badge>
             </div>
             <div className="flex items-center gap-2">
               <Button type="button" variant="gradient" className="whitespace-nowrap" disabled={busy} onClick={addChannel}>
@@ -929,7 +929,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
             </div>
 
             {channels.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/35 bg-background/18 px-4 py-10 text-center shadow-soft-card">
+              <div className="rounded-[1.35rem] border border-dashed border-border/28 bg-background/12 px-4 py-10 text-center">
                 <p className="text-sm font-medium text-secondary-text">还没有渠道</p>
                 <p className="mt-1 text-xs text-muted-text">选择服务商预设后点击“添加渠道”即可开始配置。</p>
               </div>
@@ -952,15 +952,14 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {managesRuntimeConfig ? (
-            <div className="rounded-2xl border border-border/40 bg-elevated/62 p-4 shadow-soft-card">
+            <div className="rounded-[1.35rem] border border-white/10 bg-white/2 p-4">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-text">运行时参数</span>
-                  <p className="mt-1 text-[11px] text-secondary-text">主模型、Fallback、Vision 与 Temperature 会直接写入运行时配置。</p>
+                  <span className="text-xs font-medium uppercase tracking-wider text-cyan">运行时参数</span>
+                  <p className="mt-1 text-[11px] text-muted-text">主模型、Fallback、Vision 与 Temperature 会直接写入运行时配置。</p>
                 </div>
-                <Badge variant="default">Runtime</Badge>
+                <Badge variant="default" className="border-white/10 bg-white/5 text-muted-text">Runtime</Badge>
               </div>
-
               <div className="mb-4">
                 <label className="mb-1 block text-xs text-muted-text">Temperature</label>
                 <div className="flex items-center gap-3">
@@ -982,7 +981,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               </div>
 
               {availableModels.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/50 bg-background/20 px-3 py-2 text-xs text-muted-text">
+                <div className="rounded-xl border border-dashed border-border/30 bg-background/10 px-3 py-2 text-xs text-muted-text">
                   先添加至少一个已启用渠道并填写模型，下面的主模型 / fallback / Vision 选项才会出现。
                 </div>
               ) : (
@@ -1000,7 +999,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
 
                   <div>
                     <label className="mb-2 block text-xs text-muted-text">Fallback 模型</label>
-                    <div className="space-y-2 rounded-lg border border-border/50 bg-background/20 p-3">
+                    <div className="space-y-2 rounded-xl border border-border/30 bg-background/10 p-3">
                       {availableModels.map((model) => (
                         <label key={model} className="flex items-center gap-2 text-sm text-secondary-text">
                           <input
@@ -1033,7 +1032,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 text-xs text-warning shadow-soft-card">
+            <div className="rounded-[1.35rem] border border-warning/25 bg-warning/10 px-4 py-3 text-xs text-warning">
               当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；
               这里仅保存渠道条目，不会覆盖 YAML 运行时选择。
             </div>

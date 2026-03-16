@@ -113,11 +113,11 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-full px-4 pb-6 pt-4 md:px-6">
-      <div className="mb-5 rounded-[1.7rem] border border-border/45 bg-card/94 px-5 py-5 shadow-soft-card">
+      <div className="mb-5 rounded-[1.7rem] border border-white/10 bg-card/94 px-5 py-5 shadow-soft-card-strong">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">系统设置</h1>
-            <p className="text-sm leading-6 text-secondary-text">
+            <h1 className="text-xl font-semibold tracking-tight text-white">系统设置</h1>
+            <p className="text-xs leading-6 text-muted-text">
               统一管理模型、数据源、通知、安全认证与导入能力。
             </p>
           </div>

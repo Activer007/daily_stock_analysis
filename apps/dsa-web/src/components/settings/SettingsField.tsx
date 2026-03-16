@@ -217,12 +217,12 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   return (
     <div
       className={cn(
-        'rounded-[1.15rem] border bg-elevated/78 p-4 shadow-soft-card',
-        hasError ? 'border-danger/35' : 'border-border/40',
+        'rounded-[1.15rem] border bg-white/2 p-4 shadow-soft-card transition-all duration-200 hover:bg-white/5',
+        hasError ? 'border-danger/40' : 'border-white/10',
       )}
     >
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <label className="text-sm font-semibold text-foreground" htmlFor={controlId}>
+        <label className="text-sm font-semibold text-white" htmlFor={controlId}>
           {title}
         </label>
         {schema?.isSensitive ? (
