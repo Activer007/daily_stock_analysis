@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type React from 'react';
-import { Badge, EyeToggleIcon, Select } from '../common';
+import { Badge, Select, Input } from '../common';
 import type { ConfigValidationIssue, SystemConfigFieldSchema, SystemConfigItem } from '../../types/systemConfig';
 import { getFieldDescriptionZh, getFieldTitleZh } from '../../utils/systemConfigI18n';
 import { cn } from '../../utils/cn';
@@ -46,8 +46,6 @@ function renderFieldControl(
   value: string,
   disabled: boolean,
   onChange: (nextValue: string) => void,
-  isSecretVisible: boolean,
-  onToggleSecretVisible: () => void,
   isPasswordEditable: boolean,
   onPasswordFocus: () => void,
   controlId: string,
@@ -106,12 +104,13 @@ function renderFieldControl(
         <div className="space-y-2">
           {values.map((entry, index) => (
             <div className="flex items-center gap-2" key={`${item.key}-${index}`}>
-              <input
-                type={isSecretVisible ? 'text' : 'password'}
+              <Input
+                type="password"
+                allowTogglePassword
                 id={index === 0 ? controlId : `${controlId}-${index}`}
                 readOnly={!isPasswordEditable}
                 onFocus={onPasswordFocus}
-                className={`${commonClass} flex-1`}
+                className="flex-1"
                 value={entry}
                 disabled={disabled || !schema?.isEditable}
                 onChange={(event) => {
@@ -119,35 +118,27 @@ function renderFieldControl(
                   nextValues[index] = event.target.value;
                   onChange(serializeMultiValues(nextValues));
                 }}
+                trailingAction={
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-text transition-colors hover:bg-white/10 hover:text-rose-400"
+                    disabled={disabled || !schema?.isEditable || values.length <= 1}
+                    onClick={() => {
+                      const nextValues = values.filter((_, rowIndex) => rowIndex !== index);
+                      onChange(serializeMultiValues(nextValues.length ? nextValues : ['']));
+                    }}
+                  >
+                    删除
+                  </button>
+                }
               />
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-2 py-2 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
-                disabled={disabled || !schema?.isEditable}
-                onClick={onToggleSecretVisible}
-                title={isSecretVisible ? '隐藏' : '显示'}
-                aria-label={isSecretVisible ? '隐藏密码' : '显示密码'}
-              >
-                <EyeToggleIcon visible={isSecretVisible} />
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-3 py-2 text-xs text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
-                disabled={disabled || !schema?.isEditable || values.length <= 1}
-                onClick={() => {
-                  const nextValues = values.filter((_, rowIndex) => rowIndex !== index);
-                  onChange(serializeMultiValues(nextValues.length ? nextValues : ['']));
-                }}
-              >
-                删除
-              </button>
             </div>
           ))}
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-3 py-2 text-xs text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
+              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-secondary-text transition-colors hover:bg-white/10 hover:text-white"
               disabled={disabled || !schema?.isEditable}
               onClick={() => onChange(serializeMultiValues([...values, '']))}
             >
@@ -159,28 +150,16 @@ function renderFieldControl(
     }
 
     return (
-      <div className="flex items-center gap-2">
-        <input
-          type={isSecretVisible ? 'text' : 'password'}
-          id={controlId}
-          readOnly={!isPasswordEditable}
-          onFocus={onPasswordFocus}
-          className={`${commonClass} flex-1`}
-          value={value}
-          disabled={disabled || !schema?.isEditable}
-          onChange={(event) => onChange(event.target.value)}
-        />
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-elevated/85 px-2 py-2 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
-          disabled={disabled || !schema?.isEditable}
-          onClick={onToggleSecretVisible}
-          title={isSecretVisible ? '隐藏' : '显示'}
-          aria-label={isSecretVisible ? '隐藏密码' : '显示密码'}
-        >
-          <EyeToggleIcon visible={isSecretVisible} />
-        </button>
-      </div>
+      <Input
+        type="password"
+        allowTogglePassword
+        id={controlId}
+        readOnly={!isPasswordEditable}
+        onFocus={onPasswordFocus}
+        value={value}
+        disabled={disabled || !schema?.isEditable}
+        onChange={(event) => onChange(event.target.value)}
+      />
     );
   }
 
@@ -210,7 +189,6 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   const title = getFieldTitleZh(item.key, item.key);
   const description = getFieldDescriptionZh(item.key);
   const hasError = issues.some((issue) => issue.severity === 'error');
-  const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
   const controlId = `setting-${item.key}`;
 
@@ -249,8 +227,6 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
           value,
           disabled,
           (nextValue) => onChange(item.key, nextValue),
-          isSecretVisible,
-          () => setIsSecretVisible((previous) => !previous),
           isPasswordEditable,
           () => setIsPasswordEditable(true),
           controlId,

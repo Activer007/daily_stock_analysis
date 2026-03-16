@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { authApi } from '../../api/auth';
 import { getParsedApiError, isParsedApiError, type ParsedApiError } from '../../api/error';
 import { useAuth } from '../../hooks';
-import { Badge, Button, EyeToggleIcon, Input } from '../common';
+import { Badge, Button, Input, Checkbox } from '../common';
 import { SettingsAlert } from './SettingsAlert';
 import { SettingsSectionCard } from './SettingsSectionCard';
 
@@ -23,9 +23,6 @@ export const AuthSettingsCard: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | ParsedApiError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -49,9 +46,6 @@ export const AuthSettingsCard: React.FC = () => {
     setCurrentPassword('');
     setPassword('');
     setPasswordConfirm('');
-    setShowCurrentPassword(false);
-    setShowPassword(false);
-    setShowPasswordConfirm(false);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -104,18 +98,13 @@ export const AuthSettingsCard: React.FC = () => {
               <p className="text-sm font-semibold text-white">管理员认证</p>
               <p className="text-xs leading-6 text-muted-text">{helperText}</p>
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-soft-card-strong transition-all hover:bg-white/10">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-white/20 bg-base text-cyan focus:ring-cyan/20"
-                checked={desiredEnabled}
-                onChange={(event) => setDesiredEnabled(event.target.checked)}
-                disabled={isSubmitting}
-              />
-              <span className="text-xs font-medium text-white">
-                {desiredEnabled ? '开启' : '关闭'}
-              </span>
-            </label>
+            <Checkbox
+              checked={desiredEnabled}
+              disabled={isSubmitting}
+              label={desiredEnabled ? '开启' : '关闭'}
+              onChange={(event) => setDesiredEnabled(event.target.checked)}
+              containerClassName="bg-white/5 border border-white/10 rounded-full px-4 py-2 shadow-soft-card-strong transition-all hover:bg-white/10"
+            />
           </div>
         </div>
 
@@ -124,23 +113,15 @@ export const AuthSettingsCard: React.FC = () => {
             <div className="space-y-3">
               <Input
                 label={desiredEnabled && !authEnabled ? '当前密码（重新开启时使用）' : '当前密码'}
-                type={showCurrentPassword ? 'text' : 'password'}
-                className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
+                type="password"
+                allowTogglePassword
+                iconType="password"
+                className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 autoComplete="current-password"
                 disabled={isSubmitting}
                 hint={desiredEnabled && !authEnabled ? '如果系统已保留密码，请输入当前密码；首次启用可留空。' : undefined}
-                trailingAction={(
-                  <button
-                    type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                    onClick={() => setShowCurrentPassword((previous) => !previous)}
-                    aria-label={showCurrentPassword ? '隐藏当前密码' : '显示当前密码'}
-                  >
-                    <EyeToggleIcon visible={showCurrentPassword} />
-                  </button>
-                )}
               />
             </div>
 
@@ -148,23 +129,15 @@ export const AuthSettingsCard: React.FC = () => {
               <div className="space-y-3">
                 <Input
                   label="新密码"
-                  type={showPassword ? 'text' : 'password'}
-                  className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
+                  type="password"
+                  allowTogglePassword
+                  iconType="password"
+                  className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="new-password"
                   disabled={isSubmitting}
                   hint="首次启用时填写；若仅重新开启已有密码，可留空。"
-                  trailingAction={(
-                    <button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                      onClick={() => setShowPassword((previous) => !previous)}
-                      aria-label={showPassword ? '隐藏新密码' : '显示新密码'}
-                    >
-                      <EyeToggleIcon visible={showPassword} />
-                    </button>
-                  )}
                 />
               </div>
             ) : null}
@@ -176,22 +149,14 @@ export const AuthSettingsCard: React.FC = () => {
             <div className="space-y-3">
               <Input
                 label="确认新密码"
-                type={showPasswordConfirm ? 'text' : 'password'}
-                className="focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 transition-all duration-200"
+                type="password"
+                allowTogglePassword
+                iconType="password"
+                className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                 value={passwordConfirm}
                 onChange={(event) => setPasswordConfirm(event.target.value)}
                 autoComplete="new-password"
                 disabled={isSubmitting}
-                trailingAction={(
-                  <button
-                    type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                    onClick={() => setShowPasswordConfirm((previous) => !previous)}
-                    aria-label={showPasswordConfirm ? '隐藏确认密码' : '显示确认密码'}
-                  >
-                    <EyeToggleIcon visible={showPasswordConfirm} />
-                  </button>
-                )}
               />
             </div>
           </div>

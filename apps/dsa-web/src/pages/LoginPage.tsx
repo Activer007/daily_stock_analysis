@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { Button, Card, EyeToggleIcon, Input } from '../components/common';
+import { Button, Card, Input } from '../components/common';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ParsedApiError } from '../api/error';
 import { isParsedApiError } from '../api/error';
@@ -19,8 +19,6 @@ const LoginPage: React.FC = () => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | ParsedApiError | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   const isFirstTime = !passwordSet;
 
@@ -49,10 +47,10 @@ const LoginPage: React.FC = () => {
       <Card className="w-full max-w-md" padding="lg" variant="bordered">
         <div className="mb-6">
           <div>
-            <h1 className="mb-2 text-xl font-semibold text-foreground">
+            <h1 className="mb-2 text-xl font-semibold text-white">
               {isFirstTime ? '设置初始密码' : '管理员登录'}
             </h1>
-            <p className="text-sm leading-6 text-secondary-text">
+            <p className="text-sm leading-6 text-muted-text">
               {isFirstTime
                 ? '首次启用认证时，请设置管理员密码并再次确认。'
                 : '请输入当前管理员密码以继续访问系统设置与工作台。'}
@@ -64,7 +62,9 @@ const LoginPage: React.FC = () => {
           <div className="space-y-3">
             <Input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type="password"
+              allowTogglePassword
+              iconType="password"
               label={isFirstTime ? '新密码' : '密码'}
               placeholder={isFirstTime ? '输入新密码' : '输入密码'}
               value={password}
@@ -72,16 +72,6 @@ const LoginPage: React.FC = () => {
               disabled={isSubmitting}
               autoFocus
               autoComplete={isFirstTime ? 'new-password' : 'current-password'}
-              trailingAction={(
-                <button
-                  type="button"
-                  className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
-                  onClick={() => setShowPassword((previous) => !previous)}
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                >
-                  <EyeToggleIcon visible={showPassword} />
-                </button>
-              )}
             />
           </div>
 
@@ -89,23 +79,15 @@ const LoginPage: React.FC = () => {
             <div className="space-y-3">
               <Input
                 id="passwordConfirm"
-                type={showPasswordConfirm ? 'text' : 'password'}
+                type="password"
+                allowTogglePassword
+                iconType="password"
                 label="确认密码"
                 placeholder="再次输入密码"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
                 disabled={isSubmitting}
                 autoComplete="new-password"
-                trailingAction={(
-                  <button
-                    type="button"
-                    className="btn-secondary flex h-8 w-8 items-center justify-center !rounded-lg !p-0"
-                    onClick={() => setShowPasswordConfirm((previous) => !previous)}
-                    aria-label={showPasswordConfirm ? '隐藏确认密码' : '显示确认密码'}
-                  >
-                    <EyeToggleIcon visible={showPasswordConfirm} />
-                  </button>
-                )}
               />
             </div>
           ) : null}

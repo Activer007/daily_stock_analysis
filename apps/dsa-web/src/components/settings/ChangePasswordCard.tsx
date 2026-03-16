@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { ParsedApiError } from '../../api/error';
 import { isParsedApiError } from '../../api/error';
 import { useAuth } from '../../hooks';
-import { Button, Input, EyeToggleIcon } from '../common';
+import { Button, Input } from '../common';
 import { SettingsAlert } from './SettingsAlert';
 import { SettingsSectionCard } from './SettingsSectionCard';
 
@@ -12,9 +12,7 @@ export const ChangePasswordCard: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | ParsedApiError | null>(null);
   const [success, setSuccess] = useState(false);
@@ -49,9 +47,6 @@ export const ChangePasswordCard: React.FC = () => {
         setCurrentPassword('');
         setNewPassword('');
         setNewPasswordConfirm('');
-        setShowCurrent(false);
-        setShowNew(false);
-        setShowConfirm(false);
         setTimeout(() => setSuccess(false), 4000);
       } else {
         setError(result.error ?? '修改失败');
@@ -71,34 +66,26 @@ export const ChangePasswordCard: React.FC = () => {
           <div className="space-y-3">
             <Input
               id="change-pass-current"
-              type={showCurrent ? 'text' : 'password'}
-              className="input-terminal border-border/55 border-cyan/40 transition-all duration-200"
+              type="password"
+              allowTogglePassword
+              iconType="password"
+              className="input-terminal border-border/55 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
               label="当前密码"
               placeholder="输入当前密码"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               disabled={isSubmitting}
               autoComplete="current-password"
-              trailingAction={(
-                <button
-                  type="button"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                  disabled={isSubmitting}
-                  onClick={() => setShowCurrent((v) => !v)}
-                  title={showCurrent ? '隐藏' : '显示'}
-                  aria-label={showCurrent ? '隐藏当前密码' : '显示当前密码'}
-                >
-                  <EyeToggleIcon visible={showCurrent} />
-                </button>
-              )}
             />
           </div>
 
           <div className="space-y-3">
             <Input
               id="change-pass-new"
-              type={showNew ? 'text' : 'password'}
-              className="input-terminal border-border/55 transition-all duration-200"
+              type="password"
+              allowTogglePassword
+              iconType="password"
+              className="input-terminal border-border/55 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
               label="新密码"
               hint="至少 6 位。"
               placeholder="输入新密码"
@@ -106,18 +93,6 @@ export const ChangePasswordCard: React.FC = () => {
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={isSubmitting}
               autoComplete="new-password"
-              trailingAction={(
-                <button
-                  type="button"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                  disabled={isSubmitting}
-                  onClick={() => setShowNew((v) => !v)}
-                  title={showNew ? '隐藏' : '显示'}
-                  aria-label={showNew ? '隐藏新密码' : '显示新密码'}
-                >
-                  <EyeToggleIcon visible={showNew} />
-                </button>
-              )}
             />
           </div>
         </div>
@@ -125,26 +100,16 @@ export const ChangePasswordCard: React.FC = () => {
         <div className="space-y-3 md:max-w-md">
           <Input
             id="change-pass-confirm"
-            type={showConfirm ? 'text' : 'password'}
-            className="input-terminal border-cyan/40 transition-all duration-200"
+            type="password"
+            allowTogglePassword
+            iconType="password"
+            className="input-terminal border-cyan/40 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
             label="确认新密码"
             placeholder="再次输入新密码"
             value={newPasswordConfirm}
             onChange={(e) => setNewPasswordConfirm(e.target.value)}
             disabled={isSubmitting}
             autoComplete="new-password"
-            trailingAction={(
-              <button
-                type="button"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted-text shadow-soft-card transition-all hover:bg-white/10 hover:text-white"
-                disabled={isSubmitting}
-                onClick={() => setShowConfirm((v) => !v)}
-                title={showConfirm ? '隐藏' : '显示'}
-                aria-label={showConfirm ? '隐藏确认密码' : '显示确认密码'}
-              >
-                <EyeToggleIcon visible={showConfirm} />
-              </button>
-            )}
           />
         </div>
 

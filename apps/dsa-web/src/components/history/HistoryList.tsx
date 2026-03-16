@@ -173,7 +173,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
           <div className="space-y-2">
             {items.map((item) => (
               <div key={item.id} className="flex items-start gap-2 group">
-                <div className="pt-3">
+                <div className="pt-5">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(item.id)}
