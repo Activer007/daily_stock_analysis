@@ -69,6 +69,11 @@
   --text-muted-text: hsl(var(--muted-text));
   --shadow-soft-card: 0 18px 48px rgba(15, 23, 42, 0.08);
   --shadow-soft-card-strong: 0 24px 56px rgba(15, 23, 42, 0.12);
+  --input-surface-bg: var(--bg-card);
+  --input-surface-border: hsl(var(--border) / 0.82);
+  --input-surface-border-hover: rgba(255, 255, 255, 0.18);
+  --input-surface-border-focus: hsl(var(--primary) / 0.38);
+  --input-surface-focus-ring: 0 0 0 4px hsl(var(--primary) / 0.15);
   --gradient-primary:
     linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.74));
 }
@@ -119,6 +124,11 @@
   --text-muted-text: #606070;
   --shadow-soft-card: 0 18px 48px rgba(3, 8, 20, 0.18);
   --shadow-soft-card-strong: 0 24px 56px rgba(3, 8, 20, 0.26);
+  --input-surface-bg: var(--bg-card);
+  --input-surface-border: hsl(var(--border) / 0.82);
+  --input-surface-border-hover: rgba(255, 255, 255, 0.18);
+  --input-surface-border-focus: hsl(var(--primary) / 0.45);
+  --input-surface-focus-ring: 0 0 0 4px hsl(var(--primary) / 0.18);
   --gradient-primary:
     linear-gradient(135deg, rgba(0, 212, 255, 0.96), rgba(0, 168, 204, 0.96));
 }
@@ -193,6 +203,37 @@ body {
 
 .input-terminal:hover:not(:focus) {
   border-color: rgba(255, 255, 255, 0.15);
+}
+
+.input-surface {
+  background: var(--input-surface-bg);
+  border-color: var(--input-surface-border);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-soft-card);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.input-surface::placeholder {
+  color: var(--text-muted-text);
+}
+
+.input-surface:hover:not(:focus):not(:disabled) {
+  border-color: var(--input-surface-border-hover);
+}
+
+.input-surface:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.input-focus-glow:focus,
+.input-focus-glow:focus-within {
+  border-color: var(--input-surface-border-focus);
+  box-shadow: var(--shadow-soft-card), var(--input-surface-focus-ring);
 }
 
 /* ============ Badge Styles ============ */

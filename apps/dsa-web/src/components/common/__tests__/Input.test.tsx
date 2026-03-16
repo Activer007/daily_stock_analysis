@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { Input } from '../Input';
 
 describe('Input', () => {
@@ -31,5 +31,41 @@ describe('Input', () => {
     );
 
     expect(screen.getByRole('button', { name: '显示' })).toBeInTheDocument();
+  });
+
+  it('renders a key icon and applies leading padding', () => {
+    const { container } = render(<Input label="API Key" iconType="key" />);
+
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(screen.getByLabelText('API Key')).toHaveClass('pl-10');
+  });
+
+  it('toggles password visibility in uncontrolled mode', () => {
+    render(<Input label="密码" type="password" allowTogglePassword />);
+
+    const input = screen.getByLabelText('密码');
+    expect(input).toHaveAttribute('type', 'password');
+
+    fireEvent.click(screen.getByRole('button', { name: '显示内容' }));
+    expect(input).toHaveAttribute('type', 'text');
+  });
+
+  it('supports controlled password visibility', () => {
+    const onPasswordVisibleChange = vi.fn();
+
+    render(
+      <Input
+        label="API Key"
+        type="password"
+        allowTogglePassword
+        passwordVisible
+        onPasswordVisibleChange={onPasswordVisibleChange}
+      />
+    );
+
+    expect(screen.getByLabelText('API Key')).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: '隐藏内容' }));
+    expect(onPasswordVisibleChange).toHaveBeenCalledWith(false);
   });
 });

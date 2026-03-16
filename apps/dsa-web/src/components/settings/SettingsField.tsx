@@ -33,6 +33,10 @@ function serializeMultiValues(values: string[]): string {
   return values.map((entry) => entry.trim()).join(',');
 }
 
+function inferPasswordIconType(key: string): 'password' | 'key' {
+  return key.toUpperCase().includes('PASSWORD') ? 'password' : 'key';
+}
+
 interface SettingsFieldProps {
   item: SystemConfigItem;
   value: string;
@@ -97,6 +101,8 @@ function renderFieldControl(
   }
 
   if (controlType === 'password') {
+    const iconType = inferPasswordIconType(item.key);
+
     if (isMultiValue) {
       const values = parseMultiValues(value);
 
@@ -104,34 +110,34 @@ function renderFieldControl(
         <div className="space-y-2">
           {values.map((entry, index) => (
             <div className="flex items-center gap-2" key={`${item.key}-${index}`}>
-              <Input
-                type="password"
-                allowTogglePassword
-                id={index === 0 ? controlId : `${controlId}-${index}`}
-                readOnly={!isPasswordEditable}
-                onFocus={onPasswordFocus}
-                className="flex-1"
-                value={entry}
-                disabled={disabled || !schema?.isEditable}
-                onChange={(event) => {
-                  const nextValues = [...values];
-                  nextValues[index] = event.target.value;
-                  onChange(serializeMultiValues(nextValues));
+              <div className="flex-1">
+                <Input
+                  type="password"
+                  allowTogglePassword
+                  iconType={iconType}
+                  id={index === 0 ? controlId : `${controlId}-${index}`}
+                  readOnly={!isPasswordEditable}
+                  onFocus={onPasswordFocus}
+                  value={entry}
+                  disabled={disabled || !schema?.isEditable}
+                  onChange={(event) => {
+                    const nextValues = [...values];
+                    nextValues[index] = event.target.value;
+                    onChange(serializeMultiValues(nextValues));
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-muted-text transition-colors hover:bg-white/10 hover:text-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={disabled || !schema?.isEditable || values.length <= 1}
+                onClick={() => {
+                  const nextValues = values.filter((_, rowIndex) => rowIndex !== index);
+                  onChange(serializeMultiValues(nextValues.length ? nextValues : ['']));
                 }}
-                trailingAction={
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-text transition-colors hover:bg-white/10 hover:text-rose-400"
-                    disabled={disabled || !schema?.isEditable || values.length <= 1}
-                    onClick={() => {
-                      const nextValues = values.filter((_, rowIndex) => rowIndex !== index);
-                      onChange(serializeMultiValues(nextValues.length ? nextValues : ['']));
-                    }}
-                  >
-                    删除
-                  </button>
-                }
-              />
+              >
+                删除
+              </button>
             </div>
           ))}
 
@@ -153,6 +159,7 @@ function renderFieldControl(
       <Input
         type="password"
         allowTogglePassword
+        iconType={iconType}
         id={controlId}
         readOnly={!isPasswordEditable}
         onFocus={onPasswordFocus}
@@ -235,7 +242,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
 
       {schema?.isSensitive ? (
         <p className="mt-3 text-[11px] leading-5 text-secondary-text">
-          密钥默认隐藏，可点击眼睛图标查看明文。
+          敏感内容默认隐藏，可点击眼睛图标查看明文。
           {isMultiValue ? ' 支持添加多个输入框进行增删。' : ''}
         </p>
       ) : null}

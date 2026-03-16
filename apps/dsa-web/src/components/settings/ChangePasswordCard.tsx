@@ -69,7 +69,6 @@ export const ChangePasswordCard: React.FC = () => {
               type="password"
               allowTogglePassword
               iconType="password"
-              className="input-terminal border-border/55 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
               label="当前密码"
               placeholder="输入当前密码"
               value={currentPassword}
@@ -85,7 +84,6 @@ export const ChangePasswordCard: React.FC = () => {
               type="password"
               allowTogglePassword
               iconType="password"
-              className="input-terminal border-border/55 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
               label="新密码"
               hint="至少 6 位。"
               placeholder="输入新密码"
@@ -103,7 +101,6 @@ export const ChangePasswordCard: React.FC = () => {
             type="password"
             allowTogglePassword
             iconType="password"
-            className="input-terminal border-cyan/40 transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
             label="确认新密码"
             placeholder="再次输入新密码"
             value={newPasswordConfirm}

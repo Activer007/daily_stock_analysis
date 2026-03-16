@@ -3,7 +3,7 @@ import type React from 'react';
 import type { ParsedApiError } from '../../api/error';
 import { getParsedApiError } from '../../api/error';
 import { systemConfigApi } from '../../api/systemConfig';
-import { ApiErrorAlert, Badge, Button, EyeToggleIcon, Input, Select } from '../common';
+import { ApiErrorAlert, Badge, Button, Input, Select } from '../common';
 
 type ChannelProtocol = 'openai' | 'deepseek' | 'gemini' | 'anthropic' | 'vertex_ai' | 'ollama';
 
@@ -171,7 +171,7 @@ interface ChannelRowProps {
   onUpdate: (index: number, field: keyof ChannelConfig, value: string | boolean) => void;
   onRemove: (index: number) => void;
   onToggleExpand: (index: number) => void;
-  onToggleKeyVisibility: (index: number) => void;
+  onToggleKeyVisibility: (index: number, nextVisible: boolean) => void;
   onTest: (channel: ChannelConfig, index: number) => void;
 }
 
@@ -274,7 +274,6 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
               disabled={busy}
               onChange={(e) => onUpdate(index, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
               placeholder="primary"
-              className="input-terminal"
             />
             <div className="space-y-2">
               <label className="block text-sm font-medium text-foreground">协议</label>
@@ -298,34 +297,20 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
                 ? '官方接口可留空'
                 : preset?.baseUrl || 'https://api.example.com/v1'
             }
-            className="input-terminal"
           />
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">API Key</label>
-            <div className="relative">
-              <input
-                type={visibleKey ? 'text' : 'password'}
-                className="input-terminal h-10 w-full rounded-xl border border-border/60 bg-card px-4 pr-12 text-sm text-foreground shadow-soft-card transition-all placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40 hover:border-border/80"
-                value={channel.apiKey}
-                disabled={busy}
-                onChange={(e) => onUpdate(index, 'apiKey', e.target.value)}
-                placeholder={channel.protocol === 'ollama' ? '本地 Ollama 可留空' : '支持多个 Key 逗号分隔'}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1 h-8 px-2"
-                disabled={busy}
-                onClick={() => onToggleKeyVisibility(index)}
-                title={visibleKey ? '隐藏' : '显示'}
-                aria-label={visibleKey ? '隐藏 API Key' : '显示 API Key'}
-              >
-                <EyeToggleIcon visible={visibleKey} />
-              </Button>
-            </div>
-          </div>
+          <Input
+            label="API Key"
+            type="password"
+            allowTogglePassword
+            iconType="key"
+            passwordVisible={visibleKey}
+            onPasswordVisibleChange={(nextVisible) => onToggleKeyVisibility(index, nextVisible)}
+            value={channel.apiKey}
+            disabled={busy}
+            onChange={(e) => onUpdate(index, 'apiKey', e.target.value)}
+            placeholder={channel.protocol === 'ollama' ? '本地 Ollama 可留空' : '支持多个 Key 逗号分隔'}
+          />
 
           <Input
             label="模型（逗号分隔）"
@@ -333,7 +318,6 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
             disabled={busy}
             onChange={(e) => onUpdate(index, 'models', e.target.value)}
             placeholder={preset?.placeholder || MODEL_PLACEHOLDERS[channel.protocol]}
-            className="input-terminal"
           />
 
           <div className="flex items-center gap-2 pt-1">
@@ -845,8 +829,8 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
     }
   };
 
-  const toggleKeyVisibility = (index: number) => {
-    setVisibleKeys((previous) => ({ ...previous, [index]: !previous[index] }));
+  const toggleKeyVisibility = (index: number, nextVisible: boolean) => {
+    setVisibleKeys((previous) => ({ ...previous, [index]: nextVisible }));
   };
 
   const toggleExpand = (index: number) => {

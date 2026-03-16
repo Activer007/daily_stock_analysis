@@ -116,7 +116,6 @@ export const AuthSettingsCard: React.FC = () => {
                 type="password"
                 allowTogglePassword
                 iconType="password"
-                className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 autoComplete="current-password"
@@ -132,7 +131,6 @@ export const AuthSettingsCard: React.FC = () => {
                   type="password"
                   allowTogglePassword
                   iconType="password"
-                  className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="new-password"
@@ -152,7 +150,6 @@ export const AuthSettingsCard: React.FC = () => {
                 type="password"
                 allowTogglePassword
                 iconType="password"
-                className="input-terminal transition-all duration-200 focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40"
                 value={passwordConfirm}
                 onChange={(event) => setPasswordConfirm(event.target.value)}
                 autoComplete="new-password"

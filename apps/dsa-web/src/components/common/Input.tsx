@@ -9,10 +9,14 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   error?: string;
   trailingAction?: React.ReactNode;
-  /** 启用内置的密码显隐切换功能 */
+  /** Enables the built-in password visibility toggle. */
   allowTogglePassword?: boolean;
-  /** 左侧装饰图标类型 */
+  /** Controls the leading icon style. */
   iconType?: 'password' | 'key' | 'none';
+  /** Allows external visibility state control. */
+  passwordVisible?: boolean;
+  /** Notifies the parent when visibility changes in controlled mode. */
+  onPasswordVisibleChange?: (visible: boolean) => void;
 }
 
 export const Input = ({ 
@@ -24,6 +28,8 @@ export const Input = ({
   trailingAction, 
   allowTogglePassword,
   iconType = 'none',
+  passwordVisible,
+  onPasswordVisibleChange,
   ...props 
 }: InputProps) => {
   const generatedId = useId();
@@ -33,13 +39,12 @@ export const Input = ({
   const describedBy = [props['aria-describedby'], errorId ?? hintId].filter(Boolean).join(' ') || undefined;
   const ariaInvalid = props['aria-invalid'] ?? (error ? true : undefined);
 
-  // 内部管理密码显隐状态
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  
   const isPasswordInput = props.type === 'password';
-  const effectiveType = isPasswordInput && allowTogglePassword && isPasswordVisible ? 'text' : props.type;
+  const isVisibilityControlled = typeof passwordVisible === 'boolean';
+  const visible = isVisibilityControlled ? passwordVisible : isPasswordVisible;
+  const effectiveType = isPasswordInput && allowTogglePassword && visible ? 'text' : props.type;
 
-  // 根据 iconType 选择图标
   const renderLeadingIcon = () => {
     if (iconType === 'password') {
       return <Lock className="h-4 w-4 text-muted-text/70" />;
@@ -51,6 +56,13 @@ export const Input = ({
   };
 
   const leadingIcon = renderLeadingIcon();
+  const inputStyle = error
+    ? {
+      ...props.style,
+      ['--input-surface-border-focus' as string]: 'rgba(225, 29, 72, 0.4)',
+      ['--input-surface-focus-ring' as string]: '0 0 0 4px rgba(225, 29, 72, 0.1)',
+    }
+    : props.style;
 
   const defaultTrailingAction = isPasswordInput && allowTogglePassword ? (
     <button
@@ -58,16 +70,22 @@ export const Input = ({
       className={cn(
         'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2',
         'hover:border-warning/40 hover:text-warning hover:shadow-[0_0_10px_rgba(255,170,0,0.15)]',
-        isPasswordVisible
+        visible
           ? 'border-warning/40 bg-warning/15 text-warning shadow-[0_0_10px_rgba(255,170,0,0.15)]'
           : 'border-white/10 bg-white/5 text-muted-text focus:ring-cyan/30'
       )}
-      onClick={() => setIsPasswordVisible((prev) => !prev)}
-      aria-label={isPasswordVisible ? '隐藏内容' : '显示内容'}
+      onClick={() => {
+        const nextVisible = !visible;
+        if (!isVisibilityControlled) {
+          setIsPasswordVisible(nextVisible);
+        }
+        onPasswordVisibleChange?.(nextVisible);
+      }}
+      aria-label={visible ? '隐藏内容' : '显示内容'}
       tabIndex={-1}
-      title={isPasswordVisible ? '隐藏' : '显示'}
+      title={visible ? '隐藏' : '显示'}
     >
-      <EyeToggleIcon visible={isPasswordVisible} />
+      <EyeToggleIcon visible={visible} />
     </button>
   ) : null;
 
@@ -86,12 +104,14 @@ export const Input = ({
           id={inputId}
           aria-describedby={describedBy}
           aria-invalid={ariaInvalid}
+          style={inputStyle}
           className={cn(
-            'h-11 w-full rounded-xl border border-white/10 bg-card px-4 text-sm text-foreground shadow-soft-card transition-all',
-            'placeholder:text-muted-text focus:outline-none focus:ring-4 focus:ring-cyan/15 focus:border-cyan/40',
-            error ? 'border-danger/30 focus:border-danger/40 focus:ring-danger/10' : 'hover:border-white/18',
+            'input-surface input-focus-glow h-11 w-full rounded-xl border bg-transparent px-4 text-sm transition-all',
+            'focus:outline-none',
+            error ? 'border-danger/30' : '',
             leadingIcon ? 'pl-10' : '',
             finalTrailingAction ? 'pr-12' : '',
+            'disabled:cursor-not-allowed disabled:opacity-60',
             className,
           )}
           {...props}
