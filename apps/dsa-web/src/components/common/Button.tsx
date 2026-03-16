@@ -18,12 +18,12 @@ const BUTTON_SIZE_STYLES = {
 } as const;
 
 const BUTTON_VARIANT_STYLES = {
-  primary: 'border border-cyan/30 bg-primary-gradient text-slate-950 shadow-lg shadow-cyan/20 hover:brightness-105',
-  secondary: 'border border-white/10 bg-card text-foreground shadow-soft-card hover:bg-hover',
+  primary: 'border border-cyan/30 bg-primary-gradient text-primary-foreground shadow-lg shadow-cyan/20 hover:brightness-105',
+  secondary: 'border border-border/70 bg-card text-foreground shadow-soft-card hover:bg-hover',
   outline: 'border border-cyan/25 bg-transparent text-cyan hover:bg-cyan/10',
-  ghost: 'border border-transparent bg-transparent text-secondary-text hover:bg-white/5 hover:text-foreground',
-  gradient: 'border border-cyan/20 bg-gradient-to-r from-cyan to-purple text-white shadow-lg shadow-cyan/20 hover:brightness-105',
-  danger: 'border border-danger/40 bg-danger text-white shadow-lg shadow-danger/20 hover:brightness-105',
+  ghost: 'border border-transparent bg-transparent text-secondary-text hover:bg-hover hover:text-foreground',
+  gradient: 'border border-cyan/20 bg-gradient-to-r from-cyan to-purple text-primary-foreground shadow-lg shadow-cyan/20 hover:brightness-105',
+  danger: 'border border-danger/40 bg-danger text-destructive-foreground shadow-lg shadow-danger/20 hover:brightness-105',
 } as const;
 
 /**
@@ -38,12 +38,16 @@ export const Button: React.FC<ButtonProps> = ({
   glow = false,
   className = '',
   disabled,
+  type = 'button',
   ...props
 }) => {
   const glowStyles = glow ? 'shadow-glow-cyan hover:shadow-[0_0_30px_rgba(0,212,255,0.38)]' : '';
 
   return (
     <button
+      type={type}
+      aria-busy={isLoading || undefined}
+      data-variant={variant}
       className={cn(
         'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200',
         'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan/15 focus-visible:ring-offset-0',
