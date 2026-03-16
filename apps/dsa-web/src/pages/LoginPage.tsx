@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex flex-col items-center justify-center mb-8"
+          className="flex flex-col items-center justify-center mb-10"
         >
           {/* Logo Icon */}
           <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0B0E14] border border-slate-800 shadow-[0_0_30px_rgba(6,182,212,0.15)] group">
@@ -105,14 +105,24 @@ const LoginPage: React.FC = () => {
             <TrendingUp className="absolute h-3.5 w-3.5 text-emerald-400 translate-x-2.5 translate-y-2.5 opacity-90" />
           </div>
 
+          <div className="mt-8 flex flex-col items-center">
+            <h2 className="text-4xl font-extrabold tracking-tighter text-white sm:text-5xl">
+              <span className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">DAILY </span>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent shadow-cyan-500/20 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">STOCK</span>
+            </h2>
+            <h3 className="mt-1 text-lg font-bold tracking-[0.4em] text-slate-500 uppercase">
+              Analysis Engine
+            </h3>
+          </div>
+
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="mt-4 flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 px-3 py-1 text-[10px] font-medium text-cyan-300 backdrop-blur-sm"
+            className="mt-6 flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/5 px-3 py-1 text-[10px] font-medium text-cyan-300 backdrop-blur-sm"
           >
-            <Network className="h-5 w-5" />
-            <span>DAILY STOCK ANALYSIS</span>
+            <Network className="h-3 w-3" />
+            <span>V3.0 QUANTITATIVE SYSTEM</span>
           </motion.div>
         </motion.div>
 
@@ -215,7 +225,7 @@ const LoginPage: React.FC = () => {
                       <span>{isFirstTime ? '初始化中...' : '正在建立连接...'}</span>
                     </>
                   ) : (
-                    <span>{isFirstTime ? '完成设置并登录' : '登 录'}</span>
+                    <span>{isFirstTime ? '完成设置并登录' : '授权进入工作台'}</span>
                   )}
                 </div>
                 {/* Button shine effect */}
