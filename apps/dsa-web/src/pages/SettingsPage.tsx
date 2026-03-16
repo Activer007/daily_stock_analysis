@@ -121,7 +121,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-full px-4 pb-6 pt-4 md:px-6">
-      <div className="mb-5 rounded-[1.7rem] border border-border/50 bg-card/94 px-5 py-5 shadow-soft-card-strong">
+      <div className="mb-5 rounded-xl bg-card/50 px-5 py-5 shadow-soft-card-strong">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-foreground">系统设置</h1>

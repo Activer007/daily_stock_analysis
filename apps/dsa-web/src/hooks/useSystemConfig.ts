@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createParsedApiError, getParsedApiError, type ParsedApiError } from '../api/error';
 import { systemConfigApi, SystemConfigConflictError, SystemConfigValidationError } from '../api/systemConfig';
 import type {
@@ -81,6 +81,7 @@ export function useSystemConfig() {
   const [loadError, setLoadError] = useState<ParsedApiError | null>(null);
   const [saveError, setSaveError] = useState<ParsedApiError | null>(null);
   const [retryAction, setRetryAction] = useState<RetryAction>(null);
+  const serverItemByKeyRef = useRef<Record<string, SystemConfigItem>>({});
 
   const mergedItems = useMemo(() => {
     return sortItemsByOrder(
@@ -96,6 +97,7 @@ export function useSystemConfig() {
     for (const item of serverItems) {
       map[item.key] = item;
     }
+    serverItemByKeyRef.current = map;
     return map;
   }, [serverItems]);
 
@@ -173,7 +175,7 @@ export function useSystemConfig() {
       options?: { preserveDirty?: boolean; committedKeys?: string[] },
     ) => {
       const sorted = sortItemsByOrder(items);
-      const previousServerMap = serverItemByKey;
+      const previousServerMap = serverItemByKeyRef.current;
       const committedKeys = new Set(options?.committedKeys ?? []);
       const preserveDirty = options?.preserveDirty ?? false;
 
@@ -209,7 +211,7 @@ export function useSystemConfig() {
       });
       setValidationIssues([]);
     },
-    [serverItemByKey],
+    [],
   );
 
   const load = useCallback(async () => {
