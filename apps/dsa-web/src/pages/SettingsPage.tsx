@@ -18,6 +18,12 @@ import type { SystemConfigCategory } from '../types/systemConfig';
 
 const SettingsPage: React.FC = () => {
   const { passwordChangeable } = useAuth();
+
+  // Set page title
+  useEffect(() => {
+    document.title = '系统设置 - DSA';
+  }, []);
+
   const {
     categories,
     itemsByCategory,

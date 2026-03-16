@@ -77,6 +77,11 @@ function formatBrokerLabel(value: string, displayName?: string): string {
 }
 
 const PortfolioPage: React.FC = () => {
+  // Set page title
+  useEffect(() => {
+    document.title = '持仓分析 - DSA';
+  }, []);
+
   const [accounts, setAccounts] = useState<PortfolioAccountItem[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AccountOption>('all');
   const [showCreateAccount, setShowCreateAccount] = useState(false);

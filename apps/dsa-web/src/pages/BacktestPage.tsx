@@ -109,6 +109,11 @@ const RunSummary: React.FC<{ data: BacktestRunResponse }> = ({ data }) => (
 // ============ Main Page ============
 
 const BacktestPage: React.FC = () => {
+  // Set page title
+  useEffect(() => {
+    document.title = '策略回测 - DSA';
+  }, []);
+
   // Input state
   const [codeFilter, setCodeFilter] = useState('');
   const [evalDays, setEvalDays] = useState('');

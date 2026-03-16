@@ -12,6 +12,11 @@ import { SettingsAlert } from '../components/settings';
 const LoginPage: React.FC = () => {
   const { login, passwordSet, setupState } = useAuth();
   const navigate = useNavigate();
+
+  // Set page title
+  useEffect(() => {
+    document.title = '登录 - DSA';
+  }, []);
   const [searchParams] = useSearchParams();
   const rawRedirect = searchParams.get('redirect') ?? '';
   const redirect =

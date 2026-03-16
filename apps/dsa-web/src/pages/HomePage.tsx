@@ -26,6 +26,11 @@ const HomePage: React.FC = () => {
   } = useAnalysisStore();
   const navigate = useNavigate();
 
+  // Set page title
+  useEffect(() => {
+    document.title = '每日选股分析 - DSA';
+  }, []);
+
   // Input state
   const [stockCode, setStockCode] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);

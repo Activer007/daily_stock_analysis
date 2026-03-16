@@ -55,6 +55,11 @@ const ChatPage: React.FC = () => {
   const shouldStickToBottomRef = useRef(true);
   const pendingScrollBehaviorRef = useRef<ScrollBehavior>('auto');
 
+  // Set page title
+  useEffect(() => {
+    document.title = '策略问股 - DSA';
+  }, []);
+
   const {
     messages,
     loading,
