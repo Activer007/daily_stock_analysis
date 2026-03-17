@@ -114,8 +114,8 @@ class TestFundamentalContext(unittest.TestCase):
         )
         manager = DataFetcherManager(fetchers=[efinance, tushare, akshare])
         top, bottom = manager.get_sector_rankings(1)
-        self.assertEqual(top[0]["name"], "半导体")
-        self.assertEqual(bottom[0]["name"], "消费")
+        self.assertEqual(top[0]["name"], "地产")
+        self.assertEqual(bottom[0]["name"], "煤炭")
 
     def test_fundamental_context_aggregates_blocks(self) -> None:
         manager = DataFetcherManager(fetchers=[])

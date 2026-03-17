@@ -259,7 +259,7 @@ daily_stock_analysis/
 >   - `get_stock_info.belong_boards` = 个股所属板块列表；
 >   - `get_stock_info.boards` 为兼容别名，值与 `belong_boards` 相同（未来仅在大版本考虑移除）；
 >   - `get_stock_info.sector_rankings` 与 `fundamental_context.boards.data` 保持一致。
-> - 板块涨跌榜使用固定回退顺序：`AkShare(EM->Sina) -> Tushare -> efinance`（为稳定性有意固定，不跟全局 priority 走）。
+> - 板块涨跌榜使用数据源顺序：与全局 priority 一致。
 > - 超时控制为 `best-effort` 软超时：阶段会按预算快速降级继续执行，但不保证硬中断底层三方调用。
 > - `FUNDAMENTAL_STAGE_TIMEOUT_SECONDS=1.5` 表示新增基本面阶段的目标预算，不是严格硬 SLA。
 > - 若要硬 SLA，请在后续版本升级为子进程隔离执行并在超时后强制终止。
@@ -936,6 +936,7 @@ A: 检查是否启用了 Actions，以及 cron 表达式是否正确（注意是
 
 ### Error and stability semantics
 - `trade_uid` unique conflict returns `409` (API conflict semantics).
+- sell writes now validate available quantity before insert; oversell is rejected with `409 portfolio_oversell`.
 - Snapshot write path is atomic for positions/lots/daily snapshot.
 - FX conversion keeps fail-open behavior (fallback 1:1 with stale marker) to avoid pipeline interruption.
 
@@ -1003,6 +1004,10 @@ A: 检查是否启用了 Actions，以及 cron 表达式是否正确（注意是
   - `GET /api/v1/portfolio/trades`
   - `GET /api/v1/portfolio/cash-ledger`
   - `GET /api/v1/portfolio/corporate-actions`
+- Added event delete endpoints:
+  - `DELETE /api/v1/portfolio/trades/{trade_id}`
+  - `DELETE /api/v1/portfolio/cash-ledger/{entry_id}`
+  - `DELETE /api/v1/portfolio/corporate-actions/{action_id}`
 - Unified query parameters:
   - `account_id`, `date_from`, `date_to`, `page`, `page_size`
 - Trade/cash/corporate-action specific filters:
@@ -1024,6 +1029,7 @@ A: 检查是否启用了 Actions，以及 cron 表达式是否正确（注意是
   - manual event entry forms: trade / cash / corporate action
   - CSV parse + commit operations (supports `dry_run`)
   - event list panel with filters and pagination
+  - single-account scoped event deletion for trade / cash / corporate action correction
   - broker selector fallback to built-in brokers (`huatai/citic/cmb`) when broker list API fails or returns empty
 
 ### Risk sector concentration semantics
