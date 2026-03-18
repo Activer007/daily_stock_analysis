@@ -20,13 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 新增 Ollama 本地模型配置说明，同步更新 README.md 与 docs/README_EN.md（Fixes #690）
 - 完善 Ollama 配置说明：`docs/full-guide.md` / `docs/full-guide_EN.md` 环境变量表与 Note 补充 `OLLAMA_API_BASE`，避免英文用户误以为 Ollama 不能作为独立配置入口；合并重复的 `OLLAMA_API_BASE` 条目为单一条目
 
-### 变更
+### Changed
 
-- 🧭 **Dashboard 状态管理收口**（Refs #602）— 首页改为以 `stockPoolStore` 为唯一业务状态源，统一收口历史列表、报告切换、任务同步、轮询刷新与 Markdown 抽屉；Dashboard 到 Chat 的追问 AI 链路改为通过 report context bridge 传递历史分析上下文。
-
-### 测试
-
-- 🧪 **Dashboard 回归与 smoke 补强** — 补充 `HomePage`、`ChatPage`、`stockPoolStore`、`AuthContext`、`useDashboardLifecycle`、`useTaskStream` 等前端回归测试，并验证 `lint`、`test`、`build`、`test:smoke` 通过。
+- **Dashboard state slice and workspace closure** — moved Home / Dashboard state into `stockPoolStore`, consolidated history selection, report loading, task syncing, polling refresh, and markdown drawer handling under a single state slice.
+- **Dashboard panel standardization** — kept the current dashboard layout contract stable while unifying history, report, news, and markdown presentation with shared tokens, standardized states, and bounded in-panel scrolling for the history list.
+- **Dashboard-to-chat follow-up bridge** — routed “Ask AI” follow-ups through report-context hydration instead of direct cross-page state coupling, while keeping chat sends usable when enriched history context is still loading.
+- **Frontend regression coverage for PR7** — expanded targeted tests for `HomePage`, `ChatPage`, `stockPoolStore`, `AuthContext`, `useDashboardLifecycle`, `useTaskStream`, and history interactions, and validated lint, full web tests, build, and Playwright smoke coverage.
 
 ## [3.8.0] - 2026-03-17
 
