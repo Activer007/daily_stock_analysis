@@ -49,20 +49,20 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 8 }) =
   }
 
   return (
-    <Card variant="bordered" padding="md">
+    <Card variant="bordered" padding="md" className="home-panel-card">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <span className="label-uppercase">NEWS FEED</span>
-          <h3 className="text-base font-semibold text-white">相关资讯</h3>
+          <h3 className="text-base font-semibold text-foreground">相关资讯</h3>
         </div>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <div className="w-3.5 h-3.5 border-2 border-cyan/20 border-t-cyan rounded-full animate-spin" />
+            <div className="home-spinner h-3.5 w-3.5 animate-spin border-2" />
           )}
           <button
             type="button"
             onClick={fetchNews}
-            className="text-xs text-cyan hover:text-white transition-colors"
+            className="home-accent-link text-xs"
           >
             刷新
           </button>
@@ -79,7 +79,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 8 }) =
 
       {isLoading && !error && (
         <div className="flex items-center gap-2 text-xs text-secondary-text">
-          <div className="w-4 h-4 border-2 border-cyan/20 border-t-cyan rounded-full animate-spin" />
+          <div className="home-spinner h-4 w-4 animate-spin border-2" />
           加载资讯中...
         </div>
       )}
@@ -93,11 +93,11 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 8 }) =
           {items.map((item, index) => (
             <div
               key={`${item.title}-${index}`}
-              className="group rounded-xl border border-white/6 bg-elevated/75 p-4 transition-colors hover:border-cyan/25 hover:bg-hover"
+              className="home-subpanel group p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium leading-6 text-white text-left">
+                  <p className="text-sm font-medium leading-6 text-foreground text-left">
                     {item.title}
                   </p>
                   {item.snippet && (
@@ -111,7 +111,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 8 }) =
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-cyan/18 bg-cyan/10 px-2.5 py-1 text-xs text-cyan transition-colors hover:border-cyan/30 hover:text-white"
+                    className="home-accent-pill-link shrink-0 whitespace-nowrap px-2.5 py-1 text-xs"
                   >
                     跳转
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
