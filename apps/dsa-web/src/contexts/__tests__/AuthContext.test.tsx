@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApiError, createParsedApiError } from '../../api/error';
 import { AuthProvider, useAuth } from '../AuthContext';
 
-const { getStatus, login, changePassword, logout } = vi.hoisted(() => ({
+const { getStatus, login, changePassword, logout, resetDashboardState } = vi.hoisted(() => ({
   getStatus: vi.fn(),
   login: vi.fn(),
   changePassword: vi.fn(),
   logout: vi.fn(),
+  resetDashboardState: vi.fn(),
 }));
 
 vi.mock('../../api/auth', () => ({
@@ -16,6 +17,14 @@ vi.mock('../../api/auth', () => ({
     login,
     changePassword,
     logout,
+  },
+}));
+
+vi.mock('../../stores', () => ({
+  useStockPoolStore: {
+    getState: () => ({
+      resetDashboardState,
+    }),
   },
 }));
 
@@ -96,6 +105,7 @@ describe('AuthContext', () => {
     fireEvent.click(screen.getByRole('button', { name: 'trigger-logout' }));
 
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('logged-out'));
+    expect(resetDashboardState).toHaveBeenCalled();
   });
 
   it('treats a 401 logout as already signed out after status refresh', async () => {
@@ -137,5 +147,6 @@ describe('AuthContext', () => {
     fireEvent.click(screen.getByRole('button', { name: 'trigger-logout' }));
 
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('logged-out'));
+    expect(resetDashboardState).toHaveBeenCalled();
   });
 });

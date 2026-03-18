@@ -1,7 +1,18 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { historyApi } from '../../api/history';
 import ChatPage from '../ChatPage';
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 const mockLoadSessions = vi.fn();
 const mockLoadInitialSession = vi.fn();
@@ -126,5 +137,101 @@ describe('ChatPage', () => {
 
     fireEvent.click(sessionCard);
     expect(mockSwitchSession).toHaveBeenCalledWith('session-1');
+  });
+
+  it('hydrates follow-up context from dashboard report params before sending', async () => {
+    const deferred = createDeferred<Awaited<ReturnType<typeof historyApi.getDetail>>>();
+
+    vi.mocked(historyApi.getDetail).mockImplementation(() => deferred.promise);
+
+    render(
+      <MemoryRouter initialEntries={['/chat?stock=600519&name=%E8%B4%B5%E5%B7%9E%E8%8C%85%E5%8F%B0&recordId=1']}>
+        <ChatPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByDisplayValue('请深入分析 贵州茅台(600519)')).toBeInTheDocument();
+
+    const sendButton = screen.getByRole('button', { name: /发送|处理中\.\.\./ });
+    expect(sendButton).toBeDisabled();
+    expect(screen.getByText('正在加载历史分析上下文，完成后即可发送追问。')).toBeInTheDocument();
+
+    fireEvent.click(sendButton);
+    expect(mockStartStream).not.toHaveBeenCalled();
+
+    deferred.resolve({
+      meta: {
+        id: 1,
+        queryId: 'q-1',
+        stockCode: '600519',
+        stockName: '贵州茅台',
+        reportType: 'detailed',
+        createdAt: '2026-03-18T08:00:00Z',
+        currentPrice: 1523.6,
+        changePct: 1.8,
+      },
+      summary: {
+        analysisSummary: '趋势延续',
+        operationAdvice: '继续观察',
+        trendPrediction: '高位震荡',
+        sentimentScore: 78,
+      },
+      strategy: {
+        stopLoss: '1450',
+      },
+    });
+
+    const readySendButton = await screen.findByRole('button', { name: '发送' });
+    expect(readySendButton).not.toBeDisabled();
+
+    fireEvent.click(readySendButton);
+
+    await waitFor(() => {
+      expect(mockStartStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: '请深入分析 贵州茅台(600519)',
+          context: expect.objectContaining({
+            stock_code: '600519',
+            stock_name: '贵州茅台',
+            previous_price: 1523.6,
+            previous_change_pct: 1.8,
+            previous_strategy: expect.objectContaining({
+              stopLoss: '1450',
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          strategyName: '趋势分析',
+        }),
+      );
+    });
+  });
+
+  it('falls back to base stock context when recordId is missing', async () => {
+    render(
+      <MemoryRouter initialEntries={['/chat?stock=AAPL']}>
+        <ChatPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByDisplayValue('请深入分析 AAPL')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() => {
+      expect(mockStartStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: '请深入分析 AAPL',
+          context: {
+            stock_code: 'AAPL',
+            stock_name: null,
+          },
+        }),
+        expect.objectContaining({
+          strategyName: '趋势分析',
+        }),
+      );
+    });
+    expect(historyApi.getDetail).not.toHaveBeenCalled();
   });
 });
