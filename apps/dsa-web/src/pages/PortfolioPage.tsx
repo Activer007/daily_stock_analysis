@@ -568,7 +568,7 @@ const PortfolioPage: React.FC = () => {
     <div className="min-h-screen p-4 md:p-6 space-y-4">
       <section className="space-y-3">
         <div className="space-y-2">
-          <h1 className="text-xl md:text-2xl font-semibold text-white">持仓管理</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground">持仓管理</h1>
           <p className="text-xs md:text-sm text-secondary">
             组合快照、手工录入、CSV 导入与风险分析（支持全组合 / 单账户切换）
           </p>
@@ -642,7 +642,7 @@ const PortfolioPage: React.FC = () => {
       {(showCreateAccount || !hasAccounts) ? (
         <Card padding="md">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-white">新建账户</h2>
+            <h2 className="text-sm font-semibold text-foreground">新建账户</h2>
             {hasAccounts ? (
               <button
                 type="button"
@@ -707,15 +707,15 @@ const PortfolioPage: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         <Card variant="gradient" padding="md">
           <p className="text-xs text-secondary">总权益</p>
-          <p className="mt-1 text-xl font-semibold text-white">{formatMoney(snapshot?.totalEquity, snapshot?.currency || 'CNY')}</p>
+          <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(snapshot?.totalEquity, snapshot?.currency || 'CNY')}</p>
         </Card>
         <Card variant="gradient" padding="md">
           <p className="text-xs text-secondary">总市值</p>
-          <p className="mt-1 text-xl font-semibold text-white">{formatMoney(snapshot?.totalMarketValue, snapshot?.currency || 'CNY')}</p>
+          <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(snapshot?.totalMarketValue, snapshot?.currency || 'CNY')}</p>
         </Card>
         <Card variant="gradient" padding="md">
           <p className="text-xs text-secondary">总现金</p>
-          <p className="mt-1 text-xl font-semibold text-white">{formatMoney(snapshot?.totalCash, snapshot?.currency || 'CNY')}</p>
+          <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(snapshot?.totalCash, snapshot?.currency || 'CNY')}</p>
         </Card>
         <Card variant="gradient" padding="md">
           <p className="text-xs text-secondary">汇率状态</p>
@@ -726,7 +726,7 @@ const PortfolioPage: React.FC = () => {
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
         <Card className="xl:col-span-2" padding="md">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-white">持仓明细</h2>
+            <h2 className="text-sm font-semibold text-foreground">持仓明细</h2>
             <span className="text-xs text-secondary">共 {positionRows.length} 项</span>
           </div>
           {positionRows.length === 0 ? (
@@ -749,7 +749,7 @@ const PortfolioPage: React.FC = () => {
                   {positionRows.map((row) => (
                     <tr key={`${row.accountId}-${row.symbol}-${row.market}`} className="border-b border-white/5">
                       <td className="py-2 pr-2 text-secondary">{row.accountName}</td>
-                      <td className="py-2 pr-2 font-mono text-white">{row.symbol}</td>
+                      <td className="py-2 pr-2 font-mono text-foreground">{row.symbol}</td>
                       <td className="py-2 pr-2 text-right">{row.quantity.toFixed(2)}</td>
                       <td className="py-2 pr-2 text-right">{row.avgCost.toFixed(4)}</td>
                       <td className="py-2 pr-2 text-right">{row.lastPrice.toFixed(4)}</td>
@@ -766,7 +766,7 @@ const PortfolioPage: React.FC = () => {
         </Card>
 
         <Card padding="md">
-          <h2 className="text-sm font-semibold text-white mb-3">{concentrationMode === 'sector' ? '行业集中度分布' : '行业数据暂不可用，当前展示个股集中度'}</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{concentrationMode === 'sector' ? '行业集中度分布' : '行业数据暂不可用，当前展示个股集中度'}</h2>
           {concentrationPieData.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -800,7 +800,7 @@ const PortfolioPage: React.FC = () => {
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-2">回撤监控</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">回撤监控</h3>
           <div className="text-xs text-secondary space-y-1">
             <div>最大回撤: {formatPct(risk?.drawdown?.maxDrawdownPct)}</div>
             <div>当前回撤: {formatPct(risk?.drawdown?.currentDrawdownPct)}</div>
@@ -808,7 +808,7 @@ const PortfolioPage: React.FC = () => {
           </div>
         </Card>
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-2">止损接近预警</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">止损接近预警</h3>
           <div className="text-xs text-secondary space-y-1">
             <div>触发数: {risk?.stopLoss?.triggeredCount ?? 0}</div>
             <div>接近数: {risk?.stopLoss?.nearCount ?? 0}</div>
@@ -816,7 +816,7 @@ const PortfolioPage: React.FC = () => {
           </div>
         </Card>
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-2">口径</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">口径</h3>
           <div className="text-xs text-secondary space-y-1">
             <div>账户数: {snapshot?.accountCount ?? 0}</div>
             <div>计价币种: {snapshot?.currency || 'CNY'}</div>
@@ -827,7 +827,7 @@ const PortfolioPage: React.FC = () => {
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-3">
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-3">手工录入：交易</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">手工录入：交易</h3>
           <form className="space-y-2" onSubmit={handleTradeSubmit}>
             <input className="input-terminal w-full text-sm" placeholder="股票代码（例如 600519）" value={tradeForm.symbol}
               onChange={(e) => setTradeForm((prev) => ({ ...prev, symbol: e.target.value }))} required />
@@ -858,7 +858,7 @@ const PortfolioPage: React.FC = () => {
         </Card>
 
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-3">手工录入：资金流水</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">手工录入：资金流水</h3>
           <form className="space-y-2" onSubmit={handleCashSubmit}>
             <div className="grid grid-cols-2 gap-2">
               <input className="input-terminal text-sm" type="date" value={cashForm.eventDate}
@@ -878,7 +878,7 @@ const PortfolioPage: React.FC = () => {
         </Card>
 
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-3">手工录入：公司行为</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">手工录入：公司行为</h3>
           <form className="space-y-2" onSubmit={handleCorporateSubmit}>
             <input className="input-terminal w-full text-sm" placeholder="股票代码" value={corpForm.symbol}
               onChange={(e) => setCorpForm((prev) => ({ ...prev, symbol: e.target.value }))} required />
@@ -907,7 +907,7 @@ const PortfolioPage: React.FC = () => {
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-3">券商 CSV 导入</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">券商 CSV 导入</h3>
           <div className="space-y-2">
             {brokerLoadWarning ? (
               <div className="text-xs text-amber-300 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-1">
@@ -955,7 +955,7 @@ const PortfolioPage: React.FC = () => {
         </Card>
 
         <Card padding="md">
-          <h3 className="text-sm font-semibold text-white mb-3">事件记录</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">事件记录</h3>
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <select className="input-terminal text-sm" value={eventType} onChange={(e) => setEventType(e.target.value as EventType)}>

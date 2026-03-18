@@ -6,23 +6,15 @@ import { agentApi } from '../api/agent';
 import { ApiErrorAlert, Button, ConfirmDialog, ScrollArea } from '../components/common';
 import { getParsedApiError } from '../api/error';
 import type { StrategyInfo } from '../api/agent';
-import { historyApi } from '../api/history';
 import {
   useAgentChatStore,
   type Message,
   type ProgressStep,
 } from '../stores/agentChatStore';
 import { downloadSession, formatSessionAsMarkdown } from '../utils/chatExport';
+import type { ChatFollowUpContext } from '../utils/chatFollowUp';
+import { buildFollowUpPrompt, resolveChatFollowUpContext } from '../utils/chatFollowUp';
 import { isNearBottom } from '../utils/chatScroll';
-
-interface FollowUpContext {
-  stock_code: string;
-  stock_name: string | null;
-  previous_analysis_summary?: unknown;
-  previous_strategy?: unknown;
-  previous_price?: number;
-  previous_change_pct?: number;
-}
 
 // Quick question examples shown on empty state
 const QUICK_QUESTIONS = [
@@ -44,6 +36,7 @@ const ChatPage: React.FC = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [isFollowUpContextLoading, setIsFollowUpContextLoading] = useState(false);
   const [sendToast, setSendToast] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -51,13 +44,18 @@ const ChatPage: React.FC = () => {
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialFollowUpHandled = useRef(false);
-  const followUpContextRef = useRef<FollowUpContext | null>(null);
+  const isMountedRef = useRef(true);
+  const followUpContextRef = useRef<ChatFollowUpContext | null>(null);
   const shouldStickToBottomRef = useRef(true);
   const pendingScrollBehaviorRef = useRef<ScrollBehavior>('auto');
 
   // Set page title
   useEffect(() => {
     document.title = '策略问股 - DSA';
+  }, []);
+
+  useEffect(() => () => {
+    isMountedRef.current = false;
   }, []);
 
   const {
@@ -172,20 +170,28 @@ const ChatPage: React.FC = () => {
     const recordId = searchParams.get('recordId');
     if (stock) {
       initialFollowUpHandled.current = true;
-      const displayName = name ? `${name}(${stock})` : stock;
-      setInput(`请深入分析 ${displayName}`);
+      setInput(buildFollowUpPrompt(stock, name));
+      followUpContextRef.current = {
+        stock_code: stock,
+        stock_name: name,
+      };
       if (recordId) {
-        historyApi.getDetail(Number(recordId)).then((report) => {
-          const ctx: FollowUpContext = { stock_code: stock, stock_name: name };
-          if (report.summary) ctx.previous_analysis_summary = report.summary;
-          if (report.strategy) ctx.previous_strategy = report.strategy;
-          if (report.meta) {
-            ctx.previous_price = report.meta.currentPrice;
-            ctx.previous_change_pct = report.meta.changePct;
-          }
-          followUpContextRef.current = ctx;
-        }).catch(() => {});
+        setIsFollowUpContextLoading(true);
       }
+      void resolveChatFollowUpContext({
+        stockCode: stock,
+        stockName: name,
+        recordId: recordId ? Number(recordId) : undefined,
+      }).then((context) => {
+        if (!isMountedRef.current) {
+          return;
+        }
+        followUpContextRef.current = context;
+      }).finally(() => {
+        if (isMountedRef.current) {
+          setIsFollowUpContextLoading(false);
+        }
+      });
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -193,7 +199,7 @@ const ChatPage: React.FC = () => {
   const handleSend = useCallback(
     async (overrideMessage?: string, overrideStrategy?: string) => {
       const msgText = overrideMessage || input.trim();
-      if (!msgText || loading) return;
+      if (!msgText || loading || isFollowUpContextLoading) return;
       const usedStrategy = overrideStrategy || selectedStrategy;
       const usedStrategyName =
         strategies.find((s) => s.id === usedStrategy)?.name ||
@@ -211,12 +217,13 @@ const ChatPage: React.FC = () => {
       requestScrollToBottom('smooth');
       await startStream(payload, { strategyName: usedStrategyName });
     },
-    [input, loading, requestScrollToBottom, selectedStrategy, strategies, sessionId, startStream],
+    [input, isFollowUpContextLoading, loading, requestScrollToBottom, selectedStrategy, strategies, sessionId, startStream],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      if (isFollowUpContextLoading) return;
       handleSend();
     }
   };
@@ -332,7 +339,7 @@ const ChatPage: React.FC = () => {
         </h2>
         <button
           onClick={handleStartNewChat}
-          className="rounded-lg p-1.5 text-muted-text transition-all hover:bg-white/10 hover:text-white"
+          className="rounded-lg p-1.5 text-muted-text transition-all hover:bg-white/10 hover:text-foreground"
           title="开启新对话"
         >
           <svg
@@ -377,7 +384,7 @@ const ChatPage: React.FC = () => {
                 aria-label={`切换到对话 ${s.title}`}
               >
                 {/* 装饰条 */}
-                <div 
+                <div
                   className={`h-10 w-1 rounded-full flex-shrink-0 transition-colors ${
                     s.session_id === sessionId ? 'bg-cyan' : 'bg-white/10'
                   }`}
@@ -387,7 +394,7 @@ const ChatPage: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <span className={`block truncate text-sm font-semibold tracking-tight transition-colors ${
-                        s.session_id === sessionId ? 'text-white' : 'text-secondary-text group-hover:text-white'
+                        s.session_id === sessionId ? 'text-foreground' : 'text-secondary-text group-hover:text-foreground'
                       }`}>
                         {s.title}
                       </span>
@@ -677,7 +684,7 @@ const ChatPage: React.FC = () => {
                   <div
                     className={`min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden rounded-2xl px-5 py-3.5 ${
                       msg.role === 'user'
-                        ? 'bg-cyan/10 text-white border border-cyan/20 rounded-tr-sm'
+                        ? 'bg-cyan/10 text-foreground border border-cyan/20 rounded-tr-sm'
                         : 'bg-card/72 text-secondary-text border border-white/30 rounded-tl-sm'
                     }`}
                   >
@@ -831,7 +838,7 @@ const ChatPage: React.FC = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="例如：分析 600519 / 茅台现在适合买入吗？ (Enter 发送, Shift+Enter 换行)"
-                disabled={loading}
+                disabled={loading || isFollowUpContextLoading}
                 rows={1}
                 className="input-terminal flex-1 min-h-[44px] max-h-[200px] py-2.5 resize-none"
                 style={{ height: 'auto' }}
@@ -844,13 +851,18 @@ const ChatPage: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading}
-                isLoading={loading}
+                disabled={!input.trim() || loading || isFollowUpContextLoading}
+                isLoading={loading || isFollowUpContextLoading}
                 className="h-[44px] px-6 flex-shrink-0"
               >
                 发送
               </Button>
             </div>
+            {isFollowUpContextLoading && (
+              <p className="mt-2 text-xs text-secondary-text">
+                正在加载历史分析上下文，完成后即可发送追问。
+              </p>
+            )}
           </div>
         </div>
       </div>
