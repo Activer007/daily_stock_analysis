@@ -88,10 +88,11 @@ describe('AuthContext', () => {
         passwordChangeable: true,
       })
       .mockResolvedValueOnce({
-        authEnabled: false,
+        authEnabled: true,
         loggedIn: false,
-        passwordSet: false,
-        passwordChangeable: false,
+        passwordSet: true,
+        passwordChangeable: true,
+        setupState: 'enabled',
       });
     logout.mockResolvedValue(undefined);
 
@@ -106,6 +107,25 @@ describe('AuthContext', () => {
 
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('logged-out'));
     expect(resetDashboardState).toHaveBeenCalled();
+  });
+
+  it('does not reset dashboard state when auth is disabled', async () => {
+    getStatus.mockResolvedValueOnce({
+      authEnabled: false,
+      loggedIn: false,
+      passwordSet: false,
+      passwordChangeable: false,
+      setupState: 'no_password',
+    });
+
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    await screen.findByTestId('status');
+    expect(resetDashboardState).not.toHaveBeenCalled();
   });
 
   it('treats a 401 logout as already signed out after status refresh', async () => {
