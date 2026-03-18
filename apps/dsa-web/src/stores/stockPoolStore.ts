@@ -19,6 +19,7 @@ type FetchHistoryOptions = {
 
 let reportRequestSeq = 0;
 let analyzeRequestSeq = 0;
+let historyRequestSeq = 0;
 const dismissedTaskIds = new Set<string>();
 
 export interface StockPoolState {
@@ -96,6 +97,7 @@ async function fetchHistory(
   const { autoSelectFirst = false, reset = true, silent = false } = options;
   const currentState = get();
   const page = reset ? 1 : currentState.currentPage + 1;
+  const requestId = ++historyRequestSeq;
 
   if (!silent) {
     set(
@@ -107,6 +109,9 @@ async function fetchHistory(
 
   try {
     const response = await historyApi.getList(buildHistoryParams(page));
+    if (requestId !== historyRequestSeq) {
+      return null;
+    }
 
     if (silent && reset) {
       const existingIds = new Set(get().historyItems.map((item) => item.id));
@@ -142,15 +147,19 @@ async function fetchHistory(
 
     return response;
   } catch (error) {
+    if (requestId !== historyRequestSeq) {
+      return null;
+    }
     set({ error: getParsedApiError(error) });
     return null;
   } finally {
-    set({
-      isLoadingHistory: false,
-      isLoadingMore: false,
-    });
+    if (requestId === historyRequestSeq) {
+      set({
+        isLoadingHistory: false,
+        isLoadingMore: false,
+      });
+    }
   }
-
 }
 
 export const useStockPoolStore = create<StockPoolState>((set, get) => ({
@@ -361,6 +370,7 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
   },
 
   resetDashboardState: () => {
+    historyRequestSeq += 1;
     reportRequestSeq = 0;
     analyzeRequestSeq = 0;
     dismissedTaskIds.clear();

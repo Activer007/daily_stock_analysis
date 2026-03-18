@@ -48,6 +48,16 @@ const historyReport = {
   },
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('stockPoolStore', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -131,6 +141,34 @@ describe('stockPoolStore', () => {
 
     const state = useStockPoolStore.getState();
     expect(state.historyItems.map((item) => item.id)).toEqual([2, 1]);
+    expect(state.currentPage).toBe(1);
+  });
+
+  it('ignores late history responses after dashboard reset', async () => {
+    const deferred = createDeferred<{
+      total: number;
+      page: number;
+      limit: number;
+      items: typeof historyItem[];
+    }>();
+
+    vi.mocked(historyApi.getList).mockImplementation(() => deferred.promise);
+
+    const loadPromise = useStockPoolStore.getState().loadInitialHistory();
+    useStockPoolStore.getState().resetDashboardState();
+
+    deferred.resolve({
+      total: 1,
+      page: 1,
+      limit: 20,
+      items: [historyItem],
+    });
+
+    await loadPromise;
+
+    const state = useStockPoolStore.getState();
+    expect(state.historyItems).toHaveLength(0);
+    expect(state.isLoadingHistory).toBe(false);
     expect(state.currentPage).toBe(1);
   });
 
