@@ -139,7 +139,7 @@ describe('ChatPage', () => {
     expect(mockSwitchSession).toHaveBeenCalledWith('session-1');
   });
 
-  it('hydrates follow-up context from dashboard report params before sending', async () => {
+  it('allows sending with base follow-up context before report hydration completes', async () => {
     const deferred = createDeferred<Awaited<ReturnType<typeof historyApi.getDetail>>>();
 
     vi.mocked(historyApi.getDetail).mockImplementation(() => deferred.promise);
@@ -153,11 +153,25 @@ describe('ChatPage', () => {
     expect(await screen.findByDisplayValue('请深入分析 贵州茅台(600519)')).toBeInTheDocument();
 
     const sendButton = screen.getByRole('button', { name: /发送|处理中\.\.\./ });
-    expect(sendButton).toBeDisabled();
+    expect(sendButton).not.toBeDisabled();
     expect(screen.getByText('正在加载历史分析上下文，完成后即可发送追问。')).toBeInTheDocument();
 
     fireEvent.click(sendButton);
-    expect(mockStartStream).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(mockStartStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: '请深入分析 贵州茅台(600519)',
+          context: {
+            stock_code: '600519',
+            stock_name: '贵州茅台',
+          },
+        }),
+        expect.objectContaining({
+          strategyName: '趋势分析',
+        }),
+      );
+    });
 
     deferred.resolve({
       meta: {
@@ -181,10 +195,64 @@ describe('ChatPage', () => {
       },
     });
 
-    const readySendButton = await screen.findByRole('button', { name: '发送' });
-    expect(readySendButton).not.toBeDisabled();
+    await waitFor(() => {
+      expect(screen.queryByText('正在加载历史分析上下文，完成后即可发送追问。')).not.toBeInTheDocument();
+    });
 
-    fireEvent.click(readySendButton);
+    fireEvent.change(screen.getByPlaceholderText(/分析 600519/), {
+      target: { value: '继续分析成交量' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() => {
+      expect(mockStartStream).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          message: '继续分析成交量',
+          context: undefined,
+        }),
+        expect.objectContaining({
+          strategyName: '趋势分析',
+        }),
+      );
+    });
+  });
+
+  it('uses hydrated report context when it finishes before sending', async () => {
+    vi.mocked(historyApi.getDetail).mockResolvedValue({
+      meta: {
+        id: 1,
+        queryId: 'q-1',
+        stockCode: '600519',
+        stockName: '贵州茅台',
+        reportType: 'detailed',
+        createdAt: '2026-03-18T08:00:00Z',
+        currentPrice: 1523.6,
+        changePct: 1.8,
+      },
+      summary: {
+        analysisSummary: '趋势延续',
+        operationAdvice: '继续观察',
+        trendPrediction: '高位震荡',
+        sentimentScore: 78,
+      },
+      strategy: {
+        stopLoss: '1450',
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/chat?stock=600519&name=%E8%B4%B5%E5%B7%9E%E8%8C%85%E5%8F%B0&recordId=1']}>
+        <ChatPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByDisplayValue('请深入分析 贵州茅台(600519)')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByText('正在加载历史分析上下文，完成后即可发送追问。')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
 
     await waitFor(() => {
       expect(mockStartStream).toHaveBeenCalledWith(

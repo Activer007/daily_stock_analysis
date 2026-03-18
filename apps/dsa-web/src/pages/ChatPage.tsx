@@ -45,6 +45,7 @@ const ChatPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialFollowUpHandled = useRef(false);
   const isMountedRef = useRef(true);
+  const followUpHydrationTokenRef = useRef(0);
   const followUpContextRef = useRef<ChatFollowUpContext | null>(null);
   const shouldStickToBottomRef = useRef(true);
   const pendingScrollBehaviorRef = useRef<ScrollBehavior>('auto');
@@ -169,6 +170,7 @@ const ChatPage: React.FC = () => {
     const name = searchParams.get('name');
     const recordId = searchParams.get('recordId');
     if (stock) {
+      const hydrationToken = ++followUpHydrationTokenRef.current;
       initialFollowUpHandled.current = true;
       setInput(buildFollowUpPrompt(stock, name));
       followUpContextRef.current = {
@@ -183,12 +185,12 @@ const ChatPage: React.FC = () => {
         stockName: name,
         recordId: recordId ? Number(recordId) : undefined,
       }).then((context) => {
-        if (!isMountedRef.current) {
+        if (!isMountedRef.current || followUpHydrationTokenRef.current !== hydrationToken) {
           return;
         }
         followUpContextRef.current = context;
       }).finally(() => {
-        if (isMountedRef.current) {
+        if (isMountedRef.current && followUpHydrationTokenRef.current === hydrationToken) {
           setIsFollowUpContextLoading(false);
         }
       });
@@ -199,7 +201,7 @@ const ChatPage: React.FC = () => {
   const handleSend = useCallback(
     async (overrideMessage?: string, overrideStrategy?: string) => {
       const msgText = overrideMessage || input.trim();
-      if (!msgText || loading || isFollowUpContextLoading) return;
+      if (!msgText || loading) return;
       const usedStrategy = overrideStrategy || selectedStrategy;
       const usedStrategyName =
         strategies.find((s) => s.id === usedStrategy)?.name ||
@@ -211,19 +213,20 @@ const ChatPage: React.FC = () => {
         strategies: usedStrategy ? [usedStrategy] : undefined,
         context: followUpContextRef.current ?? undefined,
       };
+      followUpHydrationTokenRef.current += 1;
       followUpContextRef.current = null;
+      setIsFollowUpContextLoading(false);
 
       setInput('');
       requestScrollToBottom('smooth');
       await startStream(payload, { strategyName: usedStrategyName });
     },
-    [input, isFollowUpContextLoading, loading, requestScrollToBottom, selectedStrategy, strategies, sessionId, startStream],
+    [input, loading, requestScrollToBottom, selectedStrategy, strategies, sessionId, startStream],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (isFollowUpContextLoading) return;
       handleSend();
     }
   };
@@ -838,7 +841,7 @@ const ChatPage: React.FC = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="例如：分析 600519 / 茅台现在适合买入吗？ (Enter 发送, Shift+Enter 换行)"
-                disabled={loading || isFollowUpContextLoading}
+                disabled={loading}
                 rows={1}
                 className="input-terminal flex-1 min-h-[44px] max-h-[200px] py-2.5 resize-none"
                 style={{ height: 'auto' }}
@@ -851,8 +854,8 @@ const ChatPage: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading || isFollowUpContextLoading}
-                isLoading={loading || isFollowUpContextLoading}
+                disabled={!input.trim() || loading}
+                isLoading={loading}
                 className="h-[44px] px-6 flex-shrink-0"
               >
                 发送
