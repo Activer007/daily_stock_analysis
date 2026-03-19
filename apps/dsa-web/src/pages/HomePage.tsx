@@ -2,6 +2,7 @@ import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiErrorAlert, ConfirmDialog, Button } from '../components/common';
+import { StockAutocomplete } from '../components/StockAutocomplete';
 import { HistoryList } from '../components/history';
 import { ReportMarkdown, ReportSummary } from '../components/report';
 import { TaskPanel } from '../components/tasks';
@@ -123,19 +124,20 @@ const HomePage: React.FC = () => {
               </svg>
             </button>
             <div className="relative min-w-0 flex-1">
-              <input
-                type="text"
+              <StockAutocomplete
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && query && !isAnalyzing) {
-                    event.preventDefault();
-                    void submitAnalysis();
-                  }
+                onChange={setQuery}
+                onSubmit={(stockCode, stockName, selectionSource) => {
+                  void submitAnalysis({
+                    stockCode,
+                    stockName,
+                    originalQuery: query,
+                    selectionSource: selectionSource ?? 'manual',
+                  });
                 }}
-                placeholder="输入股票代码，如 600519、HK00700、AAPL"
+                placeholder="输入股票代码或名称，如 600519、贵州茅台、AAPL"
                 disabled={isAnalyzing}
-                className={`input-terminal w-full ${inputError ? 'border-danger/50' : ''}`}
+                className={inputError ? 'border-danger/50' : undefined}
               />
               {inputError ? (
                 <p className="absolute -bottom-4 left-0 text-xs text-danger">{inputError}</p>

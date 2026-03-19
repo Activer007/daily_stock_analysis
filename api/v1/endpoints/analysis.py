@@ -49,6 +49,8 @@ from api.v1.schemas.history import (
 from data_provider.base import canonical_stock_code
 from src.config import Config
 from src.report_language import get_localized_stock_name, normalize_report_language
+from src.services.name_to_code_resolver import resolve_name_to_code
+from src.services.stock_code_utils import is_code_like
 from src.services.task_queue import (
     get_task_queue,
     DuplicateTaskError,
@@ -63,6 +65,28 @@ from src.utils.data_processing import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _normalize_analysis_input(raw_value: str) -> str:
+    """
+    Normalize a stock input for analysis requests.
+
+    Code-like values keep the existing canonical path.
+    Non-code inputs try the existing name resolver before falling back
+    to the raw canonicalized text for downstream compatibility.
+    """
+    text = (raw_value or "").strip()
+    if not text:
+        return ""
+
+    if is_code_like(text):
+        return canonical_stock_code(text)
+
+    resolved = resolve_name_to_code(text)
+    if resolved:
+        return canonical_stock_code(resolved)
+
+    return canonical_stock_code(text)
 
 
 # ============================================================
@@ -128,8 +152,8 @@ def trigger_analysis(
             }
         )
 
-    # 统一大小写后去重，确保 ['aapl', 'AAPL'] 被识别为同一股票（Issue #355）
-    stock_codes = [canonical_stock_code(c) for c in stock_codes]
+    # Normalize and de-duplicate inputs while preserving compatibility.
+    stock_codes = [_normalize_analysis_input(c) for c in stock_codes]
     stock_codes = [c for c in stock_codes if c]
     stock_codes = list(dict.fromkeys(stock_codes))
 
@@ -142,7 +166,7 @@ def trigger_analysis(
             }
         )
 
-    # 同步模式仅支持单只股票
+    # Sync mode only supports single-stock analysis.
     if not request.async_mode:
         if len(stock_codes) > 1:
             raise HTTPException(
@@ -154,7 +178,7 @@ def trigger_analysis(
             )
         return _handle_sync_analysis(stock_codes[0], request)
 
-    # 异步模式：为每只股票提交任务
+    # Async mode submits one task per stock.
     return _handle_async_analysis_batch(stock_codes, request)
 
 
@@ -163,15 +187,18 @@ def _handle_async_analysis_batch(
     request: AnalyzeRequest
 ) -> JSONResponse:
     """
-    处理异步分析请求（支持批量）
-    
-    为每只股票提交任务到队列，立即返回 202
-    如果仅一只股票且正在分析中，返回 409
+    Handle asynchronous analysis requests, including batch submission.
     """
     task_queue = get_task_queue()
+    stock_name = request.stock_name
+    original_query = request.original_query
+    selection_source = request.selection_source
+
     accepted_tasks, duplicate_errors = task_queue.submit_tasks_batch(
         stock_codes=stock_codes,
-        stock_name=None,
+        stock_name=stock_name if len(stock_codes) == 1 else None,
+        original_query=original_query,
+        selection_source=selection_source,
         report_type=request.report_type,
         force_refresh=request.force_refresh,
     )
@@ -357,6 +384,8 @@ def get_task_list(
             started_at=t.started_at.isoformat() if t.started_at else None,
             completed_at=t.completed_at.isoformat() if t.completed_at else None,
             error=t.error,
+            original_query=t.original_query,
+            selection_source=t.selection_source,
         )
         for t in all_tasks
     ]
@@ -491,8 +520,11 @@ def get_analysis_status(task_id: str) -> TaskStatus:
             task_id=task.task_id,
             status=task.status.value,
             progress=task.progress,
-            result=None,  # 进行中的任务没有结果
+            result=None,  # In-progress tasks do not carry a result payload.
             error=task.error,
+            stock_name=task.stock_name,
+            original_query=task.original_query,
+            selection_source=task.selection_source,
         )
     
     # 2. 从数据库查询已完成的记录

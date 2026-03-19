@@ -171,6 +171,7 @@
   --home-prose-border-strong: hsl(var(--foreground) / 0.16);
   --home-prose-blockquote-border: hsl(247 84% 66% / 0.28);
   --home-prose-blockquote-bg: hsl(247 84% 66% / 0.08);
+  --autocomplete-hover-bg: #04d1f6;
 
   /* Shadows (using HSL format) */
   --shadow-soft-card: 0 18px 48px hsl(215 25% 27% / 0.08);
@@ -243,6 +244,7 @@
   --color-success: 142 76% 54%;
   --color-warning: 35 100% 50%;
   --color-danger: 349 100% 63%;
+  --autocomplete-hover-bg: #257280;
   /* Tailwind aliases (for hsl(var(--success))) */
   --success: var(--color-success);
   --warning: var(--color-warning);

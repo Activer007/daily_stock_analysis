@@ -230,6 +230,38 @@ class AnalysisApiContractTestCase(unittest.TestCase):
             "股票代码不能为空或仅包含空白字符",
         )
 
+    def test_trigger_analysis_batch_does_not_apply_single_stock_name_to_all_tasks(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        queue = MagicMock()
+        queue.submit_tasks_batch.return_value = ([], [])
+
+        with patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+            response = trigger_analysis(
+                request=SimpleNamespace(
+                    stock_code=None,
+                    stock_codes=["600519", "000001"],
+                    stock_name="贵州茅台",
+                    original_query="茅台,平安银行",
+                    selection_source="import",
+                    report_type="detailed",
+                    force_refresh=False,
+                    async_mode=True,
+                ),
+                config=SimpleNamespace(),
+            )
+
+        self.assertEqual(response.status_code, 202)
+        queue.submit_tasks_batch.assert_called_once_with(
+            stock_codes=["600519", "000001"],
+            stock_name=None,
+            original_query="茅台,平安银行",
+            selection_source="import",
+            report_type="detailed",
+            force_refresh=False,
+        )
+
     def test_spa_fallback_returns_json_404_for_bare_api_path(self) -> None:
         if create_app is None:
             self.skipTest("fastapi is not installed in this test environment")

@@ -5,7 +5,7 @@ import { getParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
 import type { AnalysisReport, HistoryItem, HistoryListResponse, TaskInfo } from '../types/analysis';
 import { getRecentStartDate, getTodayInShanghai } from '../utils/format';
-import { validateStockCode } from '../utils/validation';
+import { looksLikeStockCode, validateStockCode } from '../utils/validation';
 
 const PAGE_SIZE = 20;
 
@@ -15,6 +15,13 @@ type FetchHistoryOptions = {
   autoSelectFirst?: boolean;
   reset?: boolean;
   silent?: boolean;
+};
+
+type SubmitAnalysisOptions = {
+  stockCode?: string;
+  stockName?: string;
+  originalQuery?: string;
+  selectionSource?: SelectionSource;
 };
 
 let reportRequestSeq = 0;
@@ -52,7 +59,7 @@ export interface StockPoolState {
   toggleHistorySelection: (recordId: number) => void;
   toggleSelectAllVisible: () => void;
   deleteSelectedHistory: () => Promise<void>;
-  submitAnalysis: () => Promise<void>;
+  submitAnalysis: (options?: SubmitAnalysisOptions) => Promise<void>;
   syncTaskCreated: (task: TaskInfo) => void;
   syncTaskUpdated: (task: TaskInfo) => void;
   syncTaskFailed: (task: TaskInfo) => void;
@@ -167,7 +174,8 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
 
   setQuery: (query) => {
     set({
-      query: query.toUpperCase(),
+      query,
+      selectionSource: 'manual',
       inputError: undefined,
       duplicateError: null,
     });
@@ -286,11 +294,27 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     }
   },
 
-  submitAnalysis: async () => {
-    const { valid, message, normalized } = validateStockCode(get().query);
-    if (!valid) {
-      set({ inputError: message, duplicateError: null });
+  submitAnalysis: async (options) => {
+    const state = get();
+    const rawStockCode = options?.stockCode ?? state.query;
+    const stockCodeInput = rawStockCode.trim();
+    const stockName = options?.stockName;
+    const selectionSource = options?.selectionSource ?? state.selectionSource;
+    const originalQuery = (options?.originalQuery ?? state.query).trim();
+
+    if (!stockCodeInput) {
+      set({ inputError: '请输入股票代码', duplicateError: null });
       return;
+    }
+
+    let normalizedStockCode = stockCodeInput;
+    if (selectionSource === 'autocomplete' || looksLikeStockCode(stockCodeInput)) {
+      const { valid, message, normalized } = validateStockCode(stockCodeInput);
+      if (!valid) {
+        set({ inputError: message, duplicateError: null });
+        return;
+      }
+      normalizedStockCode = normalized;
     }
 
     set({
@@ -303,8 +327,11 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     const requestId = ++analyzeRequestSeq;
     try {
       await analysisApi.analyzeAsync({
-        stockCode: normalized,
+        stockCode: normalizedStockCode,
         reportType: 'detailed',
+        stockName,
+        originalQuery: originalQuery || stockCodeInput,
+        selectionSource,
       });
 
       if (requestId !== analyzeRequestSeq) {
