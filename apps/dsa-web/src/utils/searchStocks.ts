@@ -140,22 +140,35 @@ function determineMatchField(query: string, item: StockIndexItem): 'code' | 'nam
 }
 
 /**
+ * Escape HTML entities
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Highlight matched text
  *
  * @param text - Original text
  * @param query - Query string
- * @returns Text with highlight markers
+ * @returns Safe HTML string with highlight markers
  */
 export function highlightMatch(text: string, query: string): string {
   const normalizedQuery = normalizeQuery(query);
-  if (!normalizedQuery) return text;
+  if (!normalizedQuery) return escapeHtml(text);
 
   const index = text.toLowerCase().indexOf(normalizedQuery);
-  if (index === -1) return text;
+  if (index === -1) return escapeHtml(text);
 
   const before = text.substring(0, index);
   const match = text.substring(index, index + normalizedQuery.length);
   const after = text.substring(index + normalizedQuery.length);
 
-  return `${before}<mark>${match}</mark>${after}`;
+  // Return escaped segments joined by safe <mark> tags
+  return `${escapeHtml(before)}<mark>${escapeHtml(match)}</mark>${escapeHtml(after)}`;
 }

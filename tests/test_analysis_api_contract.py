@@ -230,6 +230,82 @@ class AnalysisApiContractTestCase(unittest.TestCase):
             "股票代码不能为空或仅包含空白字符",
         )
 
+    def test_trigger_analysis_rejects_obviously_invalid_mixed_input_before_resolution(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        with patch("api.v1.endpoints.analysis.resolve_name_to_code") as resolve_mock:
+            with self.assertRaises(Exception) as ctx:
+                trigger_analysis(
+                    request=SimpleNamespace(
+                        stock_code="00AAAAA",
+                        stock_codes=None,
+                        report_type="detailed",
+                        force_refresh=False,
+                        async_mode=True,
+                    ),
+                    config=SimpleNamespace(),
+                )
+
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertEqual(ctx.exception.detail["message"], "请输入有效的股票代码或股票名称")
+        resolve_mock.assert_not_called()
+
+    def test_trigger_analysis_rejects_unresolvable_alpha_garbage(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        with patch("api.v1.endpoints.analysis.resolve_name_to_code", return_value=None), \
+             patch("api.v1.endpoints.analysis.get_task_queue") as queue_mock:
+            with self.assertRaises(Exception) as ctx:
+                trigger_analysis(
+                    request=SimpleNamespace(
+                        stock_code="aaaaaaa",
+                        stock_codes=None,
+                        report_type="detailed",
+                        force_refresh=False,
+                        async_mode=True,
+                    ),
+                    config=SimpleNamespace(),
+                )
+
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertEqual(ctx.exception.detail["message"], "请输入有效的股票代码或股票名称")
+        queue_mock.assert_not_called()
+
+    def test_trigger_analysis_accepts_resolvable_free_text_input(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        queue = MagicMock()
+        queue.submit_tasks_batch.return_value = ([], [])
+
+        with patch("api.v1.endpoints.analysis.resolve_name_to_code", return_value="600519"), \
+             patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+            response = trigger_analysis(
+                request=SimpleNamespace(
+                    stock_code="贵州茅台",
+                    stock_codes=None,
+                    stock_name=None,
+                    original_query="贵州茅台",
+                    selection_source="manual",
+                    report_type="detailed",
+                    force_refresh=False,
+                    async_mode=True,
+                ),
+                config=SimpleNamespace(),
+            )
+
+        self.assertEqual(response.status_code, 202)
+        queue.submit_tasks_batch.assert_called_once_with(
+            stock_codes=["600519"],
+            stock_name=None,
+            original_query="贵州茅台",
+            selection_source="manual",
+            report_type="detailed",
+            force_refresh=False,
+        )
+
     def test_trigger_analysis_batch_does_not_apply_single_stock_name_to_all_tasks(self) -> None:
         if trigger_analysis is None:
             self.skipTest("fastapi is not installed in this test environment")

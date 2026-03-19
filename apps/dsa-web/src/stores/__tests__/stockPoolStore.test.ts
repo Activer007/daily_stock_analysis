@@ -120,6 +120,17 @@ describe('stockPoolStore', () => {
     expect(state.isAnalyzing).toBe(false);
   });
 
+  it('rejects obviously invalid mixed alphanumeric input before calling the API', async () => {
+    useStockPoolStore.getState().setQuery('00aaaaa');
+
+    await useStockPoolStore.getState().submitAnalysis();
+
+    const state = useStockPoolStore.getState();
+    expect(state.inputError).toBe('请输入有效的股票代码或股票名称');
+    expect(state.isAnalyzing).toBe(false);
+    expect(analysisApi.analyzeAsync).not.toHaveBeenCalled();
+  });
+
   it('merges newly discovered history items during silent refresh', async () => {
     useStockPoolStore.setState({
       historyItems: [historyItem],

@@ -4,6 +4,8 @@ interface ValidationResult {
   normalized: string;
 }
 
+const SUPPORTED_QUERY_CHARACTERS = /^[A-Z0-9.\u3400-\u9FFF\s]+$/;
+
 const STOCK_CODE_PATTERNS = [
   /^\d{6}$/, // A-share 6-digit code
   /^(SH|SZ|BJ)\d{6}$/, // A-share code with exchange prefix
@@ -11,7 +13,7 @@ const STOCK_CODE_PATTERNS = [
   /^\d{5}$/, // HK code without prefix
   /^HK\d{1,5}$/, // HK-prefixed code, for example HK00700
   /^\d{1,5}\.HK$/, // HK suffix format, for example 00700.HK
-  /^[A-Z]{1,6}(\.[A-Z]{1,2})?$/, // Common US ticker format
+  /^[A-Z]{1,5}(\.[A-Z])?$/, // Common US ticker format
 ];
 
 /**
@@ -39,4 +41,24 @@ export const validateStockCode = (value: string): ValidationResult => {
     message: valid ? undefined : '股票代码格式不正确',
     normalized,
   };
+};
+
+/**
+ * Reject obviously invalid free-text queries before they reach the backend.
+ */
+export const isObviouslyInvalidStockQuery = (value: string): boolean => {
+  const normalized = value.trim().toUpperCase();
+
+  if (!normalized || looksLikeStockCode(normalized)) {
+    return false;
+  }
+
+  if (!SUPPORTED_QUERY_CHARACTERS.test(normalized)) {
+    return true;
+  }
+
+  const hasLetters = /[A-Z]/.test(normalized);
+  const hasDigits = /\d/.test(normalized);
+
+  return hasLetters && hasDigits;
 };

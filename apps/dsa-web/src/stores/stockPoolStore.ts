@@ -5,7 +5,7 @@ import { getParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
 import type { AnalysisReport, HistoryItem, HistoryListResponse, TaskInfo } from '../types/analysis';
 import { getRecentStartDate, getTodayInShanghai } from '../utils/format';
-import { looksLikeStockCode, validateStockCode } from '../utils/validation';
+import { isObviouslyInvalidStockQuery, looksLikeStockCode, validateStockCode } from '../utils/validation';
 
 const PAGE_SIZE = 20;
 
@@ -304,6 +304,11 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
 
     if (!stockCodeInput) {
       set({ inputError: '请输入股票代码', duplicateError: null });
+      return;
+    }
+
+    if (selectionSource !== 'autocomplete' && isObviouslyInvalidStockQuery(stockCodeInput)) {
+      set({ inputError: '请输入有效的股票代码或股票名称', duplicateError: null });
       return;
     }
 

@@ -19,6 +19,7 @@
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from typing import Optional, Union, Dict, Any
 
@@ -46,7 +47,7 @@ from api.v1.schemas.history import (
     ReportStrategy,
     ReportDetails,
 )
-from data_provider.base import canonical_stock_code
+from data_provider.base import canonical_stock_code, normalize_stock_code
 from src.config import Config
 from src.report_language import get_localized_stock_name, normalize_report_language
 from src.services.name_to_code_resolver import resolve_name_to_code
@@ -66,14 +67,39 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+_SUPPORTED_FREE_TEXT_RE = re.compile(r"^[A-Za-z0-9.\u3400-\u9fff\s]+$")
 
-def _normalize_analysis_input(raw_value: str) -> str:
+
+def _invalid_analysis_input_error() -> HTTPException:
+    return HTTPException(
+        status_code=400,
+        detail={
+            "error": "validation_error",
+            "message": "请输入有效的股票代码或股票名称",
+        },
+    )
+
+
+def _is_obviously_invalid_analysis_input(text: str) -> bool:
+    """Reject mixed alphanumeric noise and unsupported symbols early."""
+    if not text or is_code_like(text):
+        return False
+
+    if not _SUPPORTED_FREE_TEXT_RE.fullmatch(text):
+        return True
+
+    has_letters = any(ch.isalpha() and ch.isascii() for ch in text)
+    has_digits = any(ch.isdigit() for ch in text)
+    return has_letters and has_digits
+
+
+def _resolve_and_normalize_input(raw_value: str) -> str:
     """
-    Normalize a stock input for analysis requests.
+    Resolve and normalize a stock input for analysis requests.
 
     Code-like values keep the existing canonical path.
-    Non-code inputs try the existing name resolver before falling back
-    to the raw canonicalized text for downstream compatibility.
+    Non-code inputs must resolve to a known stock code. Obvious garbage
+    input is rejected before expensive resolver and task-queue work.
     """
     text = (raw_value or "").strip()
     if not text:
@@ -82,11 +108,14 @@ def _normalize_analysis_input(raw_value: str) -> str:
     if is_code_like(text):
         return canonical_stock_code(text)
 
+    if _is_obviously_invalid_analysis_input(text):
+        raise _invalid_analysis_input_error()
+
     resolved = resolve_name_to_code(text)
     if resolved:
         return canonical_stock_code(resolved)
 
-    return canonical_stock_code(text)
+    raise _invalid_analysis_input_error()
 
 
 # ============================================================
@@ -153,9 +182,31 @@ def trigger_analysis(
         )
 
     # Normalize and de-duplicate inputs while preserving compatibility.
-    stock_codes = [_normalize_analysis_input(c) for c in stock_codes]
-    stock_codes = [c for c in stock_codes if c]
-    stock_codes = list(dict.fromkeys(stock_codes))
+    resolved = [_resolve_and_normalize_input(c) for c in stock_codes]
+    
+    seen = set()
+    unique_codes = []
+    for code in resolved:
+        if not code:
+            continue
+        # Use normalize_stock_code to ensure '600519' and '600519.SH' are merged
+        norm = normalize_stock_code(code)
+        if norm not in seen:
+            seen.add(norm)
+            unique_codes.append(code)
+    
+    stock_codes = unique_codes
+
+    # Limit the number of stocks in a single request to prevent DoS
+    MAX_BATCH_SIZE = 50
+    if len(stock_codes) > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "validation_error",
+                "message": f"单次分析请求最多支持 {MAX_BATCH_SIZE} 只股票"
+            }
+        )
 
     if not stock_codes:
         raise HTTPException(
@@ -190,13 +241,18 @@ def _handle_async_analysis_batch(
     Handle asynchronous analysis requests, including batch submission.
     """
     task_queue = get_task_queue()
-    stock_name = request.stock_name
-    original_query = request.original_query
-    selection_source = request.selection_source
+    
+    # Apply metadata only for single-stock requests to ensure accuracy.
+    # Batch requests often contain heterogeneous inputs where a single
+    # name or query doesn't apply to all items.
+    is_single = len(stock_codes) == 1
+    stock_name = request.stock_name if is_single else None
+    original_query = request.original_query if is_single else None
+    selection_source = request.selection_source if is_single else None
 
     accepted_tasks, duplicate_errors = task_queue.submit_tasks_batch(
         stock_codes=stock_codes,
-        stock_name=stock_name if len(stock_codes) == 1 else None,
+        stock_name=stock_name,
         original_query=original_query,
         selection_source=selection_source,
         report_type=request.report_type,
