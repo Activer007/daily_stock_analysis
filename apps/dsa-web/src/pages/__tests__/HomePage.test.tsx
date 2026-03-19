@@ -58,6 +58,7 @@ const historyReport = {
     stockCode: '600519',
     stockName: '贵州茅台',
     reportType: 'detailed' as const,
+    reportLanguage: 'zh' as const,
     createdAt: '2026-03-18T08:00:00Z',
   },
   summary: {
