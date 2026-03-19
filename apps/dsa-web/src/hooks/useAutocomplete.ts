@@ -96,7 +96,7 @@ export function useAutocomplete(
       const results = searchStocks(q, index, { limit });
       setSuggestions(results);
       setIsOpen(results.length > 0);
-      setHighlightedIndex(results.length > 0 ? 0 : -1);
+      setHighlightedIndex(-1);
     } catch (caught) {
       const runtimeError = caught instanceof Error ? caught : new Error('Autocomplete search failed');
       console.error('Autocomplete search failed. Falling back to plain input.', runtimeError);

@@ -58,4 +58,32 @@ describe('useAutocomplete', () => {
     expect(result.current.isOpen).toBe(false);
     expect(result.current.suggestions).toEqual([]);
   });
+
+  it('keeps suggestions open without auto-highlighting the first result', () => {
+    searchStocksMock.mockReturnValue([
+      {
+        canonicalCode: '600519.SH',
+        displayCode: '600519',
+        nameZh: '贵州茅台',
+        market: 'CN',
+        matchType: 'exact',
+        matchField: 'code',
+        score: 100,
+      },
+    ]);
+
+    const { result } = renderHook(() => useAutocomplete(mockIndex, { debounceMs: 10 }));
+
+    act(() => {
+      result.current.setQuery('600519');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.suggestions).toHaveLength(1);
+    expect(result.current.highlightedIndex).toBe(-1);
+  });
 });

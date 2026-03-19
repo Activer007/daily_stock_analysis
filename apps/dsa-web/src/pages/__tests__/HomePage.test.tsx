@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { analysisApi, DuplicateTaskError } from '../../api/analysis';
 import { historyApi } from '../../api/history';
 import { useStockPoolStore } from '../../stores';
+import { getReportText, normalizeReportLanguage } from '../../utils/reportLanguage';
 import HomePage from '../HomePage';
 
 const navigateMock = vi.fn();
@@ -99,7 +100,11 @@ describe('HomePage', () => {
     expect(dashboard.className).toContain('lg:h-[calc(100vh-2rem)]');
     expect(screen.getByPlaceholderText('输入股票代码或名称，如 600519、贵州茅台、AAPL')).toBeInTheDocument();
     expect(await screen.findByText('趋势维持强势')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '详细报告' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: getReportText(normalizeReportLanguage(historyReport.meta.reportLanguage)).fullReport,
+      }),
+    ).toBeInTheDocument();
   });
 
   it('shows the empty report workspace when history is empty', async () => {
