@@ -244,7 +244,7 @@
   --color-success: 142 76% 54%;
   --color-warning: 35 100% 50%;
   --color-danger: 349 100% 63%;
-  --autocomplete-hover-bg: #257280;
+  --autocomplete-hover-bg: #2dcae6;
   /* Tailwind aliases (for hsl(var(--success))) */
   --success: var(--color-success);
   --warning: var(--color-warning);

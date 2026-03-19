@@ -52,8 +52,8 @@ export function SuggestionsList({
           aria-selected={index === highlightedIndex}
           className={cn(
             "px-4 py-1 cursor-pointer flex items-center justify-between",
-            "hover:bg-[var(--autocomplete-hover-bg)]/35",
-            index === highlightedIndex && "bg-[var(--autocomplete-hover-bg)]/35"
+            "hover:bg-[var(--autocomplete-hover-bg)]/25",
+            index === highlightedIndex && "bg-[var(--autocomplete-hover-bg)]/25"
           )}
           onClick={() => onSelect(suggestion)}
           onMouseEnter={() => onMouseEnter(index)}
