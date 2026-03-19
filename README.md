@@ -41,6 +41,7 @@
 | 基本面 | 结构化聚合 | 新增 `fundamental_context`（valuation/growth/earnings/institution/capital_flow/dragon_tiger/boards，其中 `earnings.data` 新增 `financial_report` 与 `dividend`，`boards` 表示板块涨跌榜），主链路 fail-open 降级 |
 | 策略 | 市场策略系统 | 内置 A股「三段式复盘策略」与美股「Regime Strategy」，输出进攻/均衡/防守或 risk-on/neutral/risk-off 计划，并附“仅供参考，不构成投资建议”提示 |
 | 复盘 | 大盘复盘 | 每日市场概览、板块涨跌；支持 cn(A股)/us(美股)/both(两者) 切换 |
+| 补全 | 智能补全 (MVP) | **[测试阶段]** 首页搜索框支持代码/名称/拼音/别名联想；**第一阶段仅限 A 股**，其他市场自动降级为手动输入 |
 | 智能导入 | 多源导入 | 支持图片、CSV/Excel 文件、剪贴板粘贴；Vision LLM 提取代码+名称；置信度分层确认；名称→代码解析（本地+拼音+AkShare） |
 | 历史记录 | 批量管理 | 支持多选、全选及批量删除历史分析记录，优化管理效率与 UI/UX 体验 |
 | 回测 | AI 回测验证 | 自动评估历史分析准确率，方向胜率、止盈止损命中率 |
@@ -344,6 +345,18 @@ LITELLM_MODEL=openai/deepseek-chat
 - 图片：JPG/PNG/WebP/GIF，≤5MB；文件：≤2MB；粘贴文本：≤100KB
 
 **API**：`POST /api/v1/stocks/extract-from-image`（图片）、`POST /api/v1/stocks/parse-import`（文件/粘贴）。详见 [完整指南](docs/full-guide.md)。
+
+### 智能搜索补全 (MVP)
+
+首页分析输入框已升级为“类搜索引擎”补全框，显著降低记忆负担：
+
+- **多维匹配**：支持输入股票代码、中文名、拼音缩写或别名（如 `gzmt` -> 贵州茅台）。
+- **分阶段支持**：目前处于 **MVP 测试阶段**，本地索引优先覆盖 **A 股市场**。
+- **自动降级逻辑**：
+  - **美股/港股**：若搜索未命中，用户直接按回车即可走原有手动输入流程，完全不影响分析。
+  - **新股/异常**：若索引未及时更新或加载失败，系统将无缝退回普通输入模式，确保分析链路 100% 可用。
+
+> 💡 **搜索范围提示**：自动补全目前仅针对 A 股进行试点优化。对于港股、美股或新上市标的，请继续直接输入代码（如 `AAPL`、`00700.HK`）并回车发起分析，系统会自动解析并处理。
 
 **LLM 用量查询**：`GET /api/v1/usage/summary?period=today|month|all`，返回按调用类型和模型分组的 token 消耗汇总（`total_calls`、`total_tokens`、`by_call_type`、`by_model`）。
 
