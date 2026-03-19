@@ -87,25 +87,31 @@ export function searchStocks(
 function calculateMatchScore(query: string, item: StockIndexItem): number {
   let score = 0;
   const q = query.toLowerCase();
+  const normalizedCanonicalCode = normalizeQuery(item.canonicalCode);
+  const normalizedDisplayCode = normalizeQuery(item.displayCode);
+  const normalizedName = normalizeQuery(item.nameZh);
+  const normalizedPinyinFull = normalizeQuery(item.pinyinFull || '');
+  const normalizedPinyinAbbr = normalizeQuery(item.pinyinAbbr || '');
+  const normalizedAliases = item.aliases?.map(alias => normalizeQuery(alias)) || [];
 
   // 1. Exact match (96-100 points)
-  if (q === item.canonicalCode.toLowerCase()) return 100;
-  if (q === item.displayCode.toLowerCase()) return 99;
-  if (q === item.nameZh) return 98;
-  if (item.aliases?.some(a => a === q)) return 97;
-  if (q === (item.pinyinAbbr || '').toLowerCase()) return 96;
+  if (q === normalizedCanonicalCode) return 100;
+  if (q === normalizedDisplayCode) return 99;
+  if (q === normalizedName) return 98;
+  if (normalizedAliases.some(a => a === q)) return 97;
+  if (q === normalizedPinyinAbbr) return 96;
 
   // 2. Prefix match (77-80 points)
-  if (item.displayCode.toLowerCase().startsWith(q)) score = Math.max(score, 80);
-  if (item.nameZh.startsWith(q)) score = Math.max(score, 79);
-  if (item.pinyinAbbr?.toLowerCase().startsWith(q)) score = Math.max(score, 78);
-  if (item.aliases?.some(a => a.startsWith(q))) score = Math.max(score, 77);
+  if (normalizedDisplayCode.startsWith(q)) score = Math.max(score, 80);
+  if (normalizedName.startsWith(q)) score = Math.max(score, 79);
+  if (normalizedPinyinAbbr.startsWith(q)) score = Math.max(score, 78);
+  if (normalizedAliases.some(a => a.startsWith(q))) score = Math.max(score, 77);
 
   // 3. Contains match (57-60 points)
-  if (item.displayCode.toLowerCase().includes(q)) score = Math.max(score, 60);
-  if (item.nameZh.includes(q)) score = Math.max(score, 59);
-  if (item.pinyinFull?.toLowerCase().includes(q)) score = Math.max(score, 58);
-  if (item.aliases?.some(a => a.includes(q))) score = Math.max(score, 57);
+  if (normalizedDisplayCode.includes(q)) score = Math.max(score, 60);
+  if (normalizedName.includes(q)) score = Math.max(score, 59);
+  if (normalizedPinyinFull.includes(q)) score = Math.max(score, 58);
+  if (normalizedAliases.some(a => a.includes(q))) score = Math.max(score, 57);
 
   return score;
 }
@@ -125,17 +131,23 @@ function determineMatchType(score: number): 'exact' | 'prefix' | 'contains' | 'f
  */
 function determineMatchField(query: string, item: StockIndexItem): 'code' | 'name' | 'pinyin' | 'alias' {
   const q = query.toLowerCase();
+  const normalizedCanonicalCode = normalizeQuery(item.canonicalCode);
+  const normalizedDisplayCode = normalizeQuery(item.displayCode);
+  const normalizedName = normalizeQuery(item.nameZh);
+  const normalizedPinyinFull = normalizeQuery(item.pinyinFull || '');
+  const normalizedPinyinAbbr = normalizeQuery(item.pinyinAbbr || '');
+  const normalizedAliases = item.aliases?.map(alias => normalizeQuery(alias)) || [];
 
-  if (item.canonicalCode.toLowerCase().includes(q) ||
-      item.displayCode.toLowerCase().includes(q)) {
+  if (normalizedCanonicalCode.includes(q) ||
+      normalizedDisplayCode.includes(q)) {
     return 'code';
   }
-  if (item.nameZh.includes(q)) return 'name';
-  if ((item.pinyinFull || '').toLowerCase().includes(q) ||
-      (item.pinyinAbbr || '').toLowerCase().includes(q)) {
+  if (normalizedName.includes(q)) return 'name';
+  if (normalizedPinyinFull.includes(q) ||
+      normalizedPinyinAbbr.includes(q)) {
     return 'pinyin';
   }
-  if (item.aliases?.some(a => a.includes(q))) return 'alias';
+  if (normalizedAliases.some(a => a.includes(q))) return 'alias';
   return 'name';
 }
 

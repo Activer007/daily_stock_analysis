@@ -322,5 +322,52 @@ describe('StockAutocomplete', () => {
       const input = screen.getByDisplayValue('META');
       expect(input).toHaveAttribute('data-autocomplete-mode', 'fallback');
     });
+
+    it('falls back to the plain input when a suggestion contains an unsupported market', () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      autocompleteHookImpl = () => ({
+        query: '',
+        setQuery: vi.fn(),
+        suggestions: [
+          {
+            canonicalCode: 'TEST.OTC',
+            displayCode: 'TEST',
+            nameZh: '测试市场',
+            market: 'OTC' as never,
+            matchType: 'exact' as const,
+            matchField: 'code' as const,
+            score: 100,
+          },
+        ],
+        isOpen: true,
+        highlightedIndex: 0,
+        setHighlightedIndex: vi.fn(),
+        highlightPrevious: vi.fn(),
+        highlightNext: vi.fn(),
+        handleSelect: vi.fn(),
+        close: vi.fn(),
+        reset: vi.fn(),
+        isComposing: false,
+        setIsComposing: vi.fn(),
+        runtimeFallback: false,
+        error: null,
+      });
+
+      render(
+        <StockAutocomplete
+          value="TEST"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      const input = screen.getByDisplayValue('TEST');
+      fireEvent.focus(input);
+
+      const fallbackInput = screen.getByDisplayValue('TEST');
+      expect(fallbackInput).toHaveAttribute('data-autocomplete-mode', 'fallback');
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
   });
 });

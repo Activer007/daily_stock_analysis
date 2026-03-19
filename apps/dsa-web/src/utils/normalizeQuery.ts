@@ -11,7 +11,11 @@
  * - Remove internal extra spaces
  */
 export function normalizeQuery(query: string): string {
-  return query.trim().toLowerCase().replace(/\s+/g, '');
+  return query
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
 }
 
 /**

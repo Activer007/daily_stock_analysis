@@ -44,7 +44,7 @@ class AnalyzeRequest(BaseModel):
         pattern="^(simple|detailed|full|brief)$",
     )
     force_refresh: bool = Field(
-        True,
+        False,
         description="是否强制刷新（忽略缓存）"
     )
     async_mode: bool = Field(

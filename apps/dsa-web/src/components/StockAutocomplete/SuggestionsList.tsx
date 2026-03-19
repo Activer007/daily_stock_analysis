@@ -6,7 +6,7 @@
  */
 
 import type { CSSProperties } from 'react';
-import type { StockSuggestion, Market } from '../../types/stockIndex';
+import type { StockSuggestion } from '../../types/stockIndex';
 import { cn } from '../../utils/cn';
 
 export interface SuggestionsListProps {
@@ -82,15 +82,21 @@ export function SuggestionsList({
 }
 
 // Helper component: Market badge
-function MarketBadge({ market }: { market: Market }) {
-  const config = {
-    CN: { label: 'A股', className: 'text-red-500 bg-red-500/10' },
-    HK: { label: '港股', className: 'text-green-500 bg-green-500/10' },
-    US: { label: '美股', className: 'text-blue-500 bg-blue-500/10' },
-    INDEX: { label: '指数', className: 'text-purple-500 bg-purple-500/10' },
-    ETF: { label: 'ETF', className: 'text-yellow-500 bg-yellow-500/10' },
-    BSE: { label: '北交所', className: 'text-orange-500 bg-orange-500/10' },
-  }[market];
+const MARKET_BADGE_CONFIG = {
+  CN: { label: 'A股', className: 'text-red-500 bg-red-500/10' },
+  HK: { label: '港股', className: 'text-green-500 bg-green-500/10' },
+  US: { label: '美股', className: 'text-blue-500 bg-blue-500/10' },
+  INDEX: { label: '指数', className: 'text-purple-500 bg-purple-500/10' },
+  ETF: { label: 'ETF', className: 'text-yellow-500 bg-yellow-500/10' },
+  BSE: { label: '北交所', className: 'text-orange-500 bg-orange-500/10' },
+} as const;
+
+function MarketBadge({ market }: { market: string }) {
+  const config = MARKET_BADGE_CONFIG[market as keyof typeof MARKET_BADGE_CONFIG];
+
+  if (!config) {
+    throw new Error(`Unsupported market in stock suggestion: ${market}`);
+  }
 
   return (
     <span className={cn("text-xs px-2 py-0.5 rounded", config.className)}>

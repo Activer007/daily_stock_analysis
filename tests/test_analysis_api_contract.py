@@ -273,6 +273,73 @@ class AnalysisApiContractTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.detail["message"], "请输入有效的股票代码或股票名称")
         queue_mock.assert_not_called()
 
+    def test_trigger_analysis_accepts_us_suffix_code(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        queue = MagicMock()
+        queue.submit_tasks_batch.return_value = ([], [])
+
+        with patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue), \
+             patch("api.v1.endpoints.analysis.resolve_name_to_code") as resolve_mock:
+            response = trigger_analysis(
+                request=SimpleNamespace(
+                    stock_code="AAPL.US",
+                    stock_codes=None,
+                    stock_name=None,
+                    original_query="AAPL.US",
+                    selection_source="manual",
+                    report_type="detailed",
+                    force_refresh=False,
+                    async_mode=True,
+                ),
+                config=SimpleNamespace(),
+            )
+
+        self.assertEqual(response.status_code, 202)
+        resolve_mock.assert_not_called()
+        queue.submit_tasks_batch.assert_called_once_with(
+            stock_codes=["AAPL.US"],
+            stock_name=None,
+            original_query="AAPL.US",
+            selection_source="manual",
+            report_type="detailed",
+            force_refresh=False,
+        )
+
+    def test_trigger_analysis_allows_stock_names_with_star_and_hyphen(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        queue = MagicMock()
+        queue.submit_tasks_batch.return_value = ([], [])
+
+        with patch("api.v1.endpoints.analysis.resolve_name_to_code", return_value="688783"), \
+             patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+            response = trigger_analysis(
+                request=SimpleNamespace(
+                    stock_code="西安奕材-U",
+                    stock_codes=None,
+                    stock_name=None,
+                    original_query="西安奕材-U",
+                    selection_source="manual",
+                    report_type="detailed",
+                    force_refresh=False,
+                    async_mode=True,
+                ),
+                config=SimpleNamespace(),
+            )
+
+        self.assertEqual(response.status_code, 202)
+        queue.submit_tasks_batch.assert_called_once_with(
+            stock_codes=["688783"],
+            stock_name=None,
+            original_query="西安奕材-U",
+            selection_source="manual",
+            report_type="detailed",
+            force_refresh=False,
+        )
+
     def test_trigger_analysis_accepts_resolvable_free_text_input(self) -> None:
         if trigger_analysis is None:
             self.skipTest("fastapi is not installed in this test environment")
@@ -302,6 +369,38 @@ class AnalysisApiContractTestCase(unittest.TestCase):
             stock_name=None,
             original_query="贵州茅台",
             selection_source="manual",
+            report_type="detailed",
+            force_refresh=False,
+        )
+
+    def test_trigger_analysis_preserves_batch_metadata(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        queue = MagicMock()
+        queue.submit_tasks_batch.return_value = ([], [])
+
+        with patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+            response = trigger_analysis(
+                request=SimpleNamespace(
+                    stock_code=None,
+                    stock_codes=["600519", "000001"],
+                    stock_name=None,
+                    original_query="uploaded.csv",
+                    selection_source="import",
+                    report_type="detailed",
+                    force_refresh=False,
+                    async_mode=True,
+                ),
+                config=SimpleNamespace(),
+            )
+
+        self.assertEqual(response.status_code, 202)
+        queue.submit_tasks_batch.assert_called_once_with(
+            stock_codes=["600519", "000001"],
+            stock_name=None,
+            original_query="uploaded.csv",
+            selection_source="import",
             report_type="detailed",
             force_refresh=False,
         )

@@ -38,6 +38,11 @@ describe('normalizeQuery', () => {
       expect(normalizeQuery('  AAPL  US  ')).toBe('aaplus');
     });
 
+    test('normalizes full-width latin characters to ASCII', () => {
+      expect(normalizeQuery('万科Ａ')).toBe('万科a');
+      expect(normalizeQuery('wkＡ')).toBe('wka');
+    });
+
     test('handles empty strings', () => {
       expect(normalizeQuery('')).toBe('');
       expect(normalizeQuery('   ')).toBe('');

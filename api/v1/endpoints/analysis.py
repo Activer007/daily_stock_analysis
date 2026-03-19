@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-_SUPPORTED_FREE_TEXT_RE = re.compile(r"^[A-Za-z0-9.\u3400-\u9fff\s]+$")
+_SUPPORTED_FREE_TEXT_RE = re.compile(r"^[A-Za-z0-9.*\-+\u3400-\u9fff\s]+$")
 
 
 def _invalid_analysis_input_error() -> HTTPException:
@@ -242,13 +242,15 @@ def _handle_async_analysis_batch(
     """
     task_queue = get_task_queue()
     
-    # Apply metadata only for single-stock requests to ensure accuracy.
-    # Batch requests often contain heterogeneous inputs where a single
-    # name or query doesn't apply to all items.
+    # Preserve metadata for single-stock requests. For batch requests,
+    # only carry through metadata that semantically applies to the whole
+    # batch, such as import/image source tracking.
     is_single = len(stock_codes) == 1
+    preserve_batch_metadata = request.selection_source in {"import", "image"}
+
     stock_name = request.stock_name if is_single else None
-    original_query = request.original_query if is_single else None
-    selection_source = request.selection_source if is_single else None
+    original_query = request.original_query if (is_single or preserve_batch_metadata) else None
+    selection_source = request.selection_source if (is_single or preserve_batch_metadata) else None
 
     accepted_tasks, duplicate_errors = task_queue.submit_tasks_batch(
         stock_codes=stock_codes,

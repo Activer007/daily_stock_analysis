@@ -17,11 +17,22 @@ from fastapi.testclient import TestClient
 from api.app import create_app
 from src.services.task_queue import AnalysisTaskQueue, TaskStatus
 from src.config import Config
+import src.auth as auth
 
 @pytest.fixture
 def client():
     app = create_app()
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def disable_auth():
+    """Keep analysis integration tests independent from local auth env state."""
+    auth._auth_enabled = None
+    with patch("api.middlewares.auth.is_auth_enabled", return_value=False), \
+         patch("src.auth.is_auth_enabled", return_value=False):
+        yield
+    auth._auth_enabled = None
 
 @pytest.fixture
 def mock_task_queue():
@@ -54,8 +65,8 @@ class TestAnalysisIntegration:
 
         assert response.status_code == 202
         data = response.json()
-        assert "accepted" in data
-        assert data["accepted"][0]["stock_code"] == "600519"
+        assert data["task_id"] == "test_task_123"
+        assert data["status"] == "pending"
 
         # Verify task queue received the correct resolved code and metadata
         mock_task_queue.submit_tasks_batch.assert_called_once_with(
@@ -97,7 +108,7 @@ class TestAnalysisIntegration:
         )
 
         assert response.status_code == 400
-        assert "最多支持" in response.json()["detail"]["message"]
+        assert "最多支持" in response.json()["message"]
 
     def test_trigger_analysis_metadata_isolation_in_batch(self, client, mock_task_queue):
         """Test that single-stock metadata isn't applied to batch tasks."""
@@ -118,3 +129,4 @@ class TestAnalysisIntegration:
         args, kwargs = mock_task_queue.submit_tasks_batch.call_args
         assert kwargs["stock_name"] is None
         assert kwargs["original_query"] is None
+        assert kwargs["selection_source"] is None

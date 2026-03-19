@@ -32,6 +32,18 @@ const mockIndex: StockIndexItem[] = [
     popularity: 90,
   },
   {
+    canonicalCode: "000002.SZ",
+    displayCode: "000002",
+    nameZh: "万科Ａ",
+    pinyinFull: "wankeＡ",
+    pinyinAbbr: "wkＡ",
+    aliases: [],
+    market: "CN",
+    assetType: "stock",
+    active: true,
+    popularity: 92,
+  },
+  {
     canonicalCode: "00700.HK",
     displayCode: "00700",
     nameZh: "腾讯控股",
@@ -184,6 +196,14 @@ describe('searchStocks', () => {
     expect(results).toHaveLength(1);
     expect(results[0].canonicalCode).toBe('AAPL.US');
     expect(results[0].market).toBe('US');
+  });
+
+  test('supports half-width queries for full-width A-share suffix names', () => {
+    const byName = searchStocks('万科A', mockIndex);
+    const byPinyin = searchStocks('wka', mockIndex);
+
+    expect(byName[0].canonicalCode).toBe('000002.SZ');
+    expect(byPinyin[0].canonicalCode).toBe('000002.SZ');
   });
 
   test('港股代码匹配', () => {
