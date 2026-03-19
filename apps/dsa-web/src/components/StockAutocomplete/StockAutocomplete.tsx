@@ -5,8 +5,9 @@
  * Supports keyboard navigation, IME input method, graceful degradation
  */
 
-import { useRef, useEffect, useState } from 'react';
+import { Component, useRef, useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useStockIndex } from '../../hooks/useStockIndex';
 import { useAutocomplete } from '../../hooks/useAutocomplete';
@@ -28,7 +29,66 @@ export interface StockAutocompleteProps {
   className?: string;
 }
 
-export function StockAutocomplete({
+function FallbackInput({
+  value,
+  onChange,
+  onSubmit,
+  disabled = false,
+  placeholder = '输入股票代码或名称',
+  className,
+}: StockAutocompleteProps) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !disabled && value) {
+          onSubmit(value);
+        }
+      }}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={cn('input-terminal w-full', className)}
+      data-autocomplete-mode="fallback"
+    />
+  );
+}
+
+interface StockAutocompleteBoundaryProps extends StockAutocompleteProps {
+  children: ReactNode;
+}
+
+interface StockAutocompleteBoundaryState {
+  hasError: boolean;
+}
+
+class StockAutocompleteBoundary extends Component<
+  StockAutocompleteBoundaryProps,
+  StockAutocompleteBoundaryState
+> {
+  override state: StockAutocompleteBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): StockAutocompleteBoundaryState {
+    return { hasError: true };
+  }
+
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Autocomplete runtime error. Falling back to plain input.', error, errorInfo);
+  }
+
+  override render() {
+    if (this.state.hasError) {
+      const { children, ...fallbackProps } = this.props;
+      void children;
+      return <FallbackInput {...fallbackProps} />;
+    }
+
+    return this.props.children;
+  }
+}
+
+function StockAutocompleteInner({
   value,
   onChange,
   onSubmit,
@@ -50,6 +110,8 @@ export function StockAutocomplete({
     // reset,
     isComposing,
     setIsComposing,
+    runtimeFallback,
+    error: autocompleteError,
   } = useAutocomplete(index);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +162,14 @@ export function StockAutocomplete({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!autocompleteError) {
+      return;
+    }
+
+    console.error('Autocomplete runtime fallback activated.', autocompleteError);
+  }, [autocompleteError]);
+
   // Keyboard event handling
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     // Skip if composing (IME)
@@ -149,21 +219,15 @@ export function StockAutocomplete({
   };
 
   // Fallback mode: use normal input
-  if (fallback || loading) {
+  if (fallback || loading || runtimeFallback) {
     return (
-      <input
-        ref={inputRef}
-        type="text"
+      <FallbackInput
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !disabled && value) {
-            onSubmit(value);
-          }
-        }}
-        placeholder={placeholder}
+        onChange={onChange}
+        onSubmit={onSubmit}
         disabled={disabled}
-        className={cn("input-terminal w-full", className)}
+        placeholder={placeholder}
+        className={className}
       />
     );
   }
@@ -225,6 +289,14 @@ export function StockAutocomplete({
         document.body
       )}
     </div>
+  );
+}
+
+export function StockAutocomplete(props: StockAutocompleteProps) {
+  return (
+    <StockAutocompleteBoundary {...props}>
+      <StockAutocompleteInner {...props} />
+    </StockAutocompleteBoundary>
   );
 }
 

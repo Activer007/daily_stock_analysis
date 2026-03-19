@@ -7,33 +7,39 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { StockAutocomplete } from '../StockAutocomplete';
 import type { StockIndexItem } from '../../../types/stockIndex';
 
+let stockIndexHookImpl: () => {
+  index: StockIndexItem[];
+  loading: boolean;
+  fallback: boolean;
+  error: Error | null;
+  loaded: boolean;
+};
+
+let autocompleteHookImpl: () => {
+  query: string;
+  setQuery: ReturnType<typeof vi.fn>;
+  suggestions: typeof mockSuggestions;
+  isOpen: boolean;
+  highlightedIndex: number;
+  setHighlightedIndex: ReturnType<typeof vi.fn>;
+  highlightPrevious: ReturnType<typeof vi.fn>;
+  highlightNext: ReturnType<typeof vi.fn>;
+  handleSelect: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+  reset: ReturnType<typeof vi.fn>;
+  isComposing: boolean;
+  setIsComposing: ReturnType<typeof vi.fn>;
+  runtimeFallback: boolean;
+  error: Error | null;
+};
+
 // Mock the hooks
 vi.mock('../../../hooks/useStockIndex', () => ({
-  useStockIndex: () => ({
-    index: mockIndex,
-    loading: false,
-    fallback: false,
-    error: null,
-    loaded: true,
-  }),
+  useStockIndex: () => stockIndexHookImpl(),
 }));
 
 vi.mock('../../../hooks/useAutocomplete', () => ({
-  useAutocomplete: () => ({
-    query: '',
-    setQuery: vi.fn(),
-    suggestions: mockSuggestions,
-    isOpen: false,
-    highlightedIndex: -1,
-    setHighlightedIndex: vi.fn(),
-    highlightPrevious: vi.fn(),
-    highlightNext: vi.fn(),
-    handleSelect: vi.fn(),
-    close: vi.fn(),
-    reset: vi.fn(),
-    isComposing: false,
-    setIsComposing: vi.fn(),
-  }),
+  useAutocomplete: () => autocompleteHookImpl(),
 }));
 
 const mockIndex: StockIndexItem[] = [
@@ -69,6 +75,30 @@ describe('StockAutocomplete', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    stockIndexHookImpl = () => ({
+      index: mockIndex,
+      loading: false,
+      fallback: false,
+      error: null,
+      loaded: true,
+    });
+    autocompleteHookImpl = () => ({
+      query: '',
+      setQuery: vi.fn(),
+      suggestions: mockSuggestions,
+      isOpen: false,
+      highlightedIndex: -1,
+      setHighlightedIndex: vi.fn(),
+      highlightPrevious: vi.fn(),
+      highlightNext: vi.fn(),
+      handleSelect: vi.fn(),
+      close: vi.fn(),
+      reset: vi.fn(),
+      isComposing: false,
+      setIsComposing: vi.fn(),
+      runtimeFallback: false,
+      error: null,
+    });
   });
 
   it('renders the input element', () => {
@@ -169,7 +199,15 @@ describe('StockAutocomplete', () => {
   });
 
   describe('fallback mode', () => {
-    it('still renders the input with the default mock setup', () => {
+    it('renders a plain input when index loading fallback is active', () => {
+      stockIndexHookImpl = () => ({
+        index: [],
+        loading: false,
+        fallback: true,
+        error: new Error('Index load failed'),
+        loaded: false,
+      });
+
       render(
         <StockAutocomplete
           value=""
@@ -178,8 +216,72 @@ describe('StockAutocomplete', () => {
         />
       );
 
-      const input = screen.getByRole('combobox');
-      expect(input).toBeInTheDocument();
+      const input = screen.getByPlaceholderText(/输入股票代码或名称/);
+      expect(input).toHaveAttribute('data-autocomplete-mode', 'fallback');
+    });
+
+    it('renders a plain input when autocomplete runtime fallback is active', () => {
+      autocompleteHookImpl = () => ({
+        query: '',
+        setQuery: vi.fn(),
+        suggestions: [],
+        isOpen: false,
+        highlightedIndex: -1,
+        setHighlightedIndex: vi.fn(),
+        highlightPrevious: vi.fn(),
+        highlightNext: vi.fn(),
+        handleSelect: vi.fn(),
+        close: vi.fn(),
+        reset: vi.fn(),
+        isComposing: false,
+        setIsComposing: vi.fn(),
+        runtimeFallback: true,
+        error: new Error('Search crashed'),
+      });
+
+      render(
+        <StockAutocomplete
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/输入股票代码或名称/);
+      expect(input).toHaveAttribute('data-autocomplete-mode', 'fallback');
+    });
+
+    it('submits manually when fallback input receives Enter', () => {
+      autocompleteHookImpl = () => ({
+        query: '',
+        setQuery: vi.fn(),
+        suggestions: [],
+        isOpen: false,
+        highlightedIndex: -1,
+        setHighlightedIndex: vi.fn(),
+        highlightPrevious: vi.fn(),
+        highlightNext: vi.fn(),
+        handleSelect: vi.fn(),
+        close: vi.fn(),
+        reset: vi.fn(),
+        isComposing: false,
+        setIsComposing: vi.fn(),
+        runtimeFallback: true,
+        error: new Error('Search crashed'),
+      });
+
+      render(
+        <StockAutocomplete
+          value="600519"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      const input = screen.getByDisplayValue('600519');
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(mockOnSubmit).toHaveBeenCalledWith('600519');
     });
   });
 
@@ -200,6 +302,25 @@ describe('StockAutocomplete', () => {
 
       // The events should be handled without throwing.
       expect(input).toBeInTheDocument();
+    });
+  });
+
+  describe('runtime boundary', () => {
+    it('falls back to the plain input when the autocomplete tree throws during render', () => {
+      autocompleteHookImpl = () => {
+        throw new Error('Autocomplete render failed');
+      };
+
+      render(
+        <StockAutocomplete
+          value="META"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      const input = screen.getByDisplayValue('META');
+      expect(input).toHaveAttribute('data-autocomplete-mode', 'fallback');
     });
   });
 });
