@@ -353,10 +353,8 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     const index = nextTasks.findIndex((item) => item.taskId === task.taskId);
     if (index >= 0) {
       nextTasks[index] = task;
-    } else {
-      nextTasks.push(task);
+      set({ activeTasks: nextTasks });
     }
-    set({ activeTasks: nextTasks });
   },
 
   syncTaskFailed: (task) => {

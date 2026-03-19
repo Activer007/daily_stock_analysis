@@ -43,7 +43,6 @@ const ChatPage: React.FC = () => {
   } | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const initialFollowUpHandled = useRef(false);
   const isMountedRef = useRef(true);
   const followUpHydrationTokenRef = useRef(0);
   const followUpContextRef = useRef<ChatFollowUpContext | null>(null);
@@ -165,37 +164,37 @@ const ChatPage: React.FC = () => {
 
   // Handle follow-up from report page: ?stock=600519&name=贵州茅台&recordId=xxx
   useEffect(() => {
-    if (initialFollowUpHandled.current) return;
     const stock = searchParams.get('stock');
     const name = searchParams.get('name');
     const recordId = searchParams.get('recordId');
-    if (stock) {
-      const hydrationToken = ++followUpHydrationTokenRef.current;
-      initialFollowUpHandled.current = true;
-      setInput(buildFollowUpPrompt(stock, name));
-      followUpContextRef.current = {
-        stock_code: stock,
-        stock_name: name,
-      };
-      if (recordId) {
-        setIsFollowUpContextLoading(true);
-      }
-      void resolveChatFollowUpContext({
-        stockCode: stock,
-        stockName: name,
-        recordId: recordId ? Number(recordId) : undefined,
-      }).then((context) => {
-        if (!isMountedRef.current || followUpHydrationTokenRef.current !== hydrationToken) {
-          return;
-        }
-        followUpContextRef.current = context;
-      }).finally(() => {
-        if (isMountedRef.current && followUpHydrationTokenRef.current === hydrationToken) {
-          setIsFollowUpContextLoading(false);
-        }
-      });
-      setSearchParams({}, { replace: true });
+    if (!stock) {
+      return;
     }
+
+    const hydrationToken = ++followUpHydrationTokenRef.current;
+    setInput(buildFollowUpPrompt(stock, name));
+    followUpContextRef.current = {
+      stock_code: stock,
+      stock_name: name,
+    };
+    if (recordId) {
+      setIsFollowUpContextLoading(true);
+    }
+    void resolveChatFollowUpContext({
+      stockCode: stock,
+      stockName: name,
+      recordId: recordId ? Number(recordId) : undefined,
+    }).then((context) => {
+      if (!isMountedRef.current || followUpHydrationTokenRef.current !== hydrationToken) {
+        return;
+      }
+      followUpContextRef.current = context;
+    }).finally(() => {
+      if (isMountedRef.current && followUpHydrationTokenRef.current === hydrationToken) {
+        setIsFollowUpContextLoading(false);
+      }
+    });
+    setSearchParams({}, { replace: true });
   }, [searchParams, setSearchParams]);
 
   const handleSend = useCallback(
@@ -863,7 +862,7 @@ const ChatPage: React.FC = () => {
             </div>
             {isFollowUpContextLoading && (
               <p className="mt-2 text-xs text-secondary-text">
-                正在加载历史分析上下文，完成后即可发送追问。
+                正在加载历史分析上下文；现在可直接发送追问。
               </p>
             )}
           </div>

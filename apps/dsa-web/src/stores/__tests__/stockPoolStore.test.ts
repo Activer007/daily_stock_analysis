@@ -244,4 +244,44 @@ describe('stockPoolStore', () => {
 
     expect(useStockPoolStore.getState().activeTasks).toHaveLength(0);
   });
+
+  it('ignores unknown task updates after dashboard reset', () => {
+    const pendingTask = {
+      taskId: 'task-1',
+      stockCode: '600519',
+      stockName: '贵州茅台',
+      status: 'pending' as const,
+      progress: 0,
+      reportType: 'detailed',
+      createdAt: '2026-03-18T08:00:00Z',
+    };
+
+    useStockPoolStore.getState().syncTaskCreated(pendingTask);
+    useStockPoolStore.getState().resetDashboardState();
+    useStockPoolStore.getState().syncTaskUpdated({
+      ...pendingTask,
+      status: 'processing',
+      progress: 35,
+    });
+
+    const state = useStockPoolStore.getState();
+    expect(state.activeTasks).toHaveLength(0);
+  });
+
+  it('does not backfill unknown failed tasks from SSE updates', () => {
+    useStockPoolStore.getState().syncTaskFailed({
+      taskId: 'task-404',
+      stockCode: 'AAPL',
+      stockName: 'Apple',
+      status: 'failed',
+      progress: 100,
+      reportType: 'detailed',
+      createdAt: '2026-03-18T08:00:00Z',
+      error: '分析失败',
+    });
+
+    const state = useStockPoolStore.getState();
+    expect(state.activeTasks).toHaveLength(0);
+    expect(state.error).toBeTruthy();
+  });
 });
