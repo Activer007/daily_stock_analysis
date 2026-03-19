@@ -99,7 +99,7 @@ describe('HomePage', () => {
     expect(dashboard.className).toContain('lg:h-[calc(100vh-2rem)]');
     expect(screen.getByPlaceholderText('输入股票代码，如 600519、HK00700、AAPL')).toBeInTheDocument();
     expect(await screen.findByText('趋势维持强势')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '详细报告' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '完整分析报告' })).toBeInTheDocument();
   });
 
   it('shows the empty report workspace when history is empty', async () => {
