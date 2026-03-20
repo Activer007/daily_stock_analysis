@@ -12,10 +12,10 @@ export function markdownToPlainText(markdown: string): string {
     })
     // Remove inline code
     .replace(/`([^`]+)`/g, '$1')
-    // Remove links, keep text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove images
     .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    // Remove links, keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove bold
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')

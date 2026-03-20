@@ -121,8 +121,8 @@ export const ReportMarkdown: React.FC<ReportMarkdownProps> = ({
             onClick={handleCopyMarkdown}
             disabled={isLoading || !content || copiedType !== null}
             className="home-surface-button flex h-10 w-10 items-center justify-center rounded-lg text-secondary-text hover:text-foreground disabled:opacity-50"
-            title="复制 Markdown 源码"
-            aria-label="复制 Markdown 源码"
+            title={text.copyMarkdownSource}
+            aria-label={text.copyMarkdownSource}
           >
             {copiedType === 'markdown' ? (
               <svg className="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,8 +141,8 @@ export const ReportMarkdown: React.FC<ReportMarkdownProps> = ({
             onClick={handleCopyPlainText}
             disabled={isLoading || !content || copiedType !== null}
             className="home-surface-button flex h-10 w-10 items-center justify-center rounded-lg text-secondary-text hover:text-foreground disabled:opacity-50"
-            title="复制纯文本"
-            aria-label="复制纯文本"
+            title={text.copyPlainText}
+            aria-label={text.copyPlainText}
           >
             {copiedType === 'text' ? (
               <svg className="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
