@@ -163,7 +163,7 @@ def build_canonical_code(code: str, market: str) -> str:
         # 60xxxx: Main board, 688xxx: STAR market, 900xxx: B-shares
         if code.startswith(('6', '900')):
             return f"{code}.SH"
-        
+
         # Shenzhen Stock Exchange (SZ)
         # 00xxxx: Main board, 30xxxx: ChiNext, 20xxxx: B-shares
         if code.startswith(('0', '2', '3')):
@@ -303,7 +303,7 @@ def main():
         if args.verbose:
             print("\n前10条数据预览：")
             for i, item in enumerate(index[:10]):
-                print(f"  {i+1}. {item['canonicalCode']} - {item['nameZh']} ({item['market']})")
+                print(f"  {i + 1}. {item['canonicalCode']} - {item['nameZh']} ({item['market']})")
 
         print("\n✓ 测试通过，数据格式正确")
         return 0

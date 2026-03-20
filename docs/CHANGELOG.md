@@ -9,9 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 新功能
+
+- 📊 **Tushare 股票列表获取工具** — 新增 `scripts/fetch_tushare_stock_list.py`，支持从 Tushare Pro 获取 A股、港股、美股列表信息并保存为 CSV，配有分页读取、智能限流、错误处理和进度提示；新增对应使用文档 `docs/TUSHARE_STOCK_LIST_GUIDE.md`。
+- 🔎 **索引生成脚本多市场支持** — `generate_index_from_csv.py` 重构为支持 Tushare 和 AkShare 双数据源，同时覆盖 A股、港股、美股三个市场；新增按市场分类的别名映射（A股、港股常见别名，美股常用股票英文缩写）；添加 `--source` 参数切换数据源、`--test` 参数验证模式；严格过滤美股 DUMMY 记录。
+- 🔎 **索引生成脚本增强** — `generate_stock_index.py` 新增 `--test`/`-t` 测试模式和 `--verbose`/`-v` 详细输出模式，添加市场分布统计，优化 JSON 输出格式。
+
+### 改进
+
+- 🔎 **自动补全索引数据更新** — 重新生成 `stocks.index.json`，涵盖 A股、港股、美股三个市场，提升自动补全覆盖率。
+
+### 测试
+
+- 新增 `tests/test_generate_index_from_csv.py` 测试文件，覆盖 Tushare/AkShare 双数据源解析、多市场判断、美股 DUMMY 过滤等核心路径。
+
+### 文档
+
+- 新增 `docs/TUSHARE_STOCK_LIST_GUIDE.md`，详细说明 Tushare 股票列表获取工具的使用方法、数据格式、常见问题。
+
 ### 修复
 
-- 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中“原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
+- 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中”原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
 - 🧾 **Web 报告详情复制提示按面板独立** — `ReportDetails` 中“原始分析结果”和“分析快照”的复制提示不再共享同一个 `copied` 状态；当两个面板同时展开时，复制其中一个只会更新对应按钮文案，避免两个按钮同时显示“已复制”的误导反馈。
 - 📊 **Agent backtest tool semantics** — `get_skill_backtest_summary` 现在要求显式传入 `skill_id`，缺失时会返回明确的校验提示；当仓库尚未持久化真实 skill 级汇总时会返回明确的 unsupported/info 响应，而不再复用 overall 指标。成功返回路径会同时保留 normalized 指标和 `*_pct` 兼容字段，相关工具错误返回也改为稳定通用文案，避免向 agent 或用户暴露底层异常细节。
 

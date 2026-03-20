@@ -102,9 +102,9 @@ print(stock[['name', 'industry', 'list_date']])
 获取数据后，可以更新自动补全索引：
 
 ```bash
-# 将 Tushare 数据合并到自动补全索引
-python3 scripts/generate_stock_index.py --test  # 先测试
-python3 scripts/generate_stock_index.py         # 确认后生成
+# 将 Tushare CSV 数据生成为前端自动补全索引
+python3 scripts/generate_index_from_csv.py --test  # 先测试
+python3 scripts/generate_index_from_csv.py         # 确认后生成
 ```
 
 ## 注意事项

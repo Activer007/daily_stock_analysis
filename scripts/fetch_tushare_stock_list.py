@@ -118,7 +118,7 @@ def fetch_a_stock_list(api: ts.pro_api) -> Optional[pd.DataFrame]:
 
         if df is not None and len(df) > 0:
             print(f"✓ A股列表获取成功，共 {len(df)} 只股票")
-            print(f"  - 交易所分布：")
+            print("  - 交易所分布：")
             for exchange, count in df['exchange'].value_counts().items():
                 print(f"    {exchange}: {count} 只")
             return df
@@ -215,7 +215,7 @@ def fetch_us_stock_list(api: ts.pro_api) -> Optional[pd.DataFrame]:
 
             # 按分类统计
             if 'classify' in result_df.columns:
-                print(f"  - 分类分布：")
+                print("  - 分类分布：")
                 for classify, count in result_df['classify'].value_counts().items():
                     print(f"    {classify}: {count} 只")
 
