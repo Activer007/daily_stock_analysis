@@ -405,6 +405,60 @@ class AnalysisApiContractTestCase(unittest.TestCase):
             force_refresh=False,
         )
 
+    def test_trigger_analysis_rejects_cross_request_duplicate_for_equivalent_code_shapes(self) -> None:
+        if trigger_analysis is None:
+            self.skipTest("fastapi is not installed in this test environment")
+
+        original_instance = AnalysisTaskQueue._instance
+        AnalysisTaskQueue._instance = None
+        try:
+            queue = AnalysisTaskQueue(max_workers=1)
+            queue._executor = type("ExecutorStub", (), {"submit": lambda self, *args, **kwargs: Future()})()
+
+            with patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+                first = trigger_analysis(
+                    request=SimpleNamespace(
+                        stock_code="600519",
+                        stock_codes=None,
+                        stock_name=None,
+                        original_query=None,
+                        selection_source=None,
+                        report_type="detailed",
+                        force_refresh=False,
+                        async_mode=True,
+                    ),
+                    config=SimpleNamespace(),
+                )
+                second = trigger_analysis(
+                    request=SimpleNamespace(
+                        stock_code="600519.SH",
+                        stock_codes=None,
+                        stock_name=None,
+                        original_query=None,
+                        selection_source=None,
+                        report_type="detailed",
+                        force_refresh=False,
+                        async_mode=True,
+                    ),
+                    config=SimpleNamespace(),
+                )
+
+            self.assertEqual(first.status_code, 202)
+            self.assertEqual(second.status_code, 409)
+            self.assertEqual(json.loads(second.body)["error"], "duplicate_task")
+            self.assertEqual(json.loads(second.body)["stock_code"], "600519.SH")
+            self.assertEqual(
+                json.loads(second.body)["existing_task_id"],
+                json.loads(first.body)["task_id"],
+            )
+        finally:
+            queue = AnalysisTaskQueue._instance
+            if queue is not None and queue is not original_instance:
+                executor = getattr(queue, "_executor", None)
+                if executor is not None and hasattr(executor, "shutdown"):
+                    executor.shutdown(wait=False, cancel_futures=True)
+            AnalysisTaskQueue._instance = original_instance
+
     def test_trigger_analysis_batch_does_not_apply_single_stock_name_to_all_tasks(self) -> None:
         if trigger_analysis is None:
             self.skipTest("fastapi is not installed in this test environment")
@@ -503,6 +557,24 @@ class BatchTaskQueueContractTestCase(unittest.TestCase):
         self.assertEqual([task.stock_code for task in accepted], ["600519"])
         self.assertEqual(duplicates, [])
         self.assertEqual(sorted(task.stock_code for task in queue._tasks.values()), ["600519"])
+
+    def test_batch_submit_deduplicates_equivalent_stock_code_shapes(self) -> None:
+        queue = AnalysisTaskQueue(max_workers=1)
+        queue._executor = type("ExecutorStub", (), {"submit": lambda self, *args, **kwargs: Future()})()
+
+        accepted, duplicates = queue.submit_tasks_batch(["600519"], report_type="detailed")
+
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(duplicates, [])
+        self.assertTrue(queue.is_analyzing("600519.SH"))
+        self.assertEqual(queue.get_analyzing_task_id("600519.SH"), accepted[0].task_id)
+
+        accepted_again, duplicates_again = queue.submit_tasks_batch(["600519.SH"], report_type="detailed")
+
+        self.assertEqual(accepted_again, [])
+        self.assertEqual(len(duplicates_again), 1)
+        self.assertEqual(duplicates_again[0].stock_code, "600519.SH")
+        self.assertEqual(duplicates_again[0].existing_task_id, accepted[0].task_id)
 
     def test_submit_task_rejects_blank_stock_code(self) -> None:
         queue = AnalysisTaskQueue(max_workers=1)

@@ -26,10 +26,20 @@ from typing import Optional, Dict, List, Any, TYPE_CHECKING, Tuple, Literal
 if TYPE_CHECKING:
     from asyncio import Queue as AsyncQueue
 
-from data_provider.base import canonical_stock_code
+from data_provider.base import canonical_stock_code, normalize_stock_code
 from src.utils.analysis_metadata import SELECTION_SOURCES
 
 logger = logging.getLogger(__name__)
+
+
+def _dedupe_stock_code_key(stock_code: str) -> str:
+    """
+    Build the internal duplicate-detection key for a stock code.
+
+    The task queue should treat equivalent market code shapes as the same
+    underlying stock, e.g. ``600519`` and ``600519.SH``.
+    """
+    return canonical_stock_code(normalize_stock_code(stock_code))
 
 
 class TaskStatus(str, Enum):
@@ -145,7 +155,7 @@ class AnalysisTaskQueue:
         
         # 核心数据结构
         self._tasks: Dict[str, TaskInfo] = {}           # task_id -> TaskInfo
-        self._analyzing_stocks: Dict[str, str] = {}     # stock_code -> task_id
+        self._analyzing_stocks: Dict[str, str] = {}     # dedupe_key -> task_id
         self._futures: Dict[str, Future] = {}           # task_id -> Future
         
         # SSE 订阅者列表（asyncio.Queue 实例）
@@ -248,8 +258,9 @@ class AnalysisTaskQueue:
         Returns:
             True 表示正在分析中
         """
+        dedupe_key = _dedupe_stock_code_key(stock_code)
         with self._data_lock:
-            return stock_code in self._analyzing_stocks
+            return dedupe_key in self._analyzing_stocks
     
     def get_analyzing_task_id(self, stock_code: str) -> Optional[str]:
         """
@@ -261,8 +272,9 @@ class AnalysisTaskQueue:
         Returns:
             任务 ID，如果没有则返回 None
         """
+        dedupe_key = _dedupe_stock_code_key(stock_code)
         with self._data_lock:
-            return self._analyzing_stocks.get(stock_code)
+            return self._analyzing_stocks.get(dedupe_key)
 
     def validate_selection_source(self, selection_source: Optional[str]) -> None:
         """
@@ -343,15 +355,16 @@ class AnalysisTaskQueue:
         duplicates: List[DuplicateTaskError] = []
         created_task_ids: List[str] = []
 
-        normalized_codes = [
+        canonical_codes = [
             normalized for normalized in (canonical_stock_code(code) for code in stock_codes)
             if normalized
         ]
 
         with self._data_lock:
-            for stock_code in normalized_codes:
-                if stock_code in self._analyzing_stocks:
-                    existing_task_id = self._analyzing_stocks[stock_code]
+            for stock_code in canonical_codes:
+                dedupe_key = _dedupe_stock_code_key(stock_code)
+                if dedupe_key in self._analyzing_stocks:
+                    existing_task_id = self._analyzing_stocks[dedupe_key]
                     duplicates.append(DuplicateTaskError(stock_code, existing_task_id))
                     continue
 
@@ -367,7 +380,7 @@ class AnalysisTaskQueue:
                     selection_source=selection_source,
                 )
                 self._tasks[task_id] = task_info
-                self._analyzing_stocks[stock_code] = task_id
+                self._analyzing_stocks[dedupe_key] = task_id
 
                 try:
                     future = self.executor.submit(
@@ -403,8 +416,10 @@ class AnalysisTaskQueue:
                 future.cancel()
 
             task = self._tasks.pop(task_id, None)
-            if task and self._analyzing_stocks.get(task.stock_code) == task_id:
-                del self._analyzing_stocks[task.stock_code]
+            if task:
+                dedupe_key = _dedupe_stock_code_key(task.stock_code)
+                if self._analyzing_stocks.get(dedupe_key) == task_id:
+                    del self._analyzing_stocks[dedupe_key]
     
     def get_task(self, task_id: str) -> Optional[TaskInfo]:
         """
@@ -529,8 +544,9 @@ class AnalysisTaskQueue:
                         task.stock_name = result.get("stock_name", task.stock_name)
                         
                         # 从分析中集合移除
-                        if task.stock_code in self._analyzing_stocks:
-                            del self._analyzing_stocks[task.stock_code]
+                        dedupe_key = _dedupe_stock_code_key(task.stock_code)
+                        if dedupe_key in self._analyzing_stocks:
+                            del self._analyzing_stocks[dedupe_key]
                 
                 self._broadcast_event("task_completed", task.to_dict())
                 logger.info(f"[TaskQueue] 任务完成: {task_id} ({stock_code})")
@@ -556,8 +572,9 @@ class AnalysisTaskQueue:
                     task.message = f"分析失败: {error_msg[:50]}"
                     
                     # 从分析中集合移除
-                    if task.stock_code in self._analyzing_stocks:
-                        del self._analyzing_stocks[task.stock_code]
+                    dedupe_key = _dedupe_stock_code_key(task.stock_code)
+                    if dedupe_key in self._analyzing_stocks:
+                        del self._analyzing_stocks[dedupe_key]
             
             self._broadcast_event("task_failed", task.to_dict())
             
