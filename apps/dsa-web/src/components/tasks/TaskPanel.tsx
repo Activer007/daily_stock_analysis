@@ -75,7 +75,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       {/* 状态标签 */}
       <div className="flex-shrink-0">
         <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-label font-medium ${statusClassName}`}
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClassName}`}
           aria-label={`任务状态：${statusLabel}`}
         >
           {statusLabel}
@@ -132,6 +132,7 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
         <DashboardPanelHeader
           className="mb-0"
           title={title}
+          titleClassName="text-sm font-medium"
           leading={(
             <svg className="h-4 w-4 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path

@@ -119,8 +119,6 @@ export const ReportMarkdown: React.FC<ReportMarkdownProps> = ({
             prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
             prose-pre:border
             prose-table:border-collapse
-            prose-th:border prose-th:px-3 prose-th:py-2
-            prose-td:border prose-td:px-3 prose-td:py-2
             prose-hr:my-4
             prose-a:no-underline hover:prose-a:underline
             prose-blockquote:text-secondary-text

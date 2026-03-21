@@ -8,6 +8,7 @@ interface DashboardPanelHeaderProps {
   leading?: React.ReactNode;
   className?: string;
   headingClassName?: string;
+  titleClassName?: string;
   accentEyebrow?: boolean;
 }
 
@@ -18,6 +19,7 @@ export const DashboardPanelHeader: React.FC<DashboardPanelHeaderProps> = ({
   leading,
   className = '',
   headingClassName = '',
+  titleClassName = '',
   accentEyebrow = false,
 }) => {
   if (!eyebrow && !title && !actions) {
@@ -34,7 +36,7 @@ export const DashboardPanelHeader: React.FC<DashboardPanelHeaderProps> = ({
               {eyebrow}
             </span>
           ) : null}
-          {title ? <h3 className="text-base font-semibold text-foreground">{title}</h3> : null}
+          {title ? <h3 className={cn('text-base font-semibold text-foreground', titleClassName)}>{title}</h3> : null}
         </div>
       ) : null}
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}

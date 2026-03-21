@@ -1169,6 +1169,24 @@ textarea {
   color: var(--home-state-icon-muted);
 }
 
+.history-selection-badge {
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+}
+
+.history-batch-delete-button {
+  height: 22px;
+  padding: 0 6px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.history-select-all-checkbox {
+  position: relative;
+  top: 1px;
+}
+
 .home-accent-chip {
   display: inline-flex;
   align-items: center;
@@ -1245,6 +1263,7 @@ textarea {
 
 .home-markdown-prose :where(th, td) {
   border: 1px solid var(--home-prose-border-strong);
+  padding: 4px 6px;
 }
 
 .home-markdown-prose :where(th) {

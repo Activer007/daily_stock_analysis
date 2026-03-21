@@ -93,19 +93,18 @@ export const HistoryList: React.FC<HistoryListProps> = ({
       >
         <div className="mb-4 space-y-3">
           <DashboardPanelHeader
-            className="mb-0"
-            eyebrow={(
-              <span className="flex items-center gap-2">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                历史分析
-              </span>
+            className="mb-1"
+            title="历史分析"
+            titleClassName="text-sm font-medium"
+            leading={(
+              <svg className="h-4 w-4 text-[var(--home-accent-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             )}
-            accentEyebrow
+            headingClassName="items-center"
             actions={
               selectedCount > 0 ? (
-                <Badge variant="info" size="sm" className="animate-in fade-in zoom-in duration-200">
+                <Badge variant="info" size="sm" className="history-selection-badge animate-in fade-in zoom-in duration-200">
                   已选 {selectedCount}
                 </Badge>
               ) : undefined
@@ -126,7 +125,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                   onChange={onToggleSelectAll}
                   disabled={isDeleting}
                   aria-label="全选当前已加载历史记录"
-                  className="h-3.5 w-3.5 cursor-pointer bg-transparent text-[var(--home-accent-text)] focus:ring-[color:var(--home-accent-border-hover)] disabled:opacity-50"
+                  className="history-select-all-checkbox h-3.5 w-3.5 cursor-pointer bg-transparent text-[var(--home-accent-text)] focus:ring-[color:var(--home-accent-border-hover)] disabled:opacity-50"
                 />
                 <span className="text-[11px] text-muted-text select-none">全选当前</span>
               </label>
@@ -136,7 +135,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                 onClick={onDeleteSelected}
                 disabled={selectedCount === 0 || isDeleting}
                 isLoading={isDeleting}
-                className="h-6 px-2 text-[9px] disabled:!border-transparent disabled:!bg-transparent"
+                className="history-batch-delete-button disabled:!border-transparent disabled:!bg-transparent"
               >
                 {isDeleting ? '删除中' : '删除'}
               </Button>

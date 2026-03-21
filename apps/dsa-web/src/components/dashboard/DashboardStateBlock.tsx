@@ -7,6 +7,8 @@ interface DashboardStateBlockProps {
   icon?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
+  titleClassName?: string;
+  descriptionClassName?: string;
   compact?: boolean;
   loading?: boolean;
 }
@@ -17,6 +19,8 @@ export const DashboardStateBlock: React.FC<DashboardStateBlockProps> = ({
   icon,
   action,
   className = '',
+  titleClassName = '',
+  descriptionClassName = '',
   compact = false,
   loading = false,
 }) => {
@@ -36,9 +40,9 @@ export const DashboardStateBlock: React.FC<DashboardStateBlockProps> = ({
         </div>
       ) : null}
       <div className="space-y-1">
-        <p className={cn('text-secondary-text', compact ? 'text-xs' : 'text-sm')}>{title}</p>
+        <p className={cn('text-secondary-text', compact ? 'text-xs' : 'text-sm', titleClassName)}>{title}</p>
         {description ? (
-          <p className={cn('mx-auto max-w-xs text-muted-text', compact ? 'text-label' : 'text-xs')}>
+          <p className={cn('mx-auto max-w-xs text-muted-text', compact ? 'text-label' : 'text-xs', descriptionClassName)}>
             {description}
           </p>
         ) : null}
