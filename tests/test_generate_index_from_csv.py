@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
 from generate_index_from_csv import (
     extract_symbol_from_ts_code,
     get_stock_name,
+    get_us_delist_priority,
     parse_stock_row,
     determine_market,
     generate_aliases,
@@ -249,6 +250,12 @@ class TestDataCleaning:
         result = parse_stock_row(row, 'US')
         assert result is None
 
+    def test_us_delist_priority_prefers_blank_over_nat(self):
+        """测试美股去重优先级：空 delist_date 优先于 NaT"""
+        assert get_us_delist_priority({'delist_date': ''}) == 2
+        assert get_us_delist_priority({'delist_date': 'NaT'}) == 1
+        assert get_us_delist_priority({'delist_date': '20250131'}) == 0
+
 
 class TestAliases:
     """测试别名生成函数"""
@@ -434,6 +441,66 @@ class TestIntegration:
         # 验证统计
         assert market_stats.get('CN', 0) == 2  # SZ, SH
         assert market_stats.get('BSE', 0) == 1  # BJ
+
+    def test_us_reused_symbols_are_deduplicated(self, tmp_path):
+        """测试美股复用 ticker 在加载时会先去重"""
+        us_csv = tmp_path / 'stock_list_us.csv'
+        with open(us_csv, 'w', encoding='utf-8-sig', newline='') as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=['ts_code', 'name', 'enname', 'list_date', 'delist_date']
+            )
+            writer.writeheader()
+            writer.writerow({
+                'ts_code': 'B',
+                'name': '',
+                'enname': 'BARNES GROUP',
+                'list_date': '19631014',
+                'delist_date': 'NaT',
+            })
+            writer.writerow({
+                'ts_code': 'B',
+                'name': '',
+                'enname': 'BARRICK MINING (NYS)',
+                'list_date': '19850213',
+                'delist_date': '',
+            })
+            writer.writerow({
+                'ts_code': 'DOC',
+                'name': '',
+                'enname': 'HEALTHPEAK PROPERTIES',
+                'list_date': '19850523',
+                'delist_date': '',
+            })
+            writer.writerow({
+                'ts_code': 'DOC',
+                'name': '',
+                'enname': 'PHYSICIANS REALTY TST.',
+                'list_date': '20130719',
+                'delist_date': '',
+            })
+            writer.writerow({
+                'ts_code': 'SPWR',
+                'name': '',
+                'enname': 'COMPLETE SOLARIA',
+                'list_date': '20210419',
+                'delist_date': '',
+            })
+            writer.writerow({
+                'ts_code': 'SPWR',
+                'name': '',
+                'enname': 'SUNPOWER',
+                'list_date': '20051109',
+                'delist_date': 'NaT',
+            })
+
+        stocks = load_tushare_data(tmp_path)
+
+        assert len(stocks) == 3
+        assert {stock['ts_code'] for stock in stocks} == {'B', 'DOC', 'SPWR'}
+        assert next(stock for stock in stocks if stock['ts_code'] == 'B')['name'] == 'BARRICK MINING (NYS)'
+        assert next(stock for stock in stocks if stock['ts_code'] == 'DOC')['name'] == 'HEALTHPEAK PROPERTIES'
+        assert next(stock for stock in stocks if stock['ts_code'] == 'SPWR')['name'] == 'COMPLETE SOLARIA'
 
 
 class TestPinyin:

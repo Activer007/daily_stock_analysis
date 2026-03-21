@@ -42,6 +42,7 @@ English | [简体中文](../README.md) | [繁體中文](README_CHT.md)
 | AI | Decision Dashboard | One-sentence conclusion + precise entry/exit levels + action checklist |
 | Analysis | Multi-dimensional Analysis | Technicals + chip distribution + sentiment + real-time quotes |
 | Market | Global Markets | A-shares, Hong Kong stocks, US stocks |
+| Search | Smart Autocomplete (MVP) | **[Beta]** Home search supports code/name/pinyin/aliases; the local index now covers A-shares, Hong Kong, and US stocks and can be refreshed from Tushare or AkShare data |
 | Review | Market Review | Daily overview, sectors, northbound capital flow |
 | Backtest | AI Backtest Validation | Auto-evaluate historical analysis accuracy, direction win rate, SL/TP hit rates |
 | Agent Q&A | Strategy Chat | Multi-turn strategy chat with 11 built-in trading strategies (internally loaded as skills) (Web/Bot/API) |
@@ -460,6 +461,20 @@ Enable the FastAPI service for configuration management and triggering analysis 
 > Note: `POST /api/v1/analysis/analyze` supports only one stock when `async_mode=false`; batch `stock_codes` requires `async_mode=true`. The async `202` response returns a single `task_id` for one stock, or an `accepted` / `duplicates` summary for batch requests.
 
 > For detailed instructions, see [Full Guide - API Service](full-guide_EN.md#fastapi-api-service)
+
+---
+
+## 🔎 Smart Search Autocomplete (MVP)
+
+The home analysis input now behaves more like a search box, reducing the need to memorize exact symbols.
+
+- **Multi-signal matching**: supports stock code, company name, pinyin abbreviation, and aliases (for example `gzmt` -> 贵州茅台, `tencent` -> 腾讯控股, `aapl` -> Apple Inc.).
+- **Multi-market coverage**: the local index now covers **A-shares, Hong Kong stocks, and US stocks**. It can be regenerated from either Tushare or AkShare source data when needed.
+- **Graceful fallback**:
+  - If the index is outdated, missing a newly listed symbol, or fails to load, the UI falls back to plain manual input without blocking analysis.
+  - If no suggestion matches, pressing Enter still submits the original input directly.
+
+> Tip: to refresh the index, run `python3 scripts/fetch_tushare_stock_list.py` to update the stock-list CSV files, then run `python3 scripts/generate_index_from_csv.py` to rebuild the static index.
 
 ---
 

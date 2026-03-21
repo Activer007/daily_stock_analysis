@@ -98,15 +98,32 @@ def load_tushare_data(data_dir: Path) -> List[Dict[str, Any]]:
 
         try:
             file_stocks = []
+            selected_us_stocks: Dict[str, tuple[Dict[str, Any], int]] = {}
             with open(csv_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
 
                 for row in reader:
                     # 传入市场参数以优化判断（对于特殊格式如 DUMMY）
                     parsed = parse_stock_row(row, market_name)
+                    if not parsed:
+                        continue
+
+                    if market_name == 'US':
+                        # Tushare us_basic may include historical rows for a reused ticker.
+                        # Keep one deterministic row per ts_code before generating the index.
+                        delist_priority = get_us_delist_priority(row)
+                        existing = selected_us_stocks.get(parsed['ts_code'])
+                        if existing is None or delist_priority > existing[1]:
+                            selected_us_stocks[parsed['ts_code']] = (parsed, delist_priority)
+                        continue
+
                     if parsed:
                         all_stocks.append(parsed)
                         file_stocks.append(parsed)
+
+            if market_name == 'US':
+                file_stocks = [item for item, _priority in selected_us_stocks.values()]
+                all_stocks.extend(file_stocks)
 
             print(f"    ✓ {market_name} 市场读取完成：{len(file_stocks)} 只股票")
 
@@ -114,6 +131,30 @@ def load_tushare_data(data_dir: Path) -> List[Dict[str, Any]]:
             print(f"    [Error] 读取 {csv_file.name} 失败：{e}")
 
     return all_stocks
+
+
+def get_us_delist_priority(row: Dict[str, str]) -> int:
+    """
+    为复用 ticker 的美股记录生成去重优先级。
+
+    Tushare us_basic 导出的 delist_date 对当前记录并不总是稳定：
+    - 空字符串通常表示当前仍在使用的 ticker
+    - ``NaT`` 多见于历史记录或日期占位值
+    - 实际日期表示明确退市
+
+    因此前置去重时优先选择：
+    1. delist_date 为空
+    2. delist_date 为 NaT
+    3. delist_date 为实际日期
+
+    同优先级时保留 CSV 中最先出现的记录，避免在信息不足时随意切换名称。
+    """
+    delist_date = (row.get('delist_date') or '').strip()
+    if not delist_date:
+        return 2
+    if delist_date.upper() == 'NAT':
+        return 1
+    return 0
 
 
 def load_akshare_data(logs_dir: Path) -> List[Dict[str, Any]]:
