@@ -2,6 +2,7 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReportDetails as ReportDetailsType, ReportLanguage } from '../../types/analysis';
 import { Card } from '../common';
+import { DashboardPanelHeader } from '../dashboard';
 import { getReportText, normalizeReportLanguage } from '../../utils/reportLanguage';
 
 interface ReportDetailsProps {
@@ -89,10 +90,11 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
 
   return (
     <Card variant="bordered" padding="md" className="home-panel-card text-left">
-      <div className="mb-3 flex items-baseline gap-2">
-        <span className="label-uppercase">{text.transparency}</span>
-        <h3 className="mt-0.5 text-base font-semibold text-foreground">{text.traceability}</h3>
-      </div>
+      <DashboardPanelHeader
+        eyebrow={text.transparency}
+        title={text.traceability}
+        className="mb-3"
+      />
 
       {/* Record ID */}
       {recordId && (

@@ -210,4 +210,64 @@ describe('HomePage', () => {
       expect(historyApi.deleteRecords).toHaveBeenCalledWith([1]);
     });
   });
+
+  it('opens and closes the mobile history drawer without changing dashboard styles', async () => {
+    vi.mocked(historyApi.getList).mockResolvedValue({
+      total: 0,
+      page: 1,
+      limit: 20,
+      items: [],
+    });
+
+    const { container } = render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    );
+
+    const trigger = await screen.findByTitle('历史记录');
+    fireEvent.click(trigger);
+
+    expect(container.querySelector('.home-mobile-overlay')).toBeTruthy();
+    expect(container.querySelector('.dashboard-card')).toBeTruthy();
+
+    fireEvent.click(container.querySelector('.fixed.inset-0.z-40') as HTMLElement);
+
+    await waitFor(() => {
+      expect(container.querySelector('.home-mobile-overlay')).toBeFalsy();
+    });
+  });
+
+  it('renders active task panel content from dashboard state', async () => {
+    vi.mocked(historyApi.getList).mockResolvedValue({
+      total: 0,
+      page: 1,
+      limit: 20,
+      items: [],
+    });
+
+    useStockPoolStore.setState({
+      activeTasks: [
+        {
+          taskId: 'task-1',
+          stockCode: '600519',
+          stockName: '贵州茅台',
+          status: 'processing',
+          progress: 45,
+          message: '正在抓取最新行情',
+          reportType: 'detailed',
+          createdAt: '2026-03-18T08:00:00Z',
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('分析任务')).toBeInTheDocument();
+    expect(screen.getByText('正在抓取最新行情')).toBeInTheDocument();
+  });
 });

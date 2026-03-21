@@ -2,6 +2,7 @@ import type React from 'react';
 import { useRef, useCallback, useEffect, useId } from 'react';
 import type { HistoryItem } from '../../types/analysis';
 import { Badge, Button, ScrollArea } from '../common';
+import { DashboardPanelHeader, DashboardStateBlock } from '../dashboard';
 import { HistoryListItem } from './HistoryListItem';
 
 interface HistoryListProps {
@@ -91,19 +92,25 @@ export const HistoryList: React.FC<HistoryListProps> = ({
         testId="home-history-list-scroll"
       >
         <div className="mb-4 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="home-title-accent flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              历史分析
-            </h2>
-            {selectedCount > 0 && (
-              <Badge variant="info" size="sm" className="animate-in fade-in zoom-in duration-200">
-                已选 {selectedCount}
-              </Badge>
+          <DashboardPanelHeader
+            className="mb-0"
+            eyebrow={(
+              <span className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                历史分析
+              </span>
             )}
-          </div>
+            accentEyebrow
+            actions={
+              selectedCount > 0 ? (
+                <Badge variant="info" size="sm" className="animate-in fade-in zoom-in duration-200">
+                  已选 {selectedCount}
+                </Badge>
+              ) : undefined
+            }
+          />
 
           {items.length > 0 && (
             <div className="flex items-center gap-2">
@@ -138,21 +145,21 @@ export const HistoryList: React.FC<HistoryListProps> = ({
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-10">
-            <div className="home-spinner h-6 w-6 animate-spin border-2" />
-          </div>
+          <DashboardStateBlock
+            loading
+            compact
+            title="加载历史记录中..."
+          />
         ) : items.length === 0 ? (
-          <div className="text-center py-12 space-y-3">
-            <div className="mx-auto w-11 h-11 rounded-full bg-subtle flex items-center justify-center text-muted-text/30">
+          <DashboardStateBlock
+            title="暂无历史分析记录"
+            description="完成首次分析后，这里会保留最近结果。"
+            icon={(
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-secondary-text">暂无历史分析记录</p>
-              <p className="text-xs text-muted-text">完成首次分析后，这里会保留最近结果。</p>
-            </div>
-          </div>
+            )}
+          />
         ) : (
           <div className="space-y-2">
             {items.map((item) => (

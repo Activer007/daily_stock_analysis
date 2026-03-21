@@ -2,6 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiErrorAlert, ConfirmDialog, Button } from '../components/common';
+import { DashboardStateBlock } from '../components/dashboard';
 import { StockAutocomplete } from '../components/StockAutocomplete';
 import { HistoryList } from '../components/history';
 import { ReportMarkdown, ReportSummary } from '../components/report';
@@ -221,8 +222,7 @@ const HomePage: React.FC = () => {
             ) : null}
             {isLoadingReport ? (
               <div className="flex h-full flex-col items-center justify-center">
-                <div className="home-spinner h-10 w-10 animate-spin border-3" />
-                <p className="mt-3 text-sm text-secondary-text">加载报告中...</p>
+                <DashboardStateBlock title="加载报告中..." loading />
               </div>
             ) : selectedReport ? (
               <div className="max-w-4xl pb-8">
@@ -254,15 +254,15 @@ const HomePage: React.FC = () => {
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-elevated">
-                  <svg className="h-6 w-6 text-muted-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h3 className="mb-1.5 text-base font-medium text-foreground">开始分析</h3>
-                <p className="max-w-xs text-xs text-muted-text">
-                  输入股票代码进行分析，或从左侧选择历史报告查看
-                </p>
+                <DashboardStateBlock
+                  title="开始分析"
+                  description="输入股票代码进行分析，或从左侧选择历史报告查看"
+                  icon={(
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  )}
+                />
               </div>
             )}
           </section>

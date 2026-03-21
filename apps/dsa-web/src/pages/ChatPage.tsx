@@ -858,7 +858,7 @@ const ChatPage: React.FC = () => {
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading}
                 isLoading={loading}
-                className="h-[44px] px-6 flex-shrink-0"
+                className="btn-primary flex-shrink-0"
               >
                 发送
               </Button>

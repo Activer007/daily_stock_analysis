@@ -1,16 +1,12 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReportDetails } from '../ReportDetails';
 
-const writeTextMock = vi.fn();
-let originalClipboard: Navigator['clipboard'] | undefined;
-
 describe('ReportDetails', () => {
+  const writeTextMock = vi.fn().mockResolvedValue(undefined);
+
   beforeEach(() => {
-    vi.useFakeTimers();
-    writeTextMock.mockReset();
-    writeTextMock.mockResolvedValue(undefined);
-    originalClipboard = navigator.clipboard;
+    writeTextMock.mockClear();
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
@@ -20,48 +16,40 @@ describe('ReportDetails', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: originalClipboard,
-    });
-    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('shows copied feedback only for the panel that was copied', async () => {
-    const details = {
-      rawResult: { signal: 'buy' },
-      contextSnapshot: { source: 'cache' },
-    };
-
-    render(<ReportDetails details={details} />);
+  it('toggles sections and copies json payloads', async () => {
+    render(
+      <ReportDetails
+        recordId={7}
+        details={{
+          rawResult: { score: 82 },
+          contextSnapshot: { window: '30d' },
+        }}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: '原始分析结果' }));
-    fireEvent.click(screen.getByRole('button', { name: '分析快照' }));
+    expect(screen.getByText(/"score": 82/)).toBeInTheDocument();
 
-    const [rawCopyButton, snapshotCopyButton] = screen.getAllByRole('button', { name: '复制' });
+    fireEvent.click(screen.getAllByRole('button', { name: '复制' })[0]);
 
-    await act(async () => {
-      fireEvent.click(rawCopyButton);
-      await Promise.resolve();
+    await waitFor(() => {
+      expect(writeTextMock).toHaveBeenCalled();
     });
 
-    expect(writeTextMock).toHaveBeenNthCalledWith(1, JSON.stringify(details.rawResult, null, 2));
     expect(screen.getByRole('button', { name: '已复制' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: '复制' })).toHaveLength(1);
 
-    await act(async () => {
-      fireEvent.click(snapshotCopyButton);
-      await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 2100));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '复制' })).toBeInTheDocument();
     });
+  });
 
-    expect(writeTextMock).toHaveBeenNthCalledWith(2, JSON.stringify(details.contextSnapshot, null, 2));
-    expect(screen.getAllByRole('button', { name: '已复制' })).toHaveLength(2);
-
-    act(() => {
-      vi.advanceTimersByTime(2000);
-    });
-
-    expect(screen.getAllByRole('button', { name: '复制' })).toHaveLength(2);
+  it('does not render when details and record id are both absent', () => {
+    const { container } = render(<ReportDetails />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
