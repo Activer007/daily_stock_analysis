@@ -175,4 +175,39 @@ describe('HomePage', () => {
       '/chat?stock=600519&name=%E8%B4%B5%E5%B7%9E%E8%8C%85%E5%8F%B0&recordId=1',
     );
   });
+
+  it('confirms and deletes selected history from the dashboard state flow', async () => {
+    vi.mocked(historyApi.getList).mockResolvedValue({
+      total: 1,
+      page: 1,
+      limit: 20,
+      items: [historyItem],
+    });
+    vi.mocked(historyApi.getDetail).mockResolvedValue(historyReport);
+    vi.mocked(historyApi.deleteRecords).mockResolvedValue({ deleted: 1 });
+
+    useStockPoolStore.setState({
+      historyItems: [historyItem],
+      selectedHistoryIds: [1],
+      selectedReport: historyReport,
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: '删除' }));
+
+    expect(
+      await screen.findByText('确认删除这条历史记录吗？删除后将不可恢复。'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '确认删除' }));
+
+    await waitFor(() => {
+      expect(historyApi.deleteRecords).toHaveBeenCalledWith([1]);
+    });
+  });
 });

@@ -106,6 +106,49 @@ describe('stockPoolStore', () => {
     expect(historyApi.getList).toHaveBeenCalledTimes(1);
   });
 
+  it('falls back to the next history report after deleting the currently selected item', async () => {
+    const nextHistoryItem = {
+      ...historyItem,
+      id: 2,
+      queryId: 'q-2',
+      stockCode: 'AAPL',
+      stockName: 'Apple',
+    };
+    const nextHistoryReport = {
+      ...historyReport,
+      meta: {
+        ...historyReport.meta,
+        id: 2,
+        queryId: 'q-2',
+        stockCode: 'AAPL',
+        stockName: 'Apple',
+      },
+    };
+
+    useStockPoolStore.setState({
+      historyItems: [historyItem, nextHistoryItem],
+      selectedHistoryIds: [1],
+      selectedReport: historyReport,
+    });
+
+    vi.mocked(historyApi.deleteRecords).mockResolvedValue({ deleted: 1 });
+    vi.mocked(historyApi.getList).mockResolvedValue({
+      total: 1,
+      page: 1,
+      limit: 20,
+      items: [nextHistoryItem],
+    });
+    vi.mocked(historyApi.getDetail).mockResolvedValue(nextHistoryReport);
+
+    await useStockPoolStore.getState().deleteSelectedHistory();
+
+    const state = useStockPoolStore.getState();
+    expect(state.historyItems).toHaveLength(1);
+    expect(state.historyItems[0].id).toBe(2);
+    expect(state.selectedReport?.meta.id).toBe(2);
+    expect(state.selectedReport?.meta.stockCode).toBe('AAPL');
+  });
+
   it('surfaces duplicate task errors without replacing the dashboard error state', async () => {
     vi.mocked(analysisApi.analyzeAsync).mockRejectedValue(
       new DuplicateTaskError('600519', 'task-1', '股票 600519 正在分析中'),
