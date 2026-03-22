@@ -24,7 +24,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🖥️ **Dashboard 字号层级回调** — 收敛首页侧栏与空状态的字体层级：恢复首页空状态主标题的强调级别，统一“历史分析 / 分析任务”侧栏面板标题尺寸，并微调历史列表中“已选 / 删除 / 全选当前”这组操作元素的密度与对齐。
 - 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中”原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
 - 🧾 **Web 报告详情复制提示按面板独立** — `ReportDetails` 中”原始分析结果”和”分析快照”的复制提示不再共享同一个 `copied` 状态；当两个面板同时展开时，复制其中一个只会更新对应按钮文案，避免两个按钮同时显示”已复制”的误导反馈。
+- 🧩 **个股分析页补齐关联板块展示**（#669）— A 股分析写路径现在会把 `belong_boards` 一次性写入 `fundamental_context` / `fundamental_snapshot`，结构化报告详情同步新增 `belong_boards` 与 `sector_rankings` 字段，Web 个股分析页首屏可直接展示所属板块及其是否命中当日板块涨跌榜；无数据时保持 fail-open 隐藏，不影响现有分析主流程。
+### 新功能
+
+- 💾 **桌面端 `.env` 备份/恢复入口**（#754）— 桌面模式下的系统设置页新增 `导出 .env` / `导入 .env` 按钮，可直接备份当前已保存配置，或把备份文件中的键值合并恢复到当前桌面端 `.env`；导入沿用现有 `config_version` 冲突保护与运行时重载链路，不改变现有桌面端便携模式路径。
+- 📊 **Tushare 股票列表获取工具** — 新增 `scripts/fetch_tushare_stock_list.py`，支持从 Tushare Pro 获取 A股、港股、美股列表信息并保存为 CSV，配有分页读取、智能限流、错误处理和进度提示；新增对应使用文档 `docs/TUSHARE_STOCK_LIST_GUIDE.md`。
+- 🔎 **索引生成脚本多市场支持** — `generate_index_from_csv.py` 重构为支持 Tushare 和 AkShare 双数据源，同时覆盖 A股、港股、美股三个市场；新增按市场分类的别名映射（A股、港股常见别名，美股常用股票英文缩写）；添加 `--source` 参数切换数据源、`--test` 参数验证模式；严格过滤美股 DUMMY 记录。
+- 🔎 **索引生成脚本增强** — `generate_stock_index.py` 新增 `--test`/`-t` 测试模式和 `--verbose`/`-v` 详细输出模式，添加市场分布统计，优化 JSON 输出格式。
+
+### 改进
+
+- 🔎 **自动补全索引数据更新** — 重新生成 `stocks.index.json`，涵盖 A股、港股、美股三个市场，提升自动补全覆盖率。
+
+### 测试
+
+- 新增 `tests/test_generate_index_from_csv.py` 测试文件，覆盖 Tushare/AkShare 双数据源解析、多市场判断、美股 DUMMY 过滤等核心路径。
+
+### 文档
+
+- 新增 `docs/TUSHARE_STOCK_LIST_GUIDE.md`，详细说明 Tushare 股票列表获取工具的使用方法、数据格式、常见问题。
+
+### 修复
+
+- 🔎 **美股自动补全复用 ticker 去重** — `generate_index_from_csv.py` 在导入 Tushare `us_basic` CSV 时会先按 `ts_code` 折叠复用的美股 ticker，优先保留更可能仍在使用的记录，避免 `stocks.index.json` 出现重复 `canonicalCode` 后让 Web 自动补全展示历史名称或提交歧义代码。
+- 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中”原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
+- 🧾 **Web 报告详情复制提示按面板独立** — `ReportDetails` 中“原始分析结果”和“分析快照”的复制提示不再共享同一个 `copied` 状态；当两个面板同时展开时，复制其中一个只会更新对应按钮文案，避免两个按钮同时显示“已复制”的误导反馈。
 - 📊 **Agent backtest tool semantics** — `get_skill_backtest_summary` 现在要求显式传入 `skill_id`，缺失时会返回明确的校验提示；当仓库尚未持久化真实 skill 级汇总时会返回明确的 unsupported/info 响应，而不再复用 overall 指标。成功返回路径会同时保留 normalized 指标和 `*_pct` 兼容字段，相关工具错误返回也改为稳定通用文案，避免向 agent 或用户暴露底层异常细节。
+- 📋 **首页完整报告支持双模式复制** — 历史报告详情头部新增“复制 Markdown 源码”和“复制纯文本”工具按钮；前者保留原始 Markdown 结构，后者去除常见 Markdown 格式符号，方便分享、归档和跨报告比对。复制按钮文案会跟随 `REPORT_LANGUAGE` 保持中英文一致，避免英文报告页出现中文固定文案。
 
 ## [3.9.0] - 2026-03-20
 

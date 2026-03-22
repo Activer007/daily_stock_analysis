@@ -13,7 +13,7 @@ ensure_litellm_stub()
 
 from src.config import Config
 from src.core.config_manager import ConfigManager
-from src.services.system_config_service import ConfigConflictError, SystemConfigService
+from src.services.system_config_service import ConfigConflictError, ConfigImportError, SystemConfigService
 
 
 class SystemConfigServiceTestCase(unittest.TestCase):
@@ -57,6 +57,87 @@ class SystemConfigServiceTestCase(unittest.TestCase):
         self.assertEqual(items["GEMINI_API_KEY"]["value"], "secret-key-value")
         self.assertFalse(items["GEMINI_API_KEY"]["is_masked"])
         self.assertTrue(items["GEMINI_API_KEY"]["raw_value_exists"])
+
+    def test_export_desktop_env_returns_raw_text(self) -> None:
+        self.env_path.write_text(
+            "# Desktop config\nSTOCK_LIST=600519,000001\n\nGEMINI_API_KEY=secret-key-value\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.export_desktop_env()
+
+        self.assertEqual(
+            payload["content"],
+            "# Desktop config\nSTOCK_LIST=600519,000001\n\nGEMINI_API_KEY=secret-key-value\n",
+        )
+        self.assertEqual(payload["config_version"], self.manager.get_config_version())
+
+    def test_import_desktop_env_merges_keys_without_deleting_unspecified_values(self) -> None:
+        current_version = self.manager.get_config_version()
+
+        payload = self.service.import_desktop_env(
+            config_version=current_version,
+            content="STOCK_LIST=300750\nCUSTOM_NOTE=desktop backup\n",
+            reload_now=False,
+        )
+
+        self.assertTrue(payload["success"])
+        current_map = self.manager.read_config_map()
+        self.assertEqual(current_map["STOCK_LIST"], "300750")
+        self.assertEqual(current_map["CUSTOM_NOTE"], "desktop backup")
+        self.assertEqual(current_map["GEMINI_API_KEY"], "secret-key-value")
+
+    def test_import_desktop_env_treats_mask_token_as_literal_value(self) -> None:
+        current_version = self.manager.get_config_version()
+
+        self.service.import_desktop_env(
+            config_version=current_version,
+            content="GEMINI_API_KEY=******\n",
+            reload_now=False,
+        )
+
+        current_map = self.manager.read_config_map()
+        self.assertEqual(current_map["GEMINI_API_KEY"], "******")
+
+    def test_import_desktop_env_uses_last_duplicate_assignment(self) -> None:
+        current_version = self.manager.get_config_version()
+
+        self.service.import_desktop_env(
+            config_version=current_version,
+            content="STOCK_LIST=000001\nSTOCK_LIST=300750\n",
+            reload_now=False,
+        )
+
+        current_map = self.manager.read_config_map()
+        self.assertEqual(current_map["STOCK_LIST"], "300750")
+
+    def test_import_desktop_env_allows_empty_assignment(self) -> None:
+        current_version = self.manager.get_config_version()
+
+        self.service.import_desktop_env(
+            config_version=current_version,
+            content="LOG_LEVEL=\n",
+            reload_now=False,
+        )
+
+        current_map = self.manager.read_config_map()
+        self.assertEqual(current_map["LOG_LEVEL"], "")
+
+    def test_import_desktop_env_rejects_empty_or_comment_only_content(self) -> None:
+        with self.assertRaises(ConfigImportError):
+            self.service.import_desktop_env(
+                config_version=self.manager.get_config_version(),
+                content="   \n# only comments\n\n",
+                reload_now=False,
+            )
+
+    def test_import_desktop_env_raises_conflict_for_stale_version(self) -> None:
+        with self.assertRaises(ConfigConflictError):
+            self.service.import_desktop_env(
+                config_version="stale-version",
+                content="STOCK_LIST=300750\n",
+                reload_now=False,
+            )
 
     def test_update_preserves_masked_secret(self) -> None:
         old_version = self.manager.get_config_version()

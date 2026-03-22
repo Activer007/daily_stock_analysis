@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import re
 import time
@@ -50,6 +51,14 @@ class ConfigConflictError(Exception):
     def __init__(self, current_version: str):
         super().__init__("Configuration version conflict")
         self.current_version = current_version
+
+
+class ConfigImportError(Exception):
+    """Raised when an imported `.env` payload is invalid."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
 
 
 class SystemConfigService:
@@ -192,6 +201,39 @@ class SystemConfigService:
             "valid": valid,
             "issues": issues,
         }
+
+    def export_desktop_env(self) -> Dict[str, Any]:
+        """Return the raw active `.env` content for desktop-only backup."""
+        if self._manager.env_path.exists():
+            content = self._manager.env_path.read_text(encoding="utf-8")
+        else:
+            content = ""
+
+        return {
+            "content": content,
+            "config_version": self._manager.get_config_version(),
+            "updated_at": self._manager.get_updated_at(),
+        }
+
+    def import_desktop_env(
+        self,
+        *,
+        config_version: str,
+        content: str,
+        reload_now: bool = True,
+    ) -> Dict[str, Any]:
+        """Merge imported `.env` assignments into the active config."""
+        current_version = self._manager.get_config_version()
+        if current_version != config_version:
+            raise ConfigConflictError(current_version=current_version)
+
+        updates = self._parse_imported_env_content(content)
+        return self.update(
+            config_version=config_version,
+            items=updates,
+            mask_token="__DSA_IMPORT_LITERAL_MASK__",
+            reload_now=reload_now,
+        )
 
     def test_llm_channel(
         self,
@@ -418,6 +460,32 @@ class SystemConfigService:
             sensitive_keys=set(),
             mask_token=mask_token,
         )
+
+    @staticmethod
+    def _parse_imported_env_content(content: str) -> List[Dict[str, str]]:
+        """Parse raw `.env` text into update items using current dotenv semantics."""
+        normalized_content = content.replace("\ufeff", "")
+        if not normalized_content.strip():
+            raise ConfigImportError("未识别到有效 .env 配置")
+
+        from dotenv import dotenv_values
+
+        parsed = dotenv_values(stream=io.StringIO(normalized_content))
+        updates: List[Dict[str, str]] = []
+        for key, value in parsed.items():
+            if key is None:
+                continue
+            updates.append(
+                {
+                    "key": str(key).upper(),
+                    "value": "" if value is None else str(value),
+                }
+            )
+
+        if not updates:
+            raise ConfigImportError("未识别到有效 .env 配置")
+
+        return updates
 
     def _collect_issues(self, items: Sequence[Dict[str, str]], mask_token: str) -> List[Dict[str, Any]]:
         """Collect field-level and cross-field validation issues."""

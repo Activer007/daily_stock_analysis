@@ -135,6 +135,121 @@ class AnalysisApiContractTestCase(unittest.TestCase):
         self.assertEqual(report.details.financial_report["report_date"], "2025-12-31")
         self.assertEqual(report.details.dividend_metrics["ttm_dividend_yield_pct"], 2.5)
 
+    def test_build_analysis_report_extracts_related_board_fields_from_snapshot(self) -> None:
+        if _build_analysis_report is None:
+            self.skipTest("analysis endpoint helpers unavailable in this environment")
+
+        report = _build_analysis_report(
+            report_data={
+                "meta": {},
+                "summary": {},
+                "strategy": {},
+                "details": {},
+            },
+            query_id="q1",
+            stock_code="600519",
+            stock_name="贵州茅台",
+            context_snapshot={
+                "enhanced_context": {
+                    "fundamental_context": {
+                        "belong_boards": [{"name": "白酒", "type": "行业"}],
+                        "boards": {
+                            "data": {
+                                "top": [{"name": "白酒", "change_pct": 2.5}],
+                                "bottom": [],
+                            }
+                        },
+                    }
+                }
+            },
+            fallback_fundamental_payload=None,
+        )
+
+        self.assertEqual(report.details.belong_boards, [{"name": "白酒", "type": "行业"}])
+        self.assertEqual(report.details.sector_rankings["top"][0]["name"], "白酒")
+        self.assertEqual(report.details.sector_rankings["top"][0]["change_pct"], 2.5)
+
+    def test_build_analysis_report_normalizes_related_board_payloads(self) -> None:
+        if _build_analysis_report is None:
+            self.skipTest("analysis endpoint helpers unavailable in this environment")
+
+        report = _build_analysis_report(
+            report_data={
+                "meta": {},
+                "summary": {},
+                "strategy": {},
+                "details": {},
+            },
+            query_id="q1",
+            stock_code="600519",
+            stock_name="贵州茅台",
+            context_snapshot={
+                "enhanced_context": {
+                    "fundamental_context": {
+                        "belong_boards": [
+                            {"name": " 白酒 ", "type": " 行业 ", "code": " BK0815 "},
+                            {"name": "   "},
+                            "bad-item",
+                        ],
+                        "boards": {
+                            "data": {
+                                "top": {"name": "坏数据"},
+                                "bottom": [
+                                    {"name": " 消费 ", "change_pct": "-1.2%"},
+                                    {"name": None, "change_pct": 1},
+                                    "bad-item",
+                                ],
+                            }
+                        },
+                    }
+                }
+            },
+            fallback_fundamental_payload=None,
+        )
+
+        self.assertEqual(
+            report.details.belong_boards,
+            [{"name": "白酒", "type": "行业", "code": "BK0815"}],
+        )
+        self.assertEqual(
+            report.details.sector_rankings,
+            {
+                "top": [],
+                "bottom": [{"name": "消费", "change_pct": -1.2}],
+            },
+        )
+
+    def test_build_analysis_report_keeps_failed_board_rankings_unavailable(self) -> None:
+        if _build_analysis_report is None:
+            self.skipTest("analysis endpoint helpers unavailable in this environment")
+
+        report = _build_analysis_report(
+            report_data={
+                "meta": {},
+                "summary": {},
+                "strategy": {},
+                "details": {},
+            },
+            query_id="q1",
+            stock_code="600519",
+            stock_name="贵州茅台",
+            context_snapshot={
+                "enhanced_context": {
+                    "fundamental_context": {
+                        "belong_boards": [{"name": "白酒"}],
+                        "boards": {
+                            "status": "failed",
+                            "data": {},
+                        },
+                    }
+                }
+            },
+            fallback_fundamental_payload=None,
+        )
+
+        self.assertEqual(report.details.belong_boards, [{"name": "白酒"}])
+        self.assertIsNone(report.details.sector_rankings)
+
     def test_build_analysis_report_preserves_report_language(self) -> None:
         if _build_analysis_report is None:
             self.skipTest("analysis endpoint helpers unavailable in this environment")

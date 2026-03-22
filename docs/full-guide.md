@@ -271,12 +271,15 @@ daily_stock_analysis/
 > - 官方 quickstart 已文档化 `quotes.get(universes=["CN_Equity_A"])`，但线上 smoke test 进一步确认：`TICKFLOW_API_KEY` 不等于一定具备该权限，且 `quotes.get(symbols=[...])` 单次存在标的数量限制。
 > - TickFlow 实际返回的 `change_pct` / `amplitude` 为比例值；系统已在接入层统一转换为百分比值，确保与现有数据源字段语义一致。
 > - 字段契约：
+>   - `fundamental_context.belong_boards` = 个股关联板块列表（当前仅 A 股写入；无数据时为 `[]`）；
 >   - `fundamental_context.boards.data` = `sector_rankings`（板块涨跌榜，结构 `{top, bottom}`）；
 >   - `fundamental_context.earnings.data.financial_report` = 财报摘要（报告期、营收、归母净利润、经营现金流、ROE）；
 >   - `fundamental_context.earnings.data.dividend` = 分红指标（仅现金分红税前口径，含 `events`、`ttm_cash_dividend_per_share`、`ttm_dividend_yield_pct`）；
 >   - `get_stock_info.belong_boards` = 个股所属板块列表；
 >   - `get_stock_info.boards` 为兼容别名，值与 `belong_boards` 相同（未来仅在大版本考虑移除）；
 >   - `get_stock_info.sector_rankings` 与 `fundamental_context.boards.data` 保持一致。
+>   - `AnalysisReport.details.belong_boards` = 结构化报告详情中的关联板块列表；
+>   - `AnalysisReport.details.sector_rankings` = 结构化报告详情中的板块涨跌榜（用于前端板块联动展示）。
 > - 板块涨跌榜使用数据源顺序：与全局 priority 一致。
 > - 超时控制为 `best-effort` 软超时：阶段会按预算快速降级继续执行，但不保证硬中断底层三方调用。
 > - `FUNDAMENTAL_STAGE_TIMEOUT_SECONDS=1.5` 表示新增基本面阶段的目标预算，不是严格硬 SLA。
