@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { cn } from '../utils/cn';
 import { agentApi } from '../api/agent';
 import { ApiErrorAlert, Button, ConfirmDialog, ScrollArea } from '../components/common';
 import { getParsedApiError } from '../api/error';
@@ -709,20 +710,18 @@ const ChatPage: React.FC = () => {
                   className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                      msg.role === 'user'
-                        ? 'bg-cyan text-black'
-                        : 'bg-elevated text-foreground'
-                    }`}
+                    className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold shadow-sm transition-all',
+                      msg.role === 'user' ? 'chat-avatar-user' : 'chat-avatar-ai'
+                    )}
                   >
                     {msg.role === 'user' ? 'U' : 'AI'}
                   </div>
                   <div
-                    className={`min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden rounded-2xl px-5 py-3.5 ${
-                      msg.role === 'user'
-                        ? 'bg-cyan/10 text-foreground border border-cyan/20 rounded-tr-sm'
-                        : 'bg-card/72 text-secondary-text border border-white/30 rounded-tl-sm'
-                    }`}
+                    className={cn(
+                      'min-w-0 w-fit max-w-[min(100%,48rem)] overflow-hidden px-5 py-3.5 transition-colors',
+                      msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
+                    )}
                   >
                     {msg.role === 'assistant' && msg.skillName && (
                       <div className="mb-2">

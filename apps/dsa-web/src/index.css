@@ -55,6 +55,9 @@
   --color-success: 152 69% 40%;
   --color-warning: 37 92% 50%;
   --color-danger: 0 90% 55%;
+  --color-danger-alert-text: 349 82% 35%; /* Darker red for light mode */
+  --color-danger-alert-border: 349 82% 56%;
+  --color-danger-alert-bg: 349 82% 56%;
   /* Tailwind-compatible accent colors (Light theme) */
   --color-cyan-400: 188 78% 41%;
   --color-emerald-400: 152 69% 40%;
@@ -182,8 +185,8 @@
   --autocomplete-hover-bg: #04d1f6;
 
   /* Shadows (using HSL format) */
-  --shadow-soft-card: 0 18px 48px hsl(215 25% 27% / 0.08);
-  --shadow-soft-card-strong: 0 24px 56px hsl(215 25% 27% / 0.12);
+  --shadow-soft-card: 0 24px 64px hsl(220 30% 45% / 0.05), 0 8px 24px hsl(220 30% 45% / 0.03);
+  --shadow-soft-card-strong: 0 32px 80px hsl(220 30% 45% / 0.08), 0 12px 32px hsl(220 30% 45% / 0.04);
   --settings-surface: hsl(0 0% 100% / 0.02);
   --settings-surface-hover: hsl(0 0% 100% / 0.05);
   --settings-surface-strong: hsl(var(--card) / 0.92);
@@ -216,6 +219,19 @@
   --input-surface-focus-ring: 0 0 0 4px hsl(var(--primary) / 0.15);
   --gradient-primary:
     linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.74));
+
+  /* Chat UI Tokens (Light) */
+  --chat-avatar-user-bg: hsl(var(--primary) / 0.5 );
+  --chat-avatar-user-fg: #041118;
+  --chat-avatar-user-border: hsl(var(--primary) / 0.3);
+  --chat-avatar-ai-bg: hsl(var(--primary) / 0.1);
+  --chat-avatar-ai-fg: hsl(var(--foreground)/ 0.8 );
+  --chat-avatar-ai-border: hsl(var(--primary) / 0.2);
+  
+  --chat-bubble-user-bg: hsl(var(--primary) / 0.1);
+  --chat-bubble-user-border: hsl(var(--primary) / 0.2);
+  --chat-bubble-ai-bg: hsl(var(--card) / 0.85);
+  --chat-bubble-ai-border: hsl(var(--foreground) / 0.2);
 
   /* Backtest专用 */
   --backtest-border-dim: hsl(var(--foreground) / 0.05);
@@ -264,6 +280,9 @@
   --color-success: 152 69% 40%;
   --color-warning: 37 92% 50%;
   --color-danger: 0 90% 55%;
+  --color-danger-alert-text: 349 100% 75%; /* Bright/light pink for dark mode */
+  --color-danger-alert-border: 349 100% 63%;
+  --color-danger-alert-bg: 349 100% 63%;
   --autocomplete-hover-bg: #2dcae6;
   /* Tailwind-compatible accent colors (Dark theme) */
   --color-cyan-400: 188 78% 41%;
@@ -424,6 +443,19 @@
   --input-surface-focus-ring: 0 0 0 4px hsl(var(--primary) / 0.18);
   --gradient-primary:
     linear-gradient(135deg, rgba(0, 212, 255, 0.96), rgba(0, 168, 204, 0.96));
+
+  /* Chat UI Tokens (Dark) */
+  --chat-avatar-user-bg: hsl(var(--primary) / 0.8);
+  --chat-avatar-user-fg: hsl(var(--foreground) / 0.9);
+  --chat-avatar-user-border: hsl(var(--primary) / 0.15); /* Lower brightness/opacity for dark mode */
+  --chat-avatar-ai-bg: hsl(var(--primary) / 0.8);
+  --chat-avatar-ai-fg: hsl(var(--foreground) / 0.9);
+  --chat-avatar-ai-border: hsl(0 0% 100% / 0.1); /* Low opacity white for dark mode */
+  
+  --chat-bubble-user-bg: hsl(var(--primary) / 0.1);
+  --chat-bubble-user-border: hsl(var(--primary) / 0.2);
+  --chat-bubble-ai-bg: hsl(var(--card) / 0.72);
+  --chat-bubble-ai-border: hsl(0 0% 100% / 0.12); /* Semi-transparent border for dark mode */
 
   /* Backtest专用 */
   --backtest-border-dim: hsl(var(--foreground) / 0.06);
@@ -929,8 +961,8 @@ textarea {
   --terminal-card-gradient-start: var(--border-accent);
   --terminal-card-gradient-mid: var(--border-purple);
   --terminal-card-gradient-end: var(--border-dim);
-  --terminal-card-shadow: 0 18px 48px rgba(3, 8, 20, 0.18);
-  --terminal-card-shadow-hover: 0 24px 56px rgba(3, 8, 20, 0.26);
+  --terminal-card-shadow: var(--shadow-soft-card);
+  --terminal-card-shadow-hover: var(--shadow-soft-card-strong);
   position: relative;
   overflow: hidden;
   border-radius: 1rem;
@@ -990,7 +1022,7 @@ textarea {
     var(--border-purple) 50%,
     var(--border-dim) 100%
   );
-  box-shadow: 0 18px 48px rgba(3, 8, 20, 0.2);
+  box-shadow: var(--shadow-soft-card);
 }
 
 .gradient-border-card-inner {
@@ -1011,7 +1043,7 @@ textarea {
   background: hsl(var(--card) / 0.72);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 48px rgba(3, 8, 20, 0.22);
+  box-shadow: var(--shadow-soft-card);
 }
 
 .glass-card::before {
@@ -1069,7 +1101,7 @@ textarea {
   background: hsl(var(--card) / 0.72);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 48px rgba(3, 8, 20, 0.22);
+  box-shadow: var(--shadow-soft-card);
 }
 
 .dashboard-card::before {
@@ -1650,6 +1682,38 @@ textarea {
 
 .prose :where(li) {
   margin: 2px 0;
+}
+
+/* =========================================
+   Chat Page UI Styles
+   ========================================= */
+
+.chat-avatar-user {
+  background-color: var(--chat-avatar-user-bg);
+  color: var(--chat-avatar-user-fg);
+  border: 1px solid var(--chat-avatar-user-border);
+}
+
+.chat-avatar-ai {
+  background-color: var(--chat-avatar-ai-bg);
+  color: var(--chat-avatar-ai-fg);
+  border: 1px solid var(--chat-avatar-ai-border);
+}
+
+.chat-bubble-user {
+  background-color: var(--chat-bubble-user-bg);
+  color: hsl(var(--foreground));
+  border: 1px solid var(--chat-bubble-user-border);
+  border-radius: 1rem;
+  border-top-right-radius: 0.125rem;
+}
+
+.chat-bubble-ai {
+  background-color: var(--chat-bubble-ai-bg);
+  color: var(--text-secondary-text);
+  border: 1px solid var(--chat-bubble-ai-border);
+  border-radius: 1rem;
+  border-top-left-radius: 0.125rem;
 }
 
 /* =========================================
