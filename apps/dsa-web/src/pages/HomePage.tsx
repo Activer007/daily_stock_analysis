@@ -146,7 +146,7 @@ const HomePage: React.FC = () => {
       data-testid="home-dashboard"
       className="flex h-[calc(100vh-5rem)] w-full flex-col overflow-hidden md:flex-row sm:h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-2rem)]"
     >
-      <div className="flex-1 flex flex-col min-w-0 max-w-full lg:max-w-6xl mx-auto w-full">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 max-w-full lg:max-w-6xl mx-auto w-full">
         <header className="flex min-w-0 flex-shrink-0 items-center overflow-hidden px-3 py-3 md:px-4 md:py-4">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <button
@@ -206,7 +206,7 @@ const HomePage: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           <div className="hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden pl-4 pb-4 md:flex lg:w-72">
             {sidebarContent}
           </div>
@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
             </div>
           ) : null}
 
-          <section className="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto px-3 pb-4 md:px-6">
+          <section className="flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-auto px-3 pb-4 md:px-6 touch-pan-y">
             {error ? (
               <ApiErrorAlert
                 error={error}
@@ -267,6 +267,7 @@ const HomePage: React.FC = () => {
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <DashboardStateBlock
                   title="开始分析"
+                  titleAs="h3"
                   description="输入股票代码进行分析，或从左侧选择历史报告查看"
                   titleClassName="text-base font-medium text-foreground"
                   icon={(

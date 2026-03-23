@@ -81,7 +81,7 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
         >
           {copiedPanels[panel] ? text.copied : text.copy}
         </button>
-        <pre className="text-xs text-secondary-text font-mono overflow-x-auto p-3 bg-base rounded-lg max-h-80 overflow-y-auto text-left w-0 min-w-full">
+        <pre className="text-xs text-foreground font-mono overflow-x-auto p-3 bg-base rounded-lg max-h-80 overflow-y-auto text-left w-0 min-w-full">
           {jsonStr}
         </pre>
       </div>

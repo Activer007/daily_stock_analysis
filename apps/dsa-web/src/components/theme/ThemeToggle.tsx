@@ -67,7 +67,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     <div className="relative" ref={containerRef}>
       <button
         type="button"
-        disabled
+        // disabled
         onClick={() => setOpen((value) => !value)}
         data-state={open ? 'open' : 'closed'}
         className={cn(

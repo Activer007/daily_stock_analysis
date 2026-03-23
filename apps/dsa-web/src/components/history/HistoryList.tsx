@@ -184,7 +184,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
             {!hasMore && items.length > 0 && (
               <div className="text-center py-5">
                 <div className="h-px bg-subtle w-full mb-3" />
-                <span className="text-[10px] text-muted-text/50 uppercase tracking-[0.2em]">已到底部</span>
+                <span className="text-[10px] text-secondary-text uppercase tracking-[0.2em]">已到底部</span>
               </div>
             )}
           </div>

@@ -15,15 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### 改进
 
-- 🖥️ **Dashboard 面板统一化（PR7-2）** — 新增 `DashboardPanelHeader` 和 `DashboardStateBlock` 作为历史、报告、资讯、任务和透明度等面板的通用组件；统一了各面板标题层级、加载/空态/错误态和 CSS 变量 token。
+- 🖥️ **Dashboard 面板统一化（PR7-2）** — 新增 `DashboardPanelHeader` 和 `DashboardStateBlock` 作为历史、报告、资讯、任务和透明度等面板的通用组件；统一了各面板标题层级、加载/空态以及相关 CSS 变量 token。
 - 🖥️ **HomePage 状态边界收口（PR7-2）** — 引入 `useHomeDashboardState` hook，集中 `stockPoolStore` 状态选取逻辑，移除 `HomePage` 中重复的本地状态派生和回调定义。
 
 ### 测试
 
-- 🧪 **Dashboard 组件测试覆盖率扩展（PR7-2）** — 新增 `ReportNews` 和 `TaskPanel` 测试；对 `HistoryList`、`ReportDetails`、`HomePage`、`useDashboardLifecycle` 和 `stockPoolStore` 增强了断言覆盖，包括删除回退、移动端抽屉和任务生命周期等场景。
+- 🧪 **Dashboard 组件测试覆盖率扩展（PR7-2）** — 新增 `ReportNews` 和 `TaskPanel` 测试；对 `HistoryList`、`ReportDetails`、`HomePage`、`useDashboardLifecycle` 和 `stockPoolStore` 补充了删除回退、移动端抽屉、复制反馈隔离和任务生命周期等场景断言。
 
 ### 修复
 
+- 🖥️ **首页移动端滚动恢复** — 首页主内容区补齐 `min-h-0` 的 flex 高度约束，修复移动端长报告场景下内容被外层固定高度容器裁切、页面无法上下滚动的问题；不影响问股、系统设置等其他页面的现有滚动行为。
 - 🧾 **完整 Markdown 报告表格间距收敛** — 调整完整分析报告抽屉中 Markdown 表格 `th/td` 的内边距到更紧凑的 4-6px 区间，减轻窄列场景下的拥挤和失衡感，让表格信息密度与报告正文更协调。
 - 🖥️ **Dashboard 字号层级回调** — 收敛首页侧栏与空状态的字体层级：恢复首页空状态主标题的强调级别，统一“历史分析 / 分析任务”侧栏面板标题尺寸，并微调历史列表中“已选 / 删除 / 全选当前”这组操作元素的密度与对齐。
 - 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中”原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
