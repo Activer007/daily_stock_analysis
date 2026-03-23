@@ -42,8 +42,6 @@ export function useHomeDashboardState() {
       removeTask: state.removeTask,
       openMarkdownDrawer: state.openMarkdownDrawer,
       closeMarkdownDrawer: state.closeMarkdownDrawer,
-      notify: state.notify,
-      setNotify: state.setNotify,
     })),
   );
 
