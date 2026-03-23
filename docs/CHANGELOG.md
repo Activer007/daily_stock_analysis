@@ -15,21 +15,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### 改进
 
-- 🖥️ **Dashboard 面板统一化（PR7-2）** — 新增 `DashboardPanelHeader` 和 `DashboardStateBlock` 作为历史、报告、资讯、任务和透明度等面板的通用组件；统一了各面板标题层级、加载/空态以及相关 CSS 变量 token。
-- 🖥️ **HomePage 状态边界收口（PR7-2）** — 引入 `useHomeDashboardState` hook，集中 `stockPoolStore` 状态选取逻辑，移除 `HomePage` 中重复的本地状态派生和回调定义。
-
-### 测试
-
-- 🧪 **Dashboard 组件测试覆盖率扩展（PR7-2）** — 新增 `ReportNews` 和 `TaskPanel` 测试；对 `HistoryList`、`ReportDetails`、`HomePage`、`useDashboardLifecycle` 和 `stockPoolStore` 补充了删除回退、移动端抽屉、复制反馈隔离和任务生命周期等场景断言。
+- 🖥️ **核心页面布局与壳层深度集成** — 统一了问股与回测页面的布局契约，移除了硬编码的高度限制，确保页面在导航框架内 100% 填充且滚动体验更顺畅。
+- 🎨 **全局视觉体验深度优化** — 引入动态 HSL 软阴影系统，显著提升了浅色模式下的层次感与现代感；重塑了侧边栏导航激活态视觉，并优化了系统告警组件在不同主题下的对比度。
+- 🧩 **UI 组件样式规范化** — 提取并重构了回测、个股分析等页面的样式体系，将零散的内联样式收口为语义化的 CSS 变量，提升了视觉一致性与维护效率。
+- 🖥️ **Dashboard 面板统一化** — 新增 `DashboardPanelHeader` 和 `DashboardStateBlock` 作为历史、报告、资讯、任务和透明度等面板的通用组件；统一了各面板标题层级、加载/空态以及相关 CSS 变量 token。
+- 🖥️ **HomePage 状态边界收口** — 引入 `useHomeDashboardState` hook，集中 `stockPoolStore` 状态选取逻辑，移除 `HomePage` 中重复的本地状态派生和回调定义。
 
 ### 修复
 
+- 🖼️ **系统设置智能导入文件选择恢复** — 修复了“系统设置 > 基础设置 > 智能导入”模块中 “选择图片 / 选择文件” 两个按钮点击无响应的问题。
+- 🖥️ **移动端交互层级修复** — 解决了主题切换菜单在移动端被页面主内容区域遮挡的 z-index 冲突问题。
+- 🧾 **Markdown 复制工具逻辑优化** — 增强了纯文本转换算法，确保在复制分析报告时能够清除特定表格分隔符，提升了复制内容的纯净度。
 - 🖥️ **首页移动端滚动恢复** — 首页主内容区补齐 `min-h-0` 的 flex 高度约束，修复移动端长报告场景下内容被外层固定高度容器裁切、页面无法上下滚动的问题；不影响问股、系统设置等其他页面的现有滚动行为。
 - 🧾 **完整 Markdown 报告表格间距收敛** — 调整完整分析报告抽屉中 Markdown 表格 `th/td` 的内边距到更紧凑的 4-6px 区间，减轻窄列场景下的拥挤和失衡感，让表格信息密度与报告正文更协调。
 - 🖥️ **Dashboard 字号层级回调** — 收敛首页侧栏与空状态的字体层级：恢复首页空状态主标题的强调级别，统一“历史分析 / 分析任务”侧栏面板标题尺寸，并微调历史列表中“已选 / 删除 / 全选当前”这组操作元素的密度与对齐。
 - 🧾 **Web 报告透明度区复制按钮层级修复**（#749）— `ReportDetails` 中”原始分析结果 / 分析快照”的复制按钮补齐可点击层级，避免被下方 JSON 内容覆盖后出现按钮可见但无法点击的问题。
 - 🧾 **Web 报告详情复制提示按面板独立** — `ReportDetails` 中”原始分析结果”和”分析快照”的复制提示不再共享同一个 `copied` 状态；当两个面板同时展开时，复制其中一个只会更新对应按钮文案，避免两个按钮同时显示”已复制”的误导反馈。
-- 🧩 **个股分析页补齐关联板块展示**（#669）— A 股分析写路径现在会把 `belong_boards` 一次性写入 `fundamental_context` / `fundamental_snapshot`，结构化报告详情同步新增 `belong_boards` 与 `sector_rankings` 字段，Web 个股分析页首屏可直接展示所属板块及其是否命中当日板块涨跌榜；无数据时保持 fail-open 隐藏，不影响现有分析主流程。
+- 🧩 **个股分析页补齐关联板块展示**（#669）— A 股分析写路径现在会把 `belong_boards` 一次性写入 `fundamental_context` / `fundamental_snapshot`，结构化报告详情同步新增 `belong_boards` 与 `sector_rankings`字段，Web 个股分析页首屏可直接展示所属板块及其是否命中当日板块涨跌榜；无数据时保持 fail-open 隐藏，不影响现有分析主流程。
+
+### 测试
+
+- 🧪 **自动化测试脚本同步** — 对齐了 E2E 冒烟测试中的界面匹配器，确保全量自动化测试在 UI 调整后依然保持 100% 成功率。
+- 🧪 **Dashboard 组件测试覆盖率扩展** — 新增 `ReportNews` 和 `TaskPanel` 测试；对 `HistoryList`、`ReportDetails`、`HomePage`、`useDashboardLifecycle` 和 `stockPoolStore` 补充了删除回退、移动端抽屉、复制反馈隔离和任务生命周期等场景断言。
 ### 新功能
 
 - 💾 **桌面端 `.env` 备份/恢复入口**（#754）— 桌面模式下的系统设置页新增 `导出 .env` / `导入 .env` 按钮，可直接备份当前已保存配置，或把备份文件中的键值合并恢复到当前桌面端 `.env`；导入沿用现有 `config_version` 冲突保护与运行时重载链路，不改变现有桌面端便携模式路径。

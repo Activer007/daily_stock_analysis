@@ -181,6 +181,23 @@ describe('ChatPage', () => {
     expect(mockSwitchSession).toHaveBeenCalledWith('session-1');
   });
 
+  it('renders a separate delete button for each session and opens confirmation without switching', async () => {
+    render(
+      <MemoryRouter initialEntries={['/chat']}>
+        <ChatPage />
+      </MemoryRouter>
+    );
+
+    const deleteButton = await screen.findByRole('button', {
+      name: /删除对话 请简要分析 600519/,
+    });
+
+    fireEvent.click(deleteButton);
+
+    expect(mockSwitchSession).not.toHaveBeenCalled();
+    expect(await screen.findByText('删除后，该对话将不可恢复，确认删除吗？')).toBeInTheDocument();
+  });
+
   it('hides header actions when there are no messages', async () => {
     render(
       <MemoryRouter initialEntries={['/chat']}>

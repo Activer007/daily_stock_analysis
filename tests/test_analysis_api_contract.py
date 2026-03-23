@@ -407,6 +407,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                     report_type="detailed",
                     force_refresh=False,
                     async_mode=True,
+                    notify=True,
                 ),
                 config=SimpleNamespace(),
             )
@@ -442,6 +443,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                     report_type="detailed",
                     force_refresh=False,
                     async_mode=True,
+                    notify=True,
                 ),
                 config=SimpleNamespace(),
             )
@@ -476,6 +478,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                     report_type="detailed",
                     force_refresh=False,
                     async_mode=True,
+                    notify=True,
                 ),
                 config=SimpleNamespace(),
             )
@@ -509,6 +512,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                     report_type="detailed",
                     force_refresh=False,
                     async_mode=True,
+                    notify=True,
                 ),
                 config=SimpleNamespace(),
             )
@@ -545,6 +549,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                         report_type="detailed",
                         force_refresh=False,
                         async_mode=True,
+                        notify=True,
                     ),
                     config=SimpleNamespace(),
                 )
@@ -558,6 +563,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                         report_type="detailed",
                         force_refresh=False,
                         async_mode=True,
+                        notify=True,
                     ),
                     config=SimpleNamespace(),
                 )
@@ -596,6 +602,7 @@ class AnalysisApiContractTestCase(unittest.TestCase):
                     report_type="detailed",
                     force_refresh=False,
                     async_mode=True,
+                    notify=True,
                 ),
                 config=SimpleNamespace(),
             )

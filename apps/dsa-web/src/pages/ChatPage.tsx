@@ -426,37 +426,39 @@ const ChatPage: React.FC = () => {
         ) : (
           <div className="space-y-2 p-3">
             {sessions.map((s) => (
-              <button
-                key={s.session_id}
-                onClick={() => handleSwitchSession(s.session_id)}
-                className={`session-item ${s.session_id === sessionId ? 'active' : ''}`}
-                aria-label={`切换到对话 ${s.title}`}
-              >
-                <div className="indicator" />
-                <div className="content">
-                  <span className="title">{s.title}</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="meta">
-                      {s.message_count} 条对话
-                    </span>
-                    {s.last_active && (
-                      <>
-                        <span className="separator" />
-                        <span className="meta">
-                          {new Date(s.last_active).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </>
-                    )}
+              <div key={s.session_id} className="session-item-row">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchSession(s.session_id)}
+                  className={`session-item ${s.session_id === sessionId ? 'active' : ''}`}
+                  aria-label={`切换到对话 ${s.title}`}
+                >
+                  <div className="indicator" />
+                  <div className="content">
+                    <span className="title">{s.title}</span>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span className="meta">
+                        {s.message_count} 条对话
+                      </span>
+                      {s.last_active && (
+                        <>
+                          <span className="separator" />
+                          <span className="meta">
+                            {new Date(s.last_active).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <span
+                </button>
+                <button
+                  type="button"
                   className="delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     setDeleteConfirmId(s.session_id);
                   }}
+                  aria-label={`删除对话 ${s.title}`}
                   title="删除"
-                  role="button"
                 >
                   <svg
                     className="w-3.5 h-3.5"
@@ -471,8 +473,8 @@ const ChatPage: React.FC = () => {
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
-                </span>
-              </button>
+                </button>
+              </div>
             ))}
           </div>
         )}

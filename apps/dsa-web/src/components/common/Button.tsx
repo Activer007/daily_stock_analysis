@@ -17,6 +17,9 @@ const BUTTON_SIZE_STYLES = {
   xl: 'h-12 rounded-xl px-6 text-sm',
 } as const;
 
+const ACTION_AI_STYLES = 'bg-[var(--home-action-ai-bg)] border border-[var(--home-action-ai-border)] text-[var(--home-action-ai-text)] hover:bg-[var(--home-action-ai-hover-bg)]';
+const ACTION_REPORT_STYLES = 'bg-[var(--home-action-report-bg)] border border-[var(--home-action-report-border)] text-[var(--home-action-report-text)] hover:bg-[var(--home-action-report-hover-bg)]';
+
 const BUTTON_VARIANT_STYLES = {
   primary: 'border border-cyan/30 bg-primary-gradient text-primary-foreground shadow-lg shadow-cyan/20 hover:brightness-105',
   secondary: 'border border-border/70 bg-card text-foreground shadow-soft-card hover:bg-hover',
@@ -27,10 +30,10 @@ const BUTTON_VARIANT_STYLES = {
   gradient: 'border border-cyan/20 bg-gradient-to-r from-cyan to-purple text-primary-foreground shadow-lg shadow-cyan/20 hover:brightness-105',
   danger: 'border border-danger/40 bg-danger text-destructive-foreground shadow-lg shadow-danger/20 hover:brightness-105',
   'danger-subtle': 'border border-danger/60 bg-danger/10 text-danger hover:bg-danger/15',
-  'action-primary': 'bg-[var(--home-action-ai-bg)] border border-[var(--home-action-ai-border)] text-[var(--home-action-ai-text)] hover:bg-[var(--home-action-ai-hover-bg)]',
-  'action-secondary': 'bg-[var(--home-action-report-bg)] border border-[var(--home-action-report-border)] text-[var(--home-action-report-text)] hover:bg-[var(--home-action-report-hover-bg)]',
-  'home-action-ai': 'bg-[var(--home-action-ai-bg)] border border-[var(--home-action-ai-border)] text-[var(--home-action-ai-text)] hover:bg-[var(--home-action-ai-hover-bg)]',
-  'home-action-report': 'bg-[var(--home-action-report-bg)] border border-[var(--home-action-report-border)] text-[var(--home-action-report-text)] hover:bg-[var(--home-action-report-hover-bg)]',
+  'action-primary': ACTION_AI_STYLES,
+  'action-secondary': ACTION_REPORT_STYLES,
+  'home-action-ai': ACTION_AI_STYLES,
+  'home-action-report': ACTION_REPORT_STYLES,
 } as const;
 
 /**
