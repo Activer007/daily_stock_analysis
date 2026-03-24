@@ -3,6 +3,7 @@ import { Badge } from '../common';
 import type { HistoryItem } from '../../types/analysis';
 import { getSentimentColor } from '../../types/analysis';
 import { formatDateTime } from '../../utils/format';
+import { truncateStockName, isStockNameTruncated } from '../../utils/stockName';
 
 interface HistoryListItemProps {
   item: HistoryItem;
@@ -42,6 +43,8 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
   onClick,
 }) => {
   const sentimentColor = item.sentimentScore !== undefined ? getSentimentColor(item.sentimentScore) : null;
+  const stockName = item.stockName || item.stockCode;
+  const isTruncated = isStockNameTruncated(stockName);
 
   return (
     <div className="flex items-start gap-2 group">
@@ -61,7 +64,7 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
           isViewing ? 'home-history-item-selected' : ''
         }`}
       >
-        <div className="flex items-center gap-2.5 relative z-10">
+        <div className={`flex items-center gap-2.5 relative z-10${isTruncated ? ' group-hover/item:z-20' : ''}`}>
           {sentimentColor && (
             <div
               className="w-1 h-8 rounded-full flex-shrink-0"
@@ -74,15 +77,23 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="truncate text-sm font-semibold text-foreground tracking-tight">
-                  {item.stockName || item.stockCode}
+                <span
+                  className="truncate text-sm font-semibold text-foreground tracking-tight"
+                  title={item.stockName || item.stockCode}
+                >
+                  <span className="group-hover/item:hidden">
+                    {truncateStockName(item.stockName || item.stockCode)}
+                  </span>
+                  <span className="hidden group-hover/item:inline">
+                    {item.stockName || item.stockCode}
+                  </span>
                 </span>
               </div>
               {sentimentColor && (
                 <Badge
                   variant="default"
                   size="sm"
-                  className="home-history-sentiment-badge shrink-0 shadow-none text-[11px] font-semibold leading-none"
+                  className={`home-history-sentiment-badge shrink-0 shadow-none text-[11px] font-semibold leading-none transition-opacity duration-200${isTruncated ? ' group-hover/item:opacity-80' : ''}`}
                   style={{
                     color: sentimentColor,
                     borderColor: `${sentimentColor}30`,
