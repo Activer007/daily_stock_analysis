@@ -36,7 +36,7 @@ def is_code_like(value: str) -> bool:
         return False
     if text.isdigit() and len(text) in (5, 6):
         return True
-    for suffix in (".SH", ".SZ", ".SS"):
+    for suffix in (".SH", ".SZ", ".SS", ".HK"):
         if text.endswith(suffix):
             base = text[: -len(suffix)].strip()
             if base.isdigit() and len(base) in (5, 6):
@@ -54,7 +54,7 @@ def normalize_code(raw: str) -> Optional[str]:
 
     Supports:
     - Plain digit codes: 600519, 00700
-    - Suffix format: 600519.SH, 600519.SZ
+    - Suffix format: 600519.SH, 600519.SZ, 00700.HK
     - Prefix format: SH600519, SZ000001, HK00700 (case-insensitive)
     - US ticker symbols: AAPL, TSLA
     """
@@ -65,7 +65,7 @@ def normalize_code(raw: str) -> Optional[str]:
         return text
     if re.match(r"^[A-Z]{1,5}(?:\.(?:US|[A-Z]))?$", text):
         return text
-    for suffix in (".SH", ".SZ", ".SS"):
+    for suffix in (".SH", ".SZ", ".SS", ".HK"):
         if text.endswith(suffix):
             base = text[: -len(suffix)].strip()
             if base.isdigit() and len(base) in (5, 6):
