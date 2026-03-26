@@ -51,7 +51,7 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
           checked={isChecked}
           onChange={() => onToggleChecked(item.id)}
           disabled={isDeleting}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-subtle-hover bg-transparent text-[var(--home-accent-text)] focus:ring-[color:var(--home-accent-border-hover)] disabled:opacity-50"
+          className="h-3.5 w-3.5 cursor-pointer rounded border-subtle-hover bg-transparent accent-primary focus:ring-primary/30 disabled:opacity-50"
         />
       </div>
       <button

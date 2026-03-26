@@ -226,7 +226,7 @@ const HomePage: React.FC = () => {
 
           {sidebarOpen ? (
             <div className="fixed inset-0 z-40 md:hidden" onClick={() => setSidebarOpen(false)}>
-              <div className="absolute inset-0 home-mobile-overlay" />
+              <div className="page-drawer-overlay absolute inset-0" />
               <div
                 className="dashboard-card absolute bottom-0 left-0 top-0 flex w-72 flex-col overflow-hidden !rounded-none !rounded-r-xl p-3 shadow-2xl"
                 onClick={(event) => event.stopPropagation()}

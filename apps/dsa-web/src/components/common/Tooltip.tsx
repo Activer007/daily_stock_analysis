@@ -7,6 +7,7 @@ interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
   side?: 'top' | 'bottom';
+  focusable?: boolean;
   className?: string;
   contentClassName?: string;
 }
@@ -20,6 +21,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   content,
   children,
   side = 'top',
+  focusable = false,
   className = '',
   contentClassName = '',
 }) => {
@@ -108,6 +110,12 @@ export const Tooltip: React.FC<TooltipProps> = ({
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
+        tabIndex={focusable ? 0 : undefined}
         aria-describedby={open ? tooltipId : undefined}
       >
         {children}

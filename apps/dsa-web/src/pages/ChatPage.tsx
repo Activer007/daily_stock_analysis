@@ -547,7 +547,7 @@ const ChatPage: React.FC = () => {
           className="fixed inset-0 z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         >
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="page-drawer-overlay absolute inset-0" />
           <div
             className="absolute left-0 top-0 bottom-0 w-72 flex flex-col glass-card overflow-hidden border-r border-white/10 bg-card/90 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -807,8 +807,8 @@ const ChatPage: React.FC = () => {
                       msg.thinkingSteps &&
                       renderThinkingDetails(msg.thinkingSteps)}
                     {msg.role === 'assistant' ? (
-                      <div>
-                        <div className="mb-2 flex justify-end gap-2 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100">
+                      <div className="relative">
+                        <div className="pointer-events-none absolute right-0 top-0 z-10 flex gap-2 opacity-0 transition-opacity duration-150 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100">
                           <button
                             type="button"
                             onClick={() => copyMessageToClipboard(msg.id, msg.content)}
@@ -826,7 +826,7 @@ const ChatPage: React.FC = () => {
                             导出
                           </button>
                         </div>
-                        <div className="chat-prose">
+                        <div className="chat-prose pr-20 sm:pr-24">
                           <Markdown remarkPlugins={[remarkGfm]}>
                             {msg.content}
                           </Markdown>

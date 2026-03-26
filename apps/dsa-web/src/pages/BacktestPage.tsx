@@ -429,7 +429,7 @@ const BacktestPage: React.FC = () => {
                         <td className="backtest-table-cell text-secondary-text">{row.analysisDate || '--'}</td>
                         <td className="backtest-table-cell max-w-[140px] text-foreground">
                           {row.operationAdvice ? (
-                            <Tooltip content={row.operationAdvice}>
+                            <Tooltip content={row.operationAdvice} focusable>
                               <span className="block truncate">{row.operationAdvice}</span>
                             </Tooltip>
                           ) : '--'}

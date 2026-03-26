@@ -232,13 +232,13 @@ describe('HomePage', () => {
     const trigger = await screen.findByRole('button', { name: '历史记录' });
     fireEvent.click(trigger);
 
-    expect(container.querySelector('.home-mobile-overlay')).toBeTruthy();
+    expect(container.querySelector('.page-drawer-overlay')).toBeTruthy();
     expect(container.querySelector('.dashboard-card')).toBeTruthy();
 
     fireEvent.click(container.querySelector('.fixed.inset-0.z-40') as HTMLElement);
 
     await waitFor(() => {
-      expect(container.querySelector('.home-mobile-overlay')).toBeFalsy();
+      expect(container.querySelector('.page-drawer-overlay')).toBeFalsy();
     });
   });
 
