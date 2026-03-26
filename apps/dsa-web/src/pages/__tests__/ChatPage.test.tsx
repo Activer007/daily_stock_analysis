@@ -246,6 +246,24 @@ describe('ChatPage', () => {
     expect(skillBadge).toHaveTextContent('趋势分析');
   });
 
+  it('keeps assistant message actions directly activatable in the DOM', async () => {
+    mockStoreState.messages = [
+      { id: 'assistant-1', role: 'assistant', content: '趋势偏强', skillName: '趋势分析' },
+    ];
+
+    render(
+      <MemoryRouter initialEntries={['/chat']}>
+        <ChatPage />
+      </MemoryRouter>
+    );
+
+    const exportButton = await screen.findByRole('button', { name: '导出此条消息为 Markdown' });
+    const actionGroup = exportButton.parentElement;
+
+    expect(actionGroup).toHaveClass('chat-message-actions');
+    expect(actionGroup?.className).not.toMatch(/pointer-events-none|opacity-0/);
+  });
+
   it('sends exported markdown to notification channel and shows success feedback', async () => {
     mockStoreState.messages = [
       { id: 'user-1', role: 'user', content: '请分析 600519' },

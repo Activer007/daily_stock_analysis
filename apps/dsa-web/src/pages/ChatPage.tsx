@@ -808,7 +808,7 @@ const ChatPage: React.FC = () => {
                       renderThinkingDetails(msg.thinkingSteps)}
                     {msg.role === 'assistant' ? (
                       <div className="relative">
-                        <div className="pointer-events-none absolute right-0 top-0 z-10 flex gap-2 opacity-0 transition-opacity duration-150 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100">
+                        <div className="chat-message-actions">
                           <button
                             type="button"
                             onClick={() => copyMessageToClipboard(msg.id, msg.content)}

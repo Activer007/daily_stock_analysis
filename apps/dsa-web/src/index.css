@@ -1433,6 +1433,29 @@ textarea {
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
+.chat-message-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chat-message-actions {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .group\/message:hover .chat-message-actions,
+  .group\/message:focus-within .chat-message-actions {
+    pointer-events: auto;
+    opacity: 1;
+  }
+}
+
 .chat-copy-btn:hover {
   background: var(--home-action-ai-hover-bg);
 }
