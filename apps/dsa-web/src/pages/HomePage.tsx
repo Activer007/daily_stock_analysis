@@ -152,7 +152,7 @@ const HomePage: React.FC = () => {
             <button
               onClick={() => setSidebarOpen(true)}
               className="md:hidden -ml-1 flex-shrink-0 rounded-lg p-1.5 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
-              title="历史记录"
+              aria-label="历史记录"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -250,7 +250,7 @@ const HomePage: React.FC = () => {
                     追问 AI
                   </Button>
                   <Button
-                    variant="home-action-report"
+                    variant="home-action-ai"
                     size="sm"
                     disabled={selectedReport.meta.id === undefined}
                     onClick={openMarkdownDrawer}

@@ -228,7 +228,7 @@ describe('HomePage', () => {
       </MemoryRouter>,
     );
 
-    const trigger = await screen.findByTitle('历史记录');
+    const trigger = await screen.findByRole('button', { name: '历史记录' });
     fireEvent.click(trigger);
 
     expect(container.querySelector('.home-mobile-overlay')).toBeTruthy();

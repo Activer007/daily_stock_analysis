@@ -9,6 +9,7 @@ interface BadgeProps {
   size?: 'sm' | 'md';
   glow?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
@@ -38,11 +39,13 @@ export const Badge: React.FC<BadgeProps> = ({
   size = 'sm',
   glow = false,
   className = '',
+  style,
 }) => {
   const sizeStyles = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
 
   return (
     <span
+      style={style}
       className={cn(
         'inline-flex items-center gap-1 rounded-full border font-medium backdrop-blur-sm',
         sizeStyles,

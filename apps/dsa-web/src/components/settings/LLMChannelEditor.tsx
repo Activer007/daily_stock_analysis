@@ -3,7 +3,7 @@ import type React from 'react';
 import type { ParsedApiError } from '../../api/error';
 import { getParsedApiError } from '../../api/error';
 import { systemConfigApi } from '../../api/systemConfig';
-import { ApiErrorAlert, Badge, Button, Input, Select } from '../common';
+import { ApiErrorAlert, Badge, Button, Input, Select, StatusDot, Tooltip } from '../common';
 
 type ChannelProtocol = 'openai' | 'deepseek' | 'gemini' | 'anthropic' | 'vertex_ai' | 'ollama';
 
@@ -239,9 +239,27 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
         </div>
 
         <span className="flex shrink-0 items-center gap-2">
-          {testState?.status === 'success' ? <span className="h-2 w-2 rounded-full bg-emerald-400" title="连接正常" /> : null}
-          {testState?.status === 'error' ? <span className="h-2 w-2 rounded-full bg-rose-400" title="连接失败" /> : null}
-          {testState?.status === 'loading' ? <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" title="测试中" /> : null}
+          {testState?.status === 'success' ? (
+            <Tooltip content="连接正常">
+              <span className="inline-flex">
+                <StatusDot tone="success" />
+              </span>
+            </Tooltip>
+          ) : null}
+          {testState?.status === 'error' ? (
+            <Tooltip content="连接失败">
+              <span className="inline-flex">
+                <StatusDot tone="danger" />
+              </span>
+            </Tooltip>
+          ) : null}
+          {testState?.status === 'loading' ? (
+            <Tooltip content="测试中">
+              <span className="inline-flex">
+                <StatusDot tone="warning" pulse />
+              </span>
+            </Tooltip>
+          ) : null}
           {!hasKey && channel.protocol !== 'ollama' ? <Badge variant="warning">未填 Key</Badge> : null}
           {testState?.status !== 'idle' ? (
             <Badge variant={statusVariant}>
@@ -250,20 +268,23 @@ const ChannelRow: React.FC<ChannelRowProps> = ({
           ) : null}
         </span>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 shrink-0 px-2 text-xs text-muted-text hover:text-rose-300"
-          disabled={busy}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(index);
-          }}
-          title="删除渠道"
-        >
-          ✕
-        </Button>
+        <Tooltip content="删除渠道">
+          <span className="inline-flex">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 shrink-0 px-2 text-xs text-muted-text hover:text-rose-300"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(index);
+              }}
+            >
+              ✕
+            </Button>
+          </span>
+        </Tooltip>
       </div>
 
       {expanded ? (
