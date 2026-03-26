@@ -4,7 +4,7 @@ import { Pie, PieChart, ResponsiveContainer, Tooltip, Legend, Cell } from 'recha
 import { portfolioApi } from '../api/portfolio';
 import type { ParsedApiError } from '../api/error';
 import { getParsedApiError } from '../api/error';
-import { ApiErrorAlert, Card, Badge, ConfirmDialog, InlineAlert } from '../components/common';
+import { ApiErrorAlert, Card, Badge, ConfirmDialog, EmptyState, InlineAlert } from '../components/common';
 import { toDateInputValue } from '../utils/format';
 import type {
   PortfolioAccountItem,
@@ -54,6 +54,8 @@ type FxRefreshContext = {
   viewKey: string;
   requestId: number;
 };
+
+type PortfolioAlertVariant = 'info' | 'success' | 'warning' | 'danger';
 
 const PORTFOLIO_INPUT_CLASS =
   'input-surface input-focus-glow h-11 w-full rounded-xl border bg-transparent px-4 text-sm transition-all focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
@@ -132,6 +134,21 @@ function buildFxRefreshFeedback(data: PortfolioFxRefreshResponse): FxRefreshFeed
     tone: 'warning',
     text: `在线刷新未完全成功。${summary}`,
   };
+}
+
+function getFxRefreshFeedbackVariant(tone: FxRefreshFeedback['tone']): PortfolioAlertVariant {
+  if (tone === 'success') return 'success';
+  if (tone === 'warning') return 'warning';
+  return 'info';
+}
+
+function getCsvParseVariant(result: PortfolioImportParseResponse): PortfolioAlertVariant {
+  return result.errorCount > 0 || result.skippedCount > 0 ? 'warning' : 'info';
+}
+
+function getCsvCommitVariant(result: PortfolioImportCommitResponse, isDryRun: boolean): PortfolioAlertVariant {
+  if (isDryRun) return 'info';
+  return result.failedCount > 0 || result.duplicateCount > 0 ? 'warning' : 'success';
 }
 
 const PortfolioPage: React.FC = () => {
@@ -845,6 +862,7 @@ const PortfolioPage: React.FC = () => {
             <InlineAlert
               variant="danger"
               className="mt-2 rounded-lg px-2 py-1 text-xs shadow-none"
+              title="创建账户失败"
               message={accountCreateError}
             />
           ) : null}
@@ -852,6 +870,7 @@ const PortfolioPage: React.FC = () => {
             <InlineAlert
               variant="success"
               className="mt-2 rounded-lg px-2 py-1 text-xs shadow-none"
+              title="创建账户成功"
               message={accountCreateSuccess}
             />
           ) : null}
@@ -917,17 +936,12 @@ const PortfolioPage: React.FC = () => {
           </div>
           <div className="mt-2">{snapshot?.fxStale ? <Badge variant="warning">过期</Badge> : <Badge variant="success">最新</Badge>}</div>
           {fxRefreshFeedback ? (
-            <p
-              className={`mt-2 text-xs ${
-                fxRefreshFeedback.tone === 'success'
-                  ? 'text-success'
-                  : fxRefreshFeedback.tone === 'warning'
-                    ? 'text-warning'
-                    : 'text-secondary'
-              }`}
-            >
-              {fxRefreshFeedback.text}
-            </p>
+            <InlineAlert
+              variant={getFxRefreshFeedbackVariant(fxRefreshFeedback.tone)}
+              title="汇率刷新结果"
+              message={fxRefreshFeedback.text}
+              className="mt-3 rounded-xl px-3 py-2 text-xs shadow-none"
+            />
           ) : null}
         </Card>
       </section>
@@ -939,7 +953,11 @@ const PortfolioPage: React.FC = () => {
             <span className="text-xs text-secondary">共 {positionRows.length} 项</span>
           </div>
           {positionRows.length === 0 ? (
-            <p className="text-sm text-muted py-6 text-center">当前无持仓数据</p>
+            <EmptyState
+              title="当前无持仓数据"
+              description="录入交易或导入 CSV 后，这里会展示按账户汇总的持仓明细。"
+              className="border-none bg-transparent px-4 py-8 shadow-none"
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -991,7 +1009,11 @@ const PortfolioPage: React.FC = () => {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-sm text-muted py-8 text-center">暂无集中度数据</p>
+            <EmptyState
+              title="暂无集中度数据"
+              description="风险模块完成计算后，这里会展示行业或个股维度的集中度分布。"
+              className="border-none bg-transparent px-4 py-10 shadow-none"
+            />
           )}
           <div className="mt-3 text-xs text-secondary space-y-1">
             <div>展示口径: {concentrationMode === 'sector' ? '行业维度' : '个股维度（降级显示）'}</div>
@@ -1155,14 +1177,20 @@ const PortfolioPage: React.FC = () => {
               </button>
             </div>
             {csvParseResult ? (
-              <div className="text-xs text-secondary rounded-lg border border-white/10 p-2">
-                解析结果：有效 {csvParseResult.recordCount} 条，跳过 {csvParseResult.skippedCount} 条，错误 {csvParseResult.errorCount} 条
-              </div>
+              <InlineAlert
+                variant={getCsvParseVariant(csvParseResult)}
+                title="CSV 解析结果"
+                message={`有效 ${csvParseResult.recordCount} 条，跳过 ${csvParseResult.skippedCount} 条，错误 ${csvParseResult.errorCount} 条。`}
+                className="rounded-lg px-3 py-2 text-xs shadow-none"
+              />
             ) : null}
             {csvCommitResult ? (
-              <div className="text-xs text-secondary rounded-lg border border-white/10 p-2">
-                提交结果：写入 {csvCommitResult.insertedCount} 条，重复 {csvCommitResult.duplicateCount} 条，失败 {csvCommitResult.failedCount} 条
-              </div>
+              <InlineAlert
+                variant={getCsvCommitVariant(csvCommitResult, csvDryRun)}
+                title={csvDryRun ? 'CSV 预演结果' : 'CSV 提交结果'}
+                message={`${csvDryRun ? '预演检查' : '实际写入'}：写入 ${csvCommitResult.insertedCount} 条，重复 ${csvCommitResult.duplicateCount} 条，失败 ${csvCommitResult.failedCount} 条。`}
+                className="rounded-lg px-3 py-2 text-xs shadow-none"
+              />
             ) : null}
           </div>
         </Card>
@@ -1279,7 +1307,11 @@ const PortfolioPage: React.FC = () => {
                 && ((eventType === 'trade' && tradeEvents.length === 0)
                   || (eventType === 'cash' && cashEvents.length === 0)
                   || (eventType === 'corporate' && corporateEvents.length === 0)) ? (
-                    <p className="text-xs text-muted text-center py-3">暂无流水</p>
+                    <EmptyState
+                      title="暂无流水"
+                      description="调整筛选条件或先录入一笔交易、资金流水或公司行为。"
+                      className="border-none bg-transparent px-3 py-6 shadow-none"
+                    />
                   ) : null}
             </div>
             <div className="flex items-center justify-between text-xs text-secondary">

@@ -18,9 +18,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const isProcessing = task.status === 'processing';
   const statusLabel = isProcessing ? '分析中' : '等待中';
   const statusVariant = isProcessing ? 'info' : 'default';
-  const statusClassName = isProcessing
-    ? 'home-task-status-processing shadow-none'
-    : 'home-task-status-pending shadow-none';
+  const statusTone = isProcessing ? 'info' : 'neutral';
 
   return (
     <div className="home-subpanel flex items-center gap-3 px-3 py-2.5">
@@ -54,9 +52,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       <div className="flex-shrink-0">
         <Badge
           variant={statusVariant}
-          className={statusClassName}
+          className="min-w-[4.75rem] justify-center gap-1.5 shadow-none"
           aria-label={`任务状态：${statusLabel}`}
         >
+          <StatusDot tone={statusTone} pulse={isProcessing} className="h-1.5 w-1.5" />
           {statusLabel}
         </Badge>
       </div>
@@ -131,7 +130,12 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
                   {processingCount} 进行中
                 </span>
               )}
-              {pendingCount > 0 ? <span>{pendingCount} 等待中</span> : null}
+              {pendingCount > 0 ? (
+                <span className="flex items-center gap-1">
+                  <StatusDot tone="neutral" className="h-1.5 w-1.5" aria-label="等待中任务" />
+                  {pendingCount} 等待中
+                </span>
+              ) : null}
             </div>
           )}
         />

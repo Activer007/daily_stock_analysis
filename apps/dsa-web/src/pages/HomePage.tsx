@@ -148,7 +148,7 @@ const HomePage: React.FC = () => {
     >
       <div className="flex-1 flex flex-col min-h-0 min-w-0 max-w-full lg:max-w-6xl mx-auto w-full">
         <header className="flex min-w-0 flex-shrink-0 items-center overflow-hidden px-3 py-3 md:px-4 md:py-4">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5 md:flex-nowrap">
             <button
               onClick={() => setSidebarOpen(true)}
               className="md:hidden -ml-1 flex-shrink-0 rounded-lg p-1.5 text-secondary-text transition-colors hover:bg-hover hover:text-foreground"
@@ -170,7 +170,7 @@ const HomePage: React.FC = () => {
                 className={inputError ? 'border-danger/50' : undefined}
               />
             </div>
-            <label className="flex flex-shrink-0 cursor-pointer items-center gap-1 text-xs text-secondary-text select-none">
+            <label className="flex h-10 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-subtle bg-surface/60 px-3 text-xs text-secondary-text select-none transition-colors hover:border-subtle-hover hover:text-foreground">
               <input
                 type="checkbox"
                 checked={notify}
@@ -183,7 +183,7 @@ const HomePage: React.FC = () => {
               type="button"
               onClick={() => handleSubmitAnalysis()}
               disabled={!query || isAnalyzing}
-              className="btn-primary flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap"
+              className="btn-primary flex h-10 flex-shrink-0 items-center gap-1.5 whitespace-nowrap"
             >
               {isAnalyzing ? (
                 <>
@@ -205,6 +205,7 @@ const HomePage: React.FC = () => {
             {inputError ? (
               <InlineAlert
                 variant="danger"
+                title="输入有误"
                 message={inputError}
                 className="rounded-xl px-3 py-2 text-xs shadow-none"
               />
@@ -212,6 +213,7 @@ const HomePage: React.FC = () => {
             {!inputError && duplicateError ? (
               <InlineAlert
                 variant="warning"
+                title="任务已存在"
                 message={duplicateError}
                 className="rounded-xl px-3 py-2 text-xs shadow-none"
               />
@@ -249,8 +251,8 @@ const HomePage: React.FC = () => {
                 <DashboardStateBlock title="加载报告中..." loading />
               </div>
             ) : selectedReport ? (
-              <div className="max-w-4xl pb-8">
-                <div className="mb-3 flex items-center justify-end gap-2">
+              <div className="max-w-4xl space-y-4 pb-8">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button
                     variant="home-action-ai"
                     size="sm"

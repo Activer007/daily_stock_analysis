@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth, useSystemConfig } from '../hooks';
 import { createParsedApiError, getParsedApiError, type ParsedApiError } from '../api/error';
 import { systemConfigApi } from '../api/systemConfig';
-import { ApiErrorAlert, Button, ConfirmDialog } from '../components/common';
+import { ApiErrorAlert, Button, ConfirmDialog, EmptyState } from '../components/common';
 import {
   AuthSettingsCard,
   ChangePasswordCard,
@@ -396,9 +396,11 @@ const SettingsPage: React.FC = () => {
                 ))}
               </SettingsSectionCard>
             ) : (
-              <div className="settings-surface-panel settings-border-strong rounded-[1.5rem] border p-5 text-sm text-secondary-text shadow-soft-card">
-                当前分类下暂无配置项。
-              </div>
+              <EmptyState
+                title="当前分类下暂无配置项"
+                description="当前分类没有可编辑字段；可切换左侧分类继续查看其它系统配置。"
+                className="settings-surface-panel settings-border-strong border-none bg-transparent shadow-none"
+              />
             )}
           </section>
         </div>
