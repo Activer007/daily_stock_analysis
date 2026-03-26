@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 
 type StatusDotTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
-interface StatusDotProps {
+interface StatusDotProps extends React.HTMLAttributes<HTMLSpanElement> {
   tone?: StatusDotTone;
   pulse?: boolean;
   className?: string;
@@ -21,10 +21,14 @@ export const StatusDot: React.FC<StatusDotProps> = ({
   tone = 'neutral',
   pulse = false,
   className = '',
+  ...rest
 }) => {
+  const hasAccessibleLabel = typeof rest['aria-label'] === 'string' && rest['aria-label'].length > 0;
+
   return (
     <span
-      aria-hidden="true"
+      {...rest}
+      aria-hidden={hasAccessibleLabel ? undefined : true}
       className={cn(
         'inline-flex h-2.5 w-2.5 shrink-0 rounded-full',
         TONE_STYLES[tone],

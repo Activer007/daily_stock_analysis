@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiErrorAlert, ConfirmDialog, Button } from '../components/common';
+import { ApiErrorAlert, ConfirmDialog, Button, EmptyState, InlineAlert } from '../components/common';
 import { DashboardStateBlock } from '../components/dashboard';
 import { StockAutocomplete } from '../components/StockAutocomplete';
 import { HistoryList } from '../components/history';
@@ -169,12 +169,6 @@ const HomePage: React.FC = () => {
                 disabled={isAnalyzing}
                 className={inputError ? 'border-danger/50' : undefined}
               />
-              {inputError ? (
-                <p className="absolute -bottom-4 left-0 text-xs text-danger">{inputError}</p>
-              ) : null}
-              {duplicateError ? (
-                <p className="absolute -bottom-4 left-0 text-xs text-warning">{duplicateError}</p>
-              ) : null}
             </div>
             <label className="flex flex-shrink-0 cursor-pointer items-center gap-1 text-xs text-secondary-text select-none">
               <input
@@ -205,6 +199,25 @@ const HomePage: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {inputError || duplicateError ? (
+          <div className="px-3 pb-2 md:px-4">
+            {inputError ? (
+              <InlineAlert
+                variant="danger"
+                message={inputError}
+                className="rounded-xl px-3 py-2 text-xs shadow-none"
+              />
+            ) : null}
+            {!inputError && duplicateError ? (
+              <InlineAlert
+                variant="warning"
+                message={duplicateError}
+                className="rounded-xl px-3 py-2 text-xs shadow-none"
+              />
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <div className="hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden pl-4 pb-4 md:flex lg:w-72">
@@ -264,12 +277,11 @@ const HomePage: React.FC = () => {
                 <ReportSummary data={selectedReport} isHistory />
               </div>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center text-center">
-                <DashboardStateBlock
+              <div className="flex h-full items-center justify-center">
+                <EmptyState
                   title="开始分析"
-                  titleAs="h3"
-                  description="输入股票代码进行分析，或从左侧选择历史报告查看"
-                  titleClassName="text-base font-medium text-foreground"
+                  description="输入股票代码进行分析，或从左侧选择历史报告查看。"
+                  className="max-w-xl border-dashed"
                   icon={(
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />

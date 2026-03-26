@@ -154,6 +154,7 @@ describe('HomePage', () => {
     await waitFor(() => {
       expect(screen.getByText(/股票 600519 正在分析中/)).toBeInTheDocument();
     });
+    expect(screen.getByText(/股票 600519 正在分析中/).closest('[role="alert"]')).toBeInTheDocument();
   });
 
   it('navigates to chat with report context when asking a follow-up question', async () => {

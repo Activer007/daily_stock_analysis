@@ -3,7 +3,7 @@ import type React from 'react';
 import type { ParsedApiError } from '../../api/error';
 import { getParsedApiError } from '../../api/error';
 import { systemConfigApi } from '../../api/systemConfig';
-import { ApiErrorAlert, Badge, Button, Input, Select, StatusDot, Tooltip } from '../common';
+import { ApiErrorAlert, Badge, Button, InlineAlert, Input, Select, StatusDot, Tooltip } from '../common';
 
 type ChannelProtocol = 'openai' | 'deepseek' | 'gemini' | 'anthropic' | 'vertex_ai' | 'ollama';
 
@@ -1074,10 +1074,11 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               )}
             </div>
           ) : (
-            <div className="rounded-[1.35rem] border border-warning/25 bg-warning/10 px-4 py-3 text-xs text-warning">
-              当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；
-              这里仅保存渠道条目，不会覆盖 YAML 运行时选择。
-            </div>
+            <InlineAlert
+              variant="warning"
+              message="当前已启用 `LITELLM_CONFIG`，主模型 / fallback / Vision / Temperature 继续在下方通用字段中管理；这里仅保存渠道条目，不会覆盖 YAML 运行时选择。"
+              className="rounded-[1.35rem] px-4 py-3 text-xs shadow-none"
+            />
           )}
 
           <div className="flex flex-wrap items-center gap-3">
@@ -1094,15 +1095,19 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
           </div>
 
           {saveMessage?.type === 'success' ? (
-            <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
-              {saveMessage.text}
-            </div>
+            <InlineAlert
+              variant="success"
+              message={saveMessage.text}
+              className="rounded-lg px-3 py-2 text-sm shadow-none"
+            />
           ) : null}
 
           {saveMessage?.type === 'local-error' ? (
-            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-              {saveMessage.text}
-            </div>
+            <InlineAlert
+              variant="danger"
+              message={saveMessage.text}
+              className="rounded-lg px-3 py-2 text-sm shadow-none"
+            />
           ) : null}
 
           {saveMessage?.type === 'error' ? <ApiErrorAlert error={saveMessage.error} /> : null}

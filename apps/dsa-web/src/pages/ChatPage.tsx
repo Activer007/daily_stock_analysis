@@ -4,9 +4,10 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '../utils/cn';
 import { agentApi } from '../api/agent';
-import { ApiErrorAlert, Badge, Button, ConfirmDialog, InlineAlert, ScrollArea, Tooltip } from '../components/common';
+import { ApiErrorAlert, Badge, Button, ConfirmDialog, EmptyState, InlineAlert, ScrollArea, Tooltip } from '../components/common';
 import { getParsedApiError } from '../api/error';
 import type { SkillInfo } from '../api/agent';
+import { DashboardStateBlock } from '../components/dashboard';
 import {
   useAgentChatStore,
   type Message,
@@ -55,6 +56,7 @@ const ChatPage: React.FC = () => {
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
+  const sendToastTimerRef = useRef<number | null>(null);
   const followUpHydrationTokenRef = useRef(0);
   const followUpContextRef = useRef<ChatFollowUpContext | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -67,6 +69,9 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     const timers = copyResetTimerRef.current;
     return () => {
+      if (sendToastTimerRef.current !== null) {
+        window.clearTimeout(sendToastTimerRef.current);
+      }
       Object.values(timers).forEach((timerId) => {
         if (timerId !== undefined) {
           window.clearTimeout(timerId);
@@ -282,6 +287,17 @@ const ChatPage: React.FC = () => {
     handleSend(q.label, q.skill);
   };
 
+  const showSendFeedback = useCallback((nextToast: { type: 'success' | 'error'; message: string }, durationMs: number) => {
+    if (sendToastTimerRef.current !== null) {
+      window.clearTimeout(sendToastTimerRef.current);
+    }
+    setSendToast(nextToast);
+    sendToastTimerRef.current = window.setTimeout(() => {
+      setSendToast(null);
+      sendToastTimerRef.current = null;
+    }, durationMs);
+  }, []);
+
   const toggleThinking = (msgId: string) => {
     setExpandedThinking((prev) => {
       const next = new Set(prev);
@@ -441,13 +457,23 @@ const ChatPage: React.FC = () => {
           </svg>
         </button>
       </div>
-      <ScrollArea testId="chat-session-list-scroll">
+      <ScrollArea testId="chat-session-list-scroll" viewportClassName="p-3">
         {sessionsLoading ? (
-          <div className="p-4 text-center text-xs text-muted-text">加载中...</div>
+          <DashboardStateBlock
+            loading
+            compact
+            title="加载对话中..."
+            className="rounded-2xl border border-dashed border-border/50 bg-surface/30"
+          />
         ) : sessions.length === 0 ? (
-          <div className="p-4 text-center text-xs text-muted-text">暂无历史对话</div>
+          <DashboardStateBlock
+            compact
+            title="暂无历史对话"
+            description="开始提问后，这里会保留会话记录。"
+            className="rounded-2xl border border-dashed border-border/50 bg-surface/30"
+          />
         ) : (
-          <div className="space-y-2 p-3">
+          <div className="space-y-2">
             {sessions.map((s) => (
               <div key={s.session_id} className="session-item-row">
                 <button
@@ -545,8 +571,8 @@ const ChatPage: React.FC = () => {
 
       {/* Main chat area */}
       <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="mb-4 flex-shrink-0">
-          <div className="flex items-center justify-between gap-4 mb-2">
+        <header className="mb-4 flex-shrink-0 space-y-3">
+          <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -583,7 +609,7 @@ const ChatPage: React.FC = () => {
               问股
             </h1>
             {messages.length > 0 && (
-              <div className="flex gap-2 items-center flex-shrink-0">
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
                 <Tooltip content="导出会话为 Markdown 文件">
                   <span className="inline-flex">
                     <Button
@@ -622,15 +648,13 @@ const ChatPage: React.FC = () => {
                         try {
                           const content = formatSessionAsMarkdown(messages);
                           await agentApi.sendChat(content);
-                          setSendToast({ type: 'success', message: '已发送到通知渠道' });
-                          setTimeout(() => setSendToast(null), 3000);
+                          showSendFeedback({ type: 'success', message: '已发送到通知渠道' }, 3000);
                         } catch (err) {
                           const parsed = getParsedApiError(err);
-                          setSendToast({
+                          showSendFeedback({
                             type: 'error',
                             message: parsed.message || '发送失败',
-                          });
-                          setTimeout(() => setSendToast(null), 5000);
+                          }, 5000);
                         } finally {
                           setSending(false);
                         }
@@ -676,19 +700,20 @@ const ChatPage: React.FC = () => {
                     </Button>
                   </span>
                 </Tooltip>
-                {sendToast && (
-                  <InlineAlert
-                    variant={sendToast.type === 'success' ? 'success' : 'danger'}
-                    message={sendToast.message}
-                    className="max-w-sm rounded-xl px-3 py-2 text-xs shadow-none"
-                  />
-                )}
               </div>
             )}
           </div>
           <p className="text-secondary-text text-sm">
             向 AI 询问个股分析，获取基于技能视角的交易建议与实时决策报告。
           </p>
+          {sendToast ? (
+            <InlineAlert
+              variant={sendToast.type === 'success' ? 'success' : 'danger'}
+              title={sendToast.type === 'success' ? '发送成功' : '发送失败'}
+              message={sendToast.message}
+              className="max-w-md rounded-xl px-3 py-2 text-xs shadow-none"
+            />
+          ) : null}
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden border border-white/6 bg-card/78 glass-card">
@@ -701,40 +726,40 @@ const ChatPage: React.FC = () => {
             testId="chat-message-scroll"
           >
             {messages.length === 0 && !loading ? (
-              <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 mb-4 rounded-2xl bg-card/70 flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-muted-text"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  开始问股
-                </h3>
-                <p className="text-sm text-secondary-text max-w-sm mb-6">
-                  输入「分析 600519」或「茅台现在能买吗」，AI
-                  将调用实时数据工具为您生成决策报告。
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-                  {quickQuestions.map((q, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleQuickQuestion(q)}
-                      className="quick-question-btn"
+              <div className="flex h-full items-center justify-center">
+                <EmptyState
+                  title="开始问股"
+                  description="输入「分析 600519」或「茅台现在能买吗」，AI 将调用实时数据工具为您生成决策报告。"
+                  className="max-w-2xl border-dashed bg-card/55"
+                  icon={(
+                    <svg
+                      className="h-8 w-8"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      {q.label}
-                    </button>
-                  ))}
-                </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                  )}
+                  action={(
+                    <div className="flex max-w-lg flex-wrap justify-center gap-2">
+                      {quickQuestions.map((q, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleQuickQuestion(q)}
+                          className="quick-question-btn"
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
               </div>
             ) : (
               messages.map((msg) => (
@@ -782,8 +807,8 @@ const ChatPage: React.FC = () => {
                       msg.thinkingSteps &&
                       renderThinkingDetails(msg.thinkingSteps)}
                     {msg.role === 'assistant' ? (
-                      <div className="relative">
-                        <div className="absolute right-0 top-0 z-10 flex gap-2 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100">
+                      <div>
+                        <div className="mb-2 flex justify-end gap-2 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100">
                           <button
                             type="button"
                             onClick={() => copyMessageToClipboard(msg.id, msg.content)}
@@ -876,12 +901,19 @@ const ChatPage: React.FC = () => {
           )}
 
           {/* Input area */}
-          <div className="p-4 md:p-6 border-t border-white/6 bg-card/88 relative z-20">
-            {chatError ? (
-              <ApiErrorAlert error={chatError} className="mb-3" />
-            ) : null}
+          <div className="border-t border-white/6 bg-card/88 p-4 md:p-6 relative z-20">
+            <div className="space-y-3">
+              {chatError ? <ApiErrorAlert error={chatError} /> : null}
+              {isFollowUpContextLoading ? (
+                <InlineAlert
+                  variant="info"
+                  title="追问上下文加载中"
+                  message="正在加载历史分析上下文；现在可直接发送追问。"
+                  className="rounded-xl px-3 py-2 text-xs shadow-none"
+                />
+              ) : null}
             {skills.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 items-start">
+              <div className="flex flex-wrap items-start gap-x-5 gap-y-2">
                 <span className="text-xs text-muted-text font-medium uppercase tracking-wider flex-shrink-0 mt-1">
                   策略
                 </span>
@@ -931,37 +963,33 @@ const ChatPage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex gap-3 items-end">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="例如：分析 600519 / 茅台现在适合买入吗？ (Enter 发送, Shift+Enter 换行)"
-                disabled={loading}
-                rows={1}
-                className="input-surface input-focus-glow flex-1 min-h-[44px] max-h-[200px] rounded-xl border bg-transparent px-4 py-2.5 text-sm transition-all focus:outline-none resize-none disabled:cursor-not-allowed disabled:opacity-60"
-                style={{ height: 'auto' }}
-                onInput={(e) => {
-                  const t = e.target as HTMLTextAreaElement;
-                  t.style.height = 'auto';
-                  t.style.height = `${Math.min(t.scrollHeight, 200)}px`;
-                }}
-              />
-              <Button
-                variant="primary"
-                onClick={() => handleSend()}
-                disabled={!input.trim() || loading}
-                isLoading={loading}
-                className="btn-primary flex-shrink-0"
-              >
-                发送
-              </Button>
+              <div className="flex items-end gap-3">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="例如：分析 600519 / 茅台现在适合买入吗？ (Enter 发送, Shift+Enter 换行)"
+                  disabled={loading}
+                  rows={1}
+                  className="input-surface input-focus-glow flex-1 min-h-[44px] max-h-[200px] rounded-xl border bg-transparent px-4 py-2.5 text-sm transition-all focus:outline-none resize-none disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ height: 'auto' }}
+                  onInput={(e) => {
+                    const t = e.target as HTMLTextAreaElement;
+                    t.style.height = 'auto';
+                    t.style.height = `${Math.min(t.scrollHeight, 200)}px`;
+                  }}
+                />
+                <Button
+                  variant="primary"
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || loading}
+                  isLoading={loading}
+                  className="btn-primary flex-shrink-0"
+                >
+                  发送
+                </Button>
+              </div>
             </div>
-            {isFollowUpContextLoading && (
-              <p className="mt-2 text-xs text-secondary-text">
-                正在加载历史分析上下文；现在可直接发送追问。
-              </p>
-            )}
           </div>
         </div>
       </div>

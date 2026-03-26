@@ -98,7 +98,13 @@ export const ReportMarkdown: React.FC<ReportMarkdownProps> = ({
   }, [recordId, loadReportFailedText]);
 
   return (
-    <Drawer isOpen={isOpen} onClose={handleClose} width="max-w-3xl" zIndex={100}>
+    <Drawer
+      isOpen={isOpen}
+      onClose={handleClose}
+      width="max-w-3xl"
+      zIndex={100}
+      backdropClassName="bg-background/56 backdrop-blur-[2px]"
+    >
       {/* Custom Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         {/* Left: Icon + Title */}

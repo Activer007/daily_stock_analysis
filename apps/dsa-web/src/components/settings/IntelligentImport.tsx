@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { getParsedApiError } from '../../api/error';
 import { stocksApi, type ExtractItem } from '../../api/stocks';
 import { systemConfigApi, SystemConfigConflictError } from '../../api/systemConfig';
-import { Badge, Button } from '../common';
+import { Badge, Button, InlineAlert } from '../common';
 
 const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 const IMG_MAX = 5 * 1024 * 1024; // 5MB
@@ -362,14 +362,20 @@ export const IntelligentImport: React.FC<IntelligentImportProps> = ({
 
       {isLoading && <p className="text-sm text-secondary-text">处理中...</p>}
       {error && (
-        <div className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</div>
+        <InlineAlert
+          variant="danger"
+          message={error}
+          className="rounded-xl px-3 py-2 text-sm shadow-none"
+        />
       )}
 
       {items.length > 0 && (
         <div className="space-y-2">
-          <div className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-            建议人工逐条核对后再合并。高置信度默认勾选，中/低置信度需手动确认。
-          </div>
+          <InlineAlert
+            variant="warning"
+            message="建议人工逐条核对后再合并。高置信度默认勾选，中/低置信度需手动确认。"
+            className="rounded-xl px-3 py-2 text-xs shadow-none"
+          />
           <div className="flex items-center justify-between">
             <span className="text-xs text-secondary-text">
               共 {validCount} 条可合并，已勾选 {checkedCount} 条

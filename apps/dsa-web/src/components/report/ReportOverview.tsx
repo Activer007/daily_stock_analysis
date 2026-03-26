@@ -4,7 +4,7 @@ import type {
   ReportMeta,
   ReportSummary as ReportSummaryType,
 } from '../../types/analysis';
-import { ScoreGauge, Card } from '../common';
+import { Badge, Card, ScoreGauge } from '../common';
 import { formatDateTime } from '../../utils/format';
 import { getReportText, normalizeReportLanguage } from '../../utils/reportLanguage';
 
@@ -114,11 +114,11 @@ export const ReportOverview: React.FC<ReportOverviewProps> = ({
     return text.laggingBoard;
   };
 
-  const getBoardStatusClassName = (status: BoardStatus): string => {
+  const getBoardStatusVariant = (status: BoardStatus): 'success' | 'danger' => {
     if (status === 'leading') {
-      return 'bg-success/10 text-success';
+      return 'success';
     }
-    return 'bg-danger/10 text-danger';
+    return 'danger';
   };
 
   return (
@@ -244,11 +244,12 @@ export const ReportOverview: React.FC<ReportOverviewProps> = ({
                         </span>
                       )}
                       {signal && (
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${getBoardStatusClassName(signal.status)}`}
+                        <Badge
+                          variant={getBoardStatusVariant(signal.status)}
+                          className="home-board-status-badge shadow-none"
                         >
                           {getBoardStatusLabel(signal.status)}
-                        </span>
+                        </Badge>
                       )}
                       {signal && signal.changePct !== undefined && signal.changePct !== null && (
                         <span

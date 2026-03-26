@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'history';
 
-interface BadgeProps {
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
   variant?: BadgeVariant;
   size?: 'sm' | 'md';
@@ -40,11 +40,13 @@ export const Badge: React.FC<BadgeProps> = ({
   glow = false,
   className = '',
   style,
+  ...rest
 }) => {
   const sizeStyles = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
 
   return (
     <span
+      {...rest}
       style={style}
       className={cn(
         'inline-flex items-center gap-1 rounded-full border font-medium backdrop-blur-sm',
