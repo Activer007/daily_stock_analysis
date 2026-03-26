@@ -223,8 +223,8 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full px-4 pb-6 pt-4 md:px-6">
-      <div className="mb-5 rounded-xl bg-card/50 px-5 py-5 shadow-soft-card-strong">
+    <div className="settings-page min-h-full px-4 pb-6 pt-4 md:px-6">
+      <div className="mb-5 rounded-[1.5rem] border settings-border bg-card/94 px-5 py-5 shadow-soft-card-strong backdrop-blur-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-foreground">系统设置</h1>
@@ -237,7 +237,6 @@ const SettingsPage: React.FC = () => {
             <Button
               type="button"
               variant="settings-secondary"
-              className="border-border/50 bg-muted/30 hover:border-border/70"
               onClick={resetDraft}
               disabled={isLoading || isSaving}
             >
@@ -397,7 +396,7 @@ const SettingsPage: React.FC = () => {
                 ))}
               </SettingsSectionCard>
             ) : (
-              <div className="settings-panel-muted rounded-[1.5rem] border p-5 text-sm text-secondary-text shadow-soft-card">
+              <div className="settings-surface-panel settings-border-strong rounded-[1.5rem] border p-5 text-sm text-secondary-text shadow-soft-card">
                 当前分类下暂无配置项。
               </div>
             )}

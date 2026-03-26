@@ -12,11 +12,11 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'border-border/40 bg-elevated/40 text-secondary-text',
+  default: 'border-border/55 bg-elevated/75 text-secondary-text',
   success: 'border-success/20 bg-success/10 text-success',
   warning: 'border-warning/20 bg-warning/10 text-warning',
   danger: 'border-danger/20 bg-danger/10 text-danger',
-  info: 'border-cyan/20 bg-cyan/10 text-cyan',
+  info: 'border-cyan/30 bg-cyan/12 text-cyan',
   history: 'border-purple/20 bg-purple/10 text-purple',
 };
 
