@@ -131,7 +131,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({
               </label>
               <Button
                 variant="danger-subtle"
-                size="sm"
+                size="xsm"
                 onClick={onDeleteSelected}
                 disabled={selectedCount === 0 || isDeleting}
                 isLoading={isDeleting}

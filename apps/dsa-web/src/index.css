@@ -130,6 +130,9 @@
   --nav-badge-bg: hsl(var(--primary));
   --nav-brand-shadow: hsl(var(--primary) / 0.2);
 
+  /* Shell Sidebar Custom */
+  --shell-sidebar-border: hsl(193 100% 43% / 0.35);
+
   /* Home page related (using HSL format) */
   --home-loading-ring-track: hsl(var(--primary) / 0.2);
   --home-loading-ring-head: hsl(var(--primary));
@@ -468,6 +471,31 @@
   --backtest-spinner-track: hsl(var(--primary) / 0.25);
   --backtest-spinner-head: hsl(var(--primary));
   --backtest-table-bg: hsl(var(--card) / 0.82);
+
+  /* Login Page Tokens (Dark - Preserved Cyber Style) */
+  --login-bg-main: hsl(222 84% 5%);
+  --login-bg-card: hsl(222 34% 8%);
+  --login-border-card: hsl(0 0% 100% / 0.05);
+  --login-border-input: hsl(0 0% 100% / 0.1);
+  --login-border-focus: hsl(var(--primary) / 0.5);
+  --login-error-text: hsl(var(--destructive));
+  --login-error-bg: hsl(var(--destructive) / 0.1);
+  --login-error-border: hsl(var(--destructive) / 0.2);
+  --login-text-primary: hsl(0 0% 100%);
+  --login-text-secondary: hsl(215 20% 65%);
+  --login-text-muted: hsl(215 16% 45%);
+  --login-accent-soft: hsl(var(--primary) / 0.08);
+  --login-accent-border: hsl(var(--primary) / 0.28);
+  --login-accent-text: hsl(var(--primary) / 0.92);
+  --login-accent-glow: hsl(var(--primary) / 0.2);
+  --login-brand-start: hsl(var(--primary));
+  --login-brand-end: hsl(214 100% 62%);
+  --login-brand-button-start: hsl(194 96% 45%);
+  --login-brand-button-end: hsl(214 100% 56%);
+  --login-brand-button-start-hover: hsl(194 96% 50%);
+  --login-brand-button-end-hover: hsl(214 100% 62%);
+  --login-grid-line: hsl(0 0% 50% / 0.04);
+  --login-grid-mask: radial-gradient(ellipse 80% 50% at 50% 50%, #000 70%, transparent 100%);
 }
 
 /* =========================================
@@ -477,13 +505,17 @@
 /* ============ Financial Terminal Tokens ============ */
 
 /* ============ Base Styles ============ */
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+@layer base {
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
 }
+
+@layer components {
 
 /* ============ Title Styles ============ */
 .title-gradient {
@@ -866,6 +898,15 @@ body {
 
 .slide-in-from-bottom-2 {
   animation-name: slideInFromBottomMd;
+}
+
+/* ============ Glassmorphism Panels ============ */
+.glass-panel {
+  @apply rounded-2xl border border-border/60 bg-card/70 shadow-soft-card backdrop-blur-md transition-all;
+}
+
+.glass-panel-lg {
+  @apply rounded-3xl border border-border/60 bg-card/70 shadow-soft-card backdrop-blur-md transition-all;
 }
 
 /* ============ Utilities ============ */
@@ -2146,3 +2187,9 @@ textarea {
   color: var(--text-muted-text);
   max-width: 20rem;
 }
+}
+
+20rem;
+}
+}
+
