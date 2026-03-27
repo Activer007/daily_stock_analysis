@@ -77,10 +77,7 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span
-                  className="truncate text-sm font-semibold text-foreground tracking-tight"
-                  title={item.stockName || item.stockCode}
-                >
+                <span className="truncate text-sm font-semibold text-foreground tracking-tight">
                   <span className="group-hover/item:hidden">
                     {truncateStockName(item.stockName || item.stockCode)}
                   </span>
