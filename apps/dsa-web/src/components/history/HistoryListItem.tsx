@@ -79,10 +79,10 @@ export const HistoryListItem: React.FC<HistoryListItemProps> = ({
               <div className="min-w-0 flex-1">
                 <span className="truncate text-sm font-semibold text-foreground tracking-tight">
                   <span className="group-hover/item:hidden">
-                    {truncateStockName(item.stockName || item.stockCode)}
+                    {truncateStockName(stockName)}
                   </span>
                   <span className="hidden group-hover/item:inline">
-                    {item.stockName || item.stockCode}
+                    {stockName}
                   </span>
                 </span>
               </div>
