@@ -60,6 +60,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - 补齐 AI 配置页与 `task_queue` 的 LLM 运行时清理/同步回归证据：恢复渠道模型时保留 fallback、编辑模型列表期间不静默清空运行时选择，渠道无可用模型时清理失效 runtime 引用，并覆盖 legacy key 与 `cohere/*`、`google/*`、`xai/*` 直连 provider 保留语义。
 - 覆盖 Web LLM 配置检测的细分错误分类，以及 JSON、tools、vision、stream 运行时 smoke 的显式触发路径。
+- [测试] 补齐 AI 配置页与 task_queue 的 LLM 运行时清理/同步回归证据：恢复渠道模型时保留 fallback、编辑模型列表期间不静默清空运行时选择，渠道无可用模型时清理失效 runtime 引用，并覆盖 legacy key 与 `cohere/*`、`google/*`、`xai/*` 直连 provider 保留语义；验收项明确包含 `tests/test_task_queue_config_sync.py`。
+- [测试] Web LLM 配置检测补充细分错误分类，并新增显式触发的 JSON/tools/vision/stream 运行时 smoke；默认测试和保存流程不变，检测结果仅作为当前配置的一次 best-effort 诊断。
+- [新功能] 自定义 Webhook 支持 `CUSTOM_WEBHOOK_BODY_TEMPLATE` JSON body 模板，便于适配 AstrBot、NapCat 和自建推送服务。
+- [新功能] 大盘复盘结构化区块新增大盘红绿灯结论，基于盘面温度输出 green/yellow/red、核心原因和操作建议。
+- [修复] 统一持仓快照输出现价/市值/浮盈亏/收益率与价格元信息，并为 LLM 渠道测试补充结构化诊断与设置页排障提示。
+- [文档] 补充 LLM 渠道编辑器的官方来源、依赖兼容窗口、保存时的运行时模型清理规则，以及旧配置回退路径说明。
+- [文档] 为 `cohere/*`、`google/*`、`xai/*` 直连语义补充官方 provider/model 说明、`litellm>=1.80.10,<1.82.7` 兼容依据引用，并明确示例模型名仅为配置保留行为说明而非可用性背书。
+- [改进] Bot `/status` 展示统一 LLM 主模型、Agent 模型、渠道模式、YAML 配置和更多通知渠道状态。
+- [修复] 明确 runtime 清理兼容边界：仅对托管 provider（`gemini`、`vertex_ai`、`anthropic`、`openai`、`deepseek`）触发保存前失效值清理，`cohere/*`、`google/*`、`xai/*` 直连值按 legacy 兼容路径保留，不做无提示迁移或覆写。
+- [改进] Web LLM 渠道编辑器补齐 MiniMax 与火山方舟预设，并新增常用服务商 `.env` 模板速查文档。
+- [修复] 将 MiniMax 预设调整为官方 OpenAI-compatible Base URL 和当前模型示例，并补充 MiniMax、火山方舟、LiteLLM 兼容来源与回退说明。
+- [改进] Web LLM 渠道编辑器补齐 MiniMax 与火山方舟预设，并将常用服务商默认模型示例同步到 OpenAI、Claude、Gemini、Kimi、Qwen、GLM、MiniMax、豆包等官方当前推荐模型。
+- [修复] 将 MiniMax 预设调整为官方 OpenAI-compatible Base URL 和当前模型示例，并补充各 LLM 渠道最新模型来源、兼容边界与回退说明。
+- [修复] 移除截图识别对 Gemini 3 Vision 模型的过时降级逻辑，默认推断改用当前 Gemini 模型配置。
+- [新功能] EventMonitor 支持 `price_change_percent` 涨跌幅阈值规则，可按上涨或下跌方向触发实时告警。
+- [文档] 明确 `price_change_percent` 事件告警仅为配置与运行时规则扩展，未变更模型/provider/base URL/LiteLLM 兼容语义；回退路径为关闭/移除 Event Monitor 配置；兼容验证与回归依据见 `tests/test_multi_agent.py`、`tests/test_system_config_service.py`。
+- [chore] 抽出 Web LLM provider preset 单一模板数据源，保持现有配置保存语义不变。
+- [改进] 补齐 LLM provider channel 在 GitHub Actions 中的显式映射，并同步 `.env` 示例与配置文档。
+- [改进] Web LLM 渠道编辑器展示 provider 能力标签、官方来源链接和配置注意事项提示；这些标签仅用于配置参考，不代表运行时能力已验证通过。
+- [新功能] 支持 `ANSPIRE_API_KEYS` 默认接入 Anspire OpenAI-compatible 大模型网关，并在 LLM 渠道编辑器补充 Anspire Open 预设。
+- [文档] 完善 LLM provider 配置文档，补充配置方式选择、Actions 变量对照、运行时检测边界、错误 reason 排障和回滚路径（#1180）。
+- [修复] Agent weak 完整性兜底在模型缺少评分、趋势、操作建议或 dashboard 关键块时优先保留本地趋势分析结果，并只补齐真正缺失的仪表盘字段，避免首页评分被默认 50 覆盖。
+- [文档] 本次 #1188 修复仅涉及 agent_weak 完整性兜底链路字段补齐，未改动模型/provider/base URL/LiteLLM 运行时配置清理语义。
+- [文档] 本次变更为文档/治理同步，不包含运行时能力、CI 配置、前端预设或测试逻辑的新增与修改，Anspire / AIHubMix / SerpAPI 配置说明仅整理现有能力口径。
+- [文档] 本轮仅做 README、DEPLOY 与 full-guide 的内容同步与排序调整，并对外链/口径差异进行统一，补齐 PR 一致性说明。
+- [文档] 为本轮评审一致性，新增/调整条目不作为 runtime、测试回归或兼容性变更依据。
+- [新功能] 系统设置页新增配置项帮助入口与多语言帮助文案基础设施，首批覆盖自选股、LLM 主模型、LLM 渠道、飞书 Webhook 与 WebUI 监听地址。
 
 ## [3.14.2] - 2026-04-30
 

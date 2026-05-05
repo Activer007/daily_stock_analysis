@@ -63,6 +63,15 @@ class SystemConfigApiTestCase(unittest.TestCase):
         self.assertEqual(item_map["GEMINI_API_KEY"]["value"], "secret-key-value")
         self.assertFalse(item_map["GEMINI_API_KEY"]["is_masked"])
 
+    def test_get_config_schema_includes_help_metadata(self) -> None:
+        payload = system_config.get_system_config(include_schema=True, service=self.service).model_dump(by_alias=True)
+        item_map = {item["key"]: item for item in payload["items"]}
+        stock_schema = item_map["STOCK_LIST"]["schema"]
+
+        self.assertEqual(stock_schema["help_key"], "settings.base.STOCK_LIST")
+        self.assertTrue(stock_schema["examples"])
+        self.assertTrue(stock_schema["docs"])
+
     def test_get_setup_status_returns_readiness_payload(self) -> None:
         self.env_path.write_text(
             "\n".join(

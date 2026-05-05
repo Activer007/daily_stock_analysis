@@ -31,6 +31,11 @@ export interface SystemConfigOption {
   value: string;
 }
 
+export interface SystemConfigDocLink {
+  label: string;
+  href: string;
+}
+
 export interface SystemConfigFieldSchema {
   key: string;
   title?: string;
@@ -45,6 +50,10 @@ export interface SystemConfigFieldSchema {
   options: Array<string | SystemConfigOption>;
   validation: Record<string, unknown>;
   displayOrder: number;
+  helpKey?: string | null;
+  examples?: string[];
+  docs?: SystemConfigDocLink[];
+  warningCodes?: string[];
 }
 
 export interface SystemConfigCategorySchema {

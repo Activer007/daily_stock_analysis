@@ -108,6 +108,41 @@ class TestFeishuWebhookFieldsRegistered(unittest.TestCase):
             self.assertIn(key, field_keys, f"{key} missing from schema response")
 
 
+class TestSettingsHelpMetadata(unittest.TestCase):
+    """Field help metadata should be available for the first settings help slice."""
+
+    _HELP_KEYS = (
+        "STOCK_LIST",
+        "LITELLM_MODEL",
+        "LLM_CHANNELS",
+        "FEISHU_WEBHOOK_URL",
+        "WEBUI_HOST",
+    )
+
+    def test_representative_fields_have_help_metadata(self):
+        for key in self._HELP_KEYS:
+            field = get_field_definition(key)
+            self.assertTrue(field.get("help_key"), f"{key} missing help_key")
+            self.assertTrue(field.get("examples"), f"{key} missing examples")
+            self.assertTrue(field.get("docs"), f"{key} missing docs")
+
+    def test_webui_host_is_explicitly_registered(self):
+        field = get_field_definition("WEBUI_HOST")
+        self.assertEqual(field["category"], "system")
+        self.assertNotEqual(field["display_order"], 9000)
+
+    def test_schema_response_includes_help_metadata(self):
+        schema = build_schema_response()
+        fields = {
+            field["key"]: field
+            for category in schema["categories"]
+            for field in category["fields"]
+        }
+
+        self.assertEqual(fields["STOCK_LIST"]["help_key"], "settings.base.STOCK_LIST")
+        self.assertIn("docs/full-guide.md", fields["STOCK_LIST"]["docs"][0]["href"])
+
+
 class TestSensitiveFieldsUsePasswordControl(unittest.TestCase):
     """Every is_sensitive field must use ui_control='password' to avoid
     leaking secrets in the Web settings page."""

@@ -3,6 +3,7 @@ export * from './SettingsAlert';
 export * from './ChangePasswordCard';
 export * from './IntelligentImport';
 export * from './SettingsField';
+export * from './SettingsHelpButton';
 export * from './SettingsLoading';
 export * from './SettingsSectionCard';
 export * from './SettingsCategoryNav';

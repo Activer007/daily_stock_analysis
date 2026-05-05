@@ -17,6 +17,13 @@ class SystemConfigOption(BaseModel):
     value: str
 
 
+class SystemConfigDocLink(BaseModel):
+    """Documentation link metadata for field help panels."""
+
+    label: str
+    href: str
+
+
 class SystemConfigFieldSchema(BaseModel):
     """Metadata schema for a single config field."""
 
@@ -33,6 +40,10 @@ class SystemConfigFieldSchema(BaseModel):
     options: List[str | SystemConfigOption] = Field(default_factory=list)
     validation: Dict[str, Any] = Field(default_factory=dict)
     display_order: int
+    help_key: Optional[str] = Field(None, description="Stable localization key for detailed help content")
+    examples: List[str] = Field(default_factory=list, description="Safe example values for help panels")
+    docs: List[SystemConfigDocLink] = Field(default_factory=list, description="Related documentation links")
+    warning_codes: List[str] = Field(default_factory=list, description="Stable warning identifiers for help panels")
 
 
 class SystemConfigCategorySchema(BaseModel):
