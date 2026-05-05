@@ -14,6 +14,19 @@ interface SettingsHelpButtonProps {
   description?: string;
 }
 
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
 function hasItems<T>(items: T[] | undefined): items is T[] {
   return Boolean(items?.length);
 }
@@ -82,6 +95,8 @@ export const SettingsHelpButton: React.FC<SettingsHelpButtonProps> = ({
   const help = getSettingsHelpContent(schema?.helpKey, description);
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const titleId = useId();
   const examples = schema?.examples ?? [];
   const docs = schema?.docs?.length ? schema.docs : help?.docs ?? [];
@@ -91,9 +106,47 @@ export const SettingsHelpButton: React.FC<SettingsHelpButtonProps> = ({
       return;
     }
 
+    const focusDialogStart = () => {
+      closeButtonRef.current?.focus();
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const dialog = dialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const focusableElements = getFocusableElements(dialog);
+      if (!focusableElements.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey) {
+        if (!activeElement || !dialog.contains(activeElement) || activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!activeElement || !dialog.contains(activeElement) || activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -101,6 +154,7 @@ export const SettingsHelpButton: React.FC<SettingsHelpButtonProps> = ({
     const previousOverflow = document.body.style.overflow;
     const triggerButton = buttonRef.current;
     document.body.style.overflow = 'hidden';
+    focusDialogStart();
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -138,12 +192,15 @@ export const SettingsHelpButton: React.FC<SettingsHelpButtonProps> = ({
                 type="button"
                 className="absolute inset-0 cursor-default"
                 aria-label="关闭配置说明"
+                tabIndex={-1}
                 onClick={() => setOpen(false)}
               />
               <div
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
+                tabIndex={-1}
                 className={cn(
                   'relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-2xl border border-border/80 bg-card shadow-soft-card-strong',
                   'sm:max-w-2xl sm:rounded-2xl',
@@ -163,6 +220,7 @@ export const SettingsHelpButton: React.FC<SettingsHelpButtonProps> = ({
                     ) : null}
                   </div>
                   <button
+                    ref={closeButtonRef}
                     type="button"
                     onClick={() => setOpen(false)}
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-card/80 text-secondary-text transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan/15"

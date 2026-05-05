@@ -122,7 +122,20 @@ describe('SettingsField', () => {
 
     expect(screen.getByRole('dialog', { name: '自选股列表' })).toBeInTheDocument();
     expect(screen.getByText('STOCK_LIST=600519,300750,002594')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /完整指南/ })).toHaveAttribute('href', 'https://example.com/full-guide');
+    const docLink = screen.getByRole('link', { name: /完整指南/ });
+    expect(docLink).toHaveAttribute('href', 'https://example.com/full-guide');
+
+    const closeButtons = screen.getAllByRole('button', { name: '关闭配置说明' });
+    expect(closeButtons[0].tabIndex).toBe(-1);
+    const closeButton = closeButtons.find((button) => button.tabIndex !== -1);
+    expect(closeButton).toBeDefined();
+
+    closeButton?.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(docLink).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(closeButton).toHaveFocus();
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: '自选股列表' })).not.toBeInTheDocument();
