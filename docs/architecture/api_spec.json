@@ -212,7 +212,7 @@
           {
             "name": "status",
             "in": "query",
-            "description": "筛选状态：pending, processing, completed, failed（支持逗号分隔多个）",
+            "description": "筛选状态：pending, processing, completed, failed, cancel_requested, cancelled（支持逗号分隔多个）",
             "schema": {
               "type": "string",
               "example": "pending,processing"
@@ -260,6 +260,59 @@
                 "schema": {
                   "type": "string",
                   "example": "event: task_created\ndata: {\"task_id\": \"abc123\", \"stock_code\": \"600519\", \"status\": \"pending\"}\n\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/tasks/{task_id}/flow": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "获取分析任务运行流",
+        "description": "根据 task_id 查询活跃任务或已落库任务的运行流快照。活跃任务缺少诊断时返回 skeleton flow；完成任务可按同一 task_id/query_id 尝试读取历史诊断。",
+        "operationId": "getTaskRunFlow",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "分析任务 ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "任务运行流快照",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunFlowSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "任务不存在或已过期",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -426,6 +479,59 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NewsIntelResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/{record_id}/flow": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "summary": "获取历史报告运行流",
+        "description": "根据历史记录 ID 或可解析的 query_id 获取历史报告运行流快照。旧历史缺少诊断时返回 skeleton/unknown 状态，不影响报告详情读取。",
+        "operationId": "getHistoryRunFlow",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "description": "历史记录主键 ID 或 query_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "历史报告运行流快照",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunFlowSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "报告不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1971,6 +2077,379 @@
         "required": [
           "error",
           "message"
+        ]
+      },
+      "RunFlowLane": {
+        "type": "object",
+        "description": "运行流泳道定义",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "稳定泳道 ID"
+          },
+          "label": {
+            "type": "string",
+            "description": "展示标签"
+          },
+          "order": {
+            "type": "integer",
+            "description": "展示顺序"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "order"
+        ]
+      },
+      "RunFlowNode": {
+        "type": "object",
+        "description": "运行流中的一个节点",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "稳定节点 ID"
+          },
+          "lane": {
+            "type": "string",
+            "description": "所属泳道 ID"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "queue",
+              "data_source",
+              "analysis",
+              "model",
+              "artifact",
+              "notification"
+            ],
+            "description": "节点类型"
+          },
+          "label": {
+            "type": "string",
+            "description": "展示标签"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "success",
+              "failed",
+              "degraded",
+              "fallback",
+              "timeout",
+              "cancel_requested",
+              "cancelled",
+              "skipped",
+              "unknown"
+            ],
+            "description": "节点状态"
+          },
+          "provider": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider、模型或通知渠道名称"
+          },
+          "started_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "开始时间 ISO 字符串"
+          },
+          "ended_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "结束时间 ISO 字符串"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "description": "耗时毫秒数"
+          },
+          "attempts": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "description": "节点代表的尝试次数"
+          },
+          "record_count": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "description": "返回记录数"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "短脱敏状态说明"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "脱敏后的低敏元数据",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "lane",
+          "kind",
+          "label",
+          "status"
+        ]
+      },
+      "RunFlowEdge": {
+        "type": "object",
+        "description": "运行流中的有向连线",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "稳定连线 ID"
+          },
+          "from": {
+            "type": "string",
+            "description": "来源节点 ID"
+          },
+          "to": {
+            "type": "string",
+            "description": "目标节点 ID"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "data",
+              "control",
+              "fallback",
+              "retry"
+            ],
+            "description": "连线类型"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "success",
+              "failed",
+              "degraded",
+              "fallback",
+              "timeout",
+              "cancel_requested",
+              "cancelled",
+              "skipped",
+              "unknown"
+            ],
+            "description": "连线状态"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "短展示标签"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "短脱敏说明"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "脱敏后的低敏元数据",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "kind",
+          "status"
+        ]
+      },
+      "RunFlowEvent": {
+        "type": "object",
+        "description": "运行流事件",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "稳定事件 ID"
+          },
+          "timestamp": {
+            "type": "string",
+            "nullable": true,
+            "description": "事件时间 ISO 字符串"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "success",
+              "warning",
+              "danger"
+            ],
+            "description": "事件严重级别"
+          },
+          "type": {
+            "type": "string",
+            "description": "稳定事件类型"
+          },
+          "node_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "关联节点 ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "短标题"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "短脱敏说明"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "脱敏后的低敏元数据",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "type",
+          "title"
+        ]
+      },
+      "RunFlowSummary": {
+        "type": "object",
+        "description": "运行流摘要指标",
+        "properties": {
+          "elapsed_ms": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "description": "观测到的总耗时毫秒数"
+          },
+          "bottleneck_node_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "耗时最长节点 ID"
+          },
+          "failed_attempts": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "失败尝试次数"
+          },
+          "fallback_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "fallback 或 retry 转换次数"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "诊断中观测到的脱敏模型名"
+          },
+          "data_source_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "数据来源节点数量"
+          },
+          "event_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "事件数量"
+          }
+        },
+        "required": [
+          "failed_attempts",
+          "fallback_count",
+          "data_source_count",
+          "event_count"
+        ]
+      },
+      "RunFlowSnapshot": {
+        "type": "object",
+        "description": "任务或历史报告运行流快照",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "任务 ID 或 query_id"
+          },
+          "trace_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "诊断 trace ID"
+          },
+          "stock_code": {
+            "type": "string",
+            "description": "股票代码"
+          },
+          "stock_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "股票名称"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "success",
+              "failed",
+              "degraded",
+              "fallback",
+              "timeout",
+              "cancel_requested",
+              "cancelled",
+              "skipped",
+              "unknown"
+            ],
+            "description": "整体运行流状态"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RunFlowSummary"
+          },
+          "lanes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunFlowLane"
+            }
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunFlowNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunFlowEdge"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunFlowEvent"
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "description": "快照生成时间 ISO 字符串"
+          }
+        },
+        "required": [
+          "task_id",
+          "stock_code",
+          "status",
+          "summary",
+          "lanes",
+          "nodes",
+          "edges",
+          "events",
+          "generated_at"
         ]
       }
     }
