@@ -1,6 +1,6 @@
 import type React from 'react';
-import { ChevronDown, RefreshCw } from 'lucide-react';
-import { Badge, Card, StatusDot } from '../common';
+import { ChevronDown, RefreshCw, Workflow } from 'lucide-react';
+import { Badge, Button, Card, StatusDot, Tooltip } from '../common';
 import { DashboardPanelHeader } from '../dashboard';
 import type { TaskInfo } from '../../types/analysis';
 import { getRequestedPhaseLabel } from '../../utils/marketPhase';
@@ -11,12 +11,13 @@ import { useUiLanguage } from '../../contexts/UiLanguageContext';
  */
 interface TaskItemProps {
   task: TaskInfo;
+  onOpenRunFlow?: (task: TaskInfo) => void;
 }
 
 /**
  * 单个任务项
  */
-const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onOpenRunFlow }) => {
   const { language, t } = useUiLanguage();
   const isPending = task.status === 'pending';
   const isProcessing = task.status === 'processing';
@@ -92,7 +93,28 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       </div>
 
       {/* 状态标签 */}
-      <div className="flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-2">
+        {onOpenRunFlow ? (
+          <Tooltip content={t('taskPanel.openRunFlow')}>
+            <span className="inline-flex">
+              <Button
+                type="button"
+                variant="ghost"
+                size="xsm"
+                className="h-8 w-8 px-0"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenRunFlow(task);
+                }}
+                aria-label={t('taskPanel.openRunFlowAria', {
+                  stock: task.stockName || task.stockCode,
+                })}
+              >
+                <Workflow className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </span>
+          </Tooltip>
+        ) : null}
         <Badge
           variant={statusVariant}
           className="min-w-[4.75rem] justify-center gap-1.5 shadow-none"
@@ -118,6 +140,8 @@ interface TaskPanelProps {
   title?: string;
   /** 自定义类名 */
   className?: string;
+  /** 打开运行流面板 */
+  onOpenRunFlow?: (task: TaskInfo) => void;
 }
 
 /**
@@ -129,6 +153,7 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
   visible = true,
   title,
   className = '',
+  onOpenRunFlow,
 }) => {
   const { t } = useUiLanguage();
   // 筛选活跃任务（pending 和 processing）
@@ -181,7 +206,7 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
       <div className="max-h-64 overflow-y-auto p-2">
         <div className="space-y-2">
           {activeTasks.map((task) => (
-            <TaskItem key={task.taskId} task={task} />
+            <TaskItem key={task.taskId} task={task} onOpenRunFlow={onOpenRunFlow} />
           ))}
         </div>
       </div>

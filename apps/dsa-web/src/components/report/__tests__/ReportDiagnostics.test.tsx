@@ -88,6 +88,18 @@ describe('ReportDiagnostics', () => {
     expect(screen.getByText('Fetch / LLM / save / notification path')).toBeInTheDocument();
   });
 
+  it('opens historical run flow from the diagnostics body', async () => {
+    const onOpenRunFlow = vi.fn();
+    vi.mocked(historyApi.getDiagnostics).mockResolvedValue(diagnosticSummary);
+
+    render(<ReportDiagnostics recordId={1} onOpenRunFlow={onOpenRunFlow} />);
+
+    fireEvent.click(await screen.findByText('运行状态'));
+    fireEvent.click(screen.getByRole('button', { name: '查看历史记录 1 运行流' }));
+
+    expect(onOpenRunFlow).toHaveBeenCalledWith(1);
+  });
+
   it('refetches diagnostics after StrictMode cleans up the first effect run', async () => {
     vi.mocked(historyApi.getDiagnostics).mockResolvedValue(diagnosticSummary);
 
