@@ -7,6 +7,7 @@ import os
 import sys
 import unittest
 from concurrent.futures import Future
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -212,6 +213,47 @@ class RunDiagnosticsP1TestCase(unittest.TestCase):
         message = snapshot["provider_runs"][0]["error_message_sanitized"]
         self.assertNotIn("secret", message)
         self.assertNotIn("example.com/webhook", message)
+
+    def test_diagnostic_event_sink_receives_provider_llm_history_and_notification_events(self) -> None:
+        events = []
+        token = activate_run_diagnostic_context(
+            trace_id="trace-flow",
+            task_id="task-flow",
+            query_id="task-flow",
+            stock_code="600519",
+            event_sink=events.append,
+        )
+        try:
+            record_provider_run(
+                data_type="daily_data",
+                provider="UnitFetcher",
+                operation="get_daily_data",
+                success=True,
+                latency_ms=12,
+                record_count=3,
+            )
+            from src.services.run_diagnostics import record_history_run, record_llm_run, record_notification_run
+
+            record_llm_run(success=True, model="deepseek-chat", duration_ms=34)
+            record_history_run(report_saved=True, metadata_saved=True, analysis_history_id=7)
+            record_notification_run(channel="report", status="success", success=True)
+        finally:
+            reset_run_diagnostic_context(token)
+
+        self.assertEqual(
+            [event["type"] for event in events],
+            ["provider_run", "llm_run", "history_run", "notification_run"],
+        )
+        self.assertEqual(events[0]["metadata"]["node"]["lane"], "data_source")
+        provider_node = events[0]["metadata"]["node"]
+        provider_started = datetime.fromisoformat(provider_node["started_at"])
+        provider_ended = datetime.fromisoformat(provider_node["ended_at"])
+        self.assertEqual(int((provider_ended - provider_started).total_seconds() * 1000), 12)
+        self.assertEqual(events[1]["metadata"]["node"]["kind"], "model")
+        llm_node = events[1]["metadata"]["node"]
+        llm_started = datetime.fromisoformat(llm_node["started_at"])
+        llm_ended = datetime.fromisoformat(llm_node["ended_at"])
+        self.assertEqual(int((llm_ended - llm_started).total_seconds() * 1000), 34)
 
 
 if __name__ == "__main__":

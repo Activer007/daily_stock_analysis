@@ -23,6 +23,8 @@ class TaskStatusEnum(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCEL_REQUESTED = "cancel_requested"
+    CANCELLED = "cancelled"
 
 
 AnalysisPhase = Literal["auto", "premarket", "intraday", "postmarket"]

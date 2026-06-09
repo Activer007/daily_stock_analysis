@@ -8,6 +8,7 @@ import { RunFlowPanel } from '../RunFlowPanel';
 vi.mock('../../../api/analysis', () => ({
   analysisApi: {
     getTaskFlow: vi.fn(),
+    getTaskStreamUrl: vi.fn(() => 'http://localhost/api/v1/analysis/tasks/stream'),
   },
 }));
 

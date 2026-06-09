@@ -21,9 +21,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onOpenRunFlow }) => {
   const { language, t } = useUiLanguage();
   const isPending = task.status === 'pending';
   const isProcessing = task.status === 'processing';
-  const statusLabel = isProcessing ? t('taskPanel.processing') : t('taskPanel.pending');
-  const statusVariant = isProcessing ? 'info' : 'default';
-  const statusTone = isProcessing ? 'info' : 'neutral';
+  const isCancelRequested = task.status === 'cancel_requested';
+  const isCancelled = task.status === 'cancelled';
+  const statusLabel = isCancelRequested
+    ? t('taskPanel.cancelRequested')
+    : isCancelled
+      ? t('taskPanel.cancelled')
+      : isProcessing ? t('taskPanel.processing') : t('taskPanel.pending');
+  const statusVariant = isCancelRequested ? 'warning' : isProcessing ? 'info' : 'default';
+  const statusTone = isCancelRequested ? 'warning' : isProcessing ? 'info' : 'neutral';
   const progress = Math.max(0, Math.min(100, task.progress || 0));
   const traceId = (task.traceId || '').trim();
   const requestedPhaseLabel = getRequestedPhaseLabel(task.analysisPhase, language);
@@ -35,13 +41,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onOpenRunFlow }) => {
       <div className="shrink-0">
         {isProcessing ? (
           <StatusDot tone="info" pulse className="h-2.5 w-2.5" aria-label={t('taskPanel.processingAria')} />
+        ) : isCancelRequested ? (
+          <StatusDot tone="warning" pulse className="h-2.5 w-2.5" aria-label={t('taskPanel.cancelRequestedAria')} />
         ) : isPending ? (
           <StatusDot tone="neutral" className="h-2.5 w-2.5" aria-label={t('taskPanel.pendingAria')} />
         ) : null}
       </div>
 
       {/* 任务信息 */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground truncate">
             {task.stockName || task.stockCode}
@@ -93,7 +101,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onOpenRunFlow }) => {
       </div>
 
       {/* 状态标签 */}
-      <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="relative z-10 flex flex-shrink-0 items-center gap-2">
         {onOpenRunFlow ? (
           <Tooltip content={t('taskPanel.openRunFlow')}>
             <span className="inline-flex">
@@ -120,7 +128,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onOpenRunFlow }) => {
           className="min-w-[4.75rem] justify-center gap-1.5 shadow-none"
           aria-label={t('taskPanel.statusAria', { status: statusLabel })}
         >
-          <StatusDot tone={statusTone} pulse={isProcessing} className="h-1.5 w-1.5" />
+          <StatusDot tone={statusTone} pulse={isProcessing || isCancelRequested} className="h-1.5 w-1.5" />
           {statusLabel}
         </Badge>
       </div>
@@ -156,9 +164,9 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
   onOpenRunFlow,
 }) => {
   const { t } = useUiLanguage();
-  // 筛选活跃任务（pending 和 processing）
+  // 筛选活跃任务（pending / processing / cancel requested）
   const activeTasks = tasks.filter(
-    (t) => t.status === 'pending' || t.status === 'processing'
+    (t) => t.status === 'pending' || t.status === 'processing' || t.status === 'cancel_requested'
   );
 
   // 无任务或不可见时不渲染
