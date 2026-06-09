@@ -11,6 +11,7 @@ import type {
   TaskStatus,
   TaskListResponse,
 } from '../types/analysis';
+import type { RunFlowSnapshot } from '../types/runFlow';
 
 // ============ API Interfaces ============
 
@@ -159,6 +160,18 @@ export const analysisApi = {
     const data = toCamelCase<TaskListResponse>(response.data);
 
     return data;
+  },
+
+  /**
+   * Get a run-flow snapshot for an active analysis task.
+   * @param taskId Task ID
+   */
+  getTaskFlow: async (taskId: string): Promise<RunFlowSnapshot> => {
+    const response = await apiClient.get<Record<string, unknown>>(
+      `/api/v1/analysis/tasks/${encodeURIComponent(taskId)}/flow`
+    );
+
+    return toCamelCase<RunFlowSnapshot>(response.data);
   },
 
   /**

@@ -1,7 +1,8 @@
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, Check, ChevronDown, Copy } from 'lucide-react';
+import { Activity, Check, ChevronDown, Copy, Workflow } from 'lucide-react';
 import { historyApi } from '../../api/history';
+import { formatUiText, UI_TEXT } from '../../i18n/uiText';
 import type {
   ReportLanguage,
   RunDiagnosticComponent,
@@ -16,6 +17,7 @@ interface ReportDiagnosticsProps {
   recordId?: number;
   summary?: RunDiagnosticSummary;
   language?: ReportLanguage;
+  onOpenRunFlow?: (recordId: number) => void;
 }
 
 type BadgeVariant = NonNullable<React.ComponentProps<typeof Badge>['variant']>;
@@ -134,9 +136,11 @@ export const ReportDiagnostics: React.FC<ReportDiagnosticsProps> = ({
   recordId,
   summary,
   language = 'zh',
+  onOpenRunFlow,
 }) => {
   const reportLanguage = normalizeReportLanguage(language);
   const text = TEXT[reportLanguage];
+  const runFlowText = UI_TEXT[reportLanguage];
   const [fetchState, setFetchState] = useState<{
     recordId?: number;
     summary: RunDiagnosticSummary | null;
@@ -325,17 +329,30 @@ export const ReportDiagnostics: React.FC<ReportDiagnosticsProps> = ({
                 ) : null}
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="xsm"
-              disabled={!hasCopyText}
-              onClick={() => void copyDiagnostics()}
-              aria-label={copied ? text.copied : text.copy}
-              className="shrink-0"
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? text.copied : text.copy}
-            </Button>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {recordId !== undefined && onOpenRunFlow ? (
+                <Button
+                  variant="ghost"
+                  size="xsm"
+                  onClick={() => onOpenRunFlow(recordId)}
+                  aria-label={formatUiText(runFlowText['runFlow.openHistoryAria'], { recordId })}
+                >
+                  <Workflow className="h-3.5 w-3.5" aria-hidden="true" />
+                  {runFlowText['runFlow.open']}
+                </Button>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="xsm"
+                disabled={!hasCopyText}
+                onClick={() => void copyDiagnostics()}
+                aria-label={copied ? text.copied : text.copy}
+                className="shrink-0"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? text.copied : text.copy}
+              </Button>
+            </div>
           </div>
 
           <div>
