@@ -38,6 +38,7 @@ from src.config import (
     normalize_news_strategy_profile,
     resolve_news_window_days,
 )
+from src.services.run_diagnostics import record_provider_run
 
 logger = logging.getLogger(__name__)
 
@@ -3165,6 +3166,34 @@ class SearchService:
             search_time=response.search_time,
         )
 
+    @staticmethod
+    def _elapsed_ms(started_at: float) -> int:
+        return max(0, int((time.monotonic() - started_at) * 1000))
+
+    @staticmethod
+    def _record_news_search_run(
+        *,
+        provider: str,
+        operation: str,
+        success: bool,
+        latency_ms: Optional[int] = None,
+        record_count: Optional[int] = None,
+        cache_hit: Optional[bool] = None,
+        error_type: Optional[str] = None,
+        error_message: Optional[Any] = None,
+    ) -> None:
+        record_provider_run(
+            data_type="news_search",
+            provider=provider,
+            operation=operation,
+            success=success,
+            latency_ms=latency_ms,
+            error_type=error_type,
+            error_message=error_message,
+            cache_hit=cache_hit,
+            record_count=record_count,
+        )
+
     def search_stock_news(
         self,
         stock_code: str,
@@ -3235,16 +3264,43 @@ class SearchService:
         cached, cache_owner, cache_event = self._get_cached_or_reserve(cache_key)
         if cached is not None:
             logger.info(f"使用缓存搜索结果: {stock_name}({stock_code})")
+            self._record_news_search_run(
+                provider=cached.provider or "SearchCache",
+                operation="search_stock_news_cache",
+                success=bool(cached.success),
+                latency_ms=0,
+                record_count=len(cached.results or []),
+                cache_hit=True,
+                error_message=cached.error_message,
+            )
             return cached
 
         if not cache_owner and cache_event is not None:
             cached = self._wait_for_cached(cache_key, cache_event)
             if cached is not None:
                 logger.info(f"使用并发填充后的缓存搜索结果: {stock_name}({stock_code})")
+                self._record_news_search_run(
+                    provider=cached.provider or "SearchCache",
+                    operation="search_stock_news_cache_wait",
+                    success=bool(cached.success),
+                    latency_ms=0,
+                    record_count=len(cached.results or []),
+                    cache_hit=True,
+                    error_message=cached.error_message,
+                )
                 return cached
             cached, cache_owner, cache_event = self._get_cached_or_reserve(cache_key)
             if cached is not None:
                 logger.info(f"使用等待后命中的缓存搜索结果: {stock_name}({stock_code})")
+                self._record_news_search_run(
+                    provider=cached.provider or "SearchCache",
+                    operation="search_stock_news_cache_retry",
+                    success=bool(cached.success),
+                    latency_ms=0,
+                    record_count=len(cached.results or []),
+                    cache_hit=True,
+                    error_message=cached.error_message,
+                )
                 return cached
 
         try:
@@ -3267,7 +3323,19 @@ class SearchService:
                         )
                     )
 
-                response = provider.search(query, provider_max_results, days=search_days, **search_kwargs)
+                started_at = time.monotonic()
+                try:
+                    response = provider.search(query, provider_max_results, days=search_days, **search_kwargs)
+                except Exception as exc:
+                    self._record_news_search_run(
+                        provider=provider.name,
+                        operation="search_stock_news",
+                        success=False,
+                        latency_ms=self._elapsed_ms(started_at),
+                        error_type=type(exc).__name__,
+                        error_message=exc,
+                    )
+                    raise
                 filtered_response = self._filter_news_response(
                     response,
                     search_days=search_days,
@@ -3275,6 +3343,16 @@ class SearchService:
                     log_scope=f"{stock_code}:{provider.name}:stock_news",
                 )
                 had_provider_success = had_provider_success or bool(response.success)
+                filtered_count = len(filtered_response.results or []) if filtered_response.success else 0
+                self._record_news_search_run(
+                    provider=provider.name,
+                    operation="search_stock_news",
+                    success=bool(filtered_response.success and filtered_response.results),
+                    latency_ms=self._elapsed_ms(started_at),
+                    record_count=filtered_count,
+                    error_type=None if filtered_count else "NoUsableNews",
+                    error_message=None if filtered_count else (response.error_message or "过滤后无有效新闻"),
+                )
 
                 if filtered_response.success and filtered_response.results:
                     language_response, _preferred_count = self._prioritize_news_language(

@@ -24,6 +24,7 @@ const nodes: RunFlowNode[] = [
     label: '新闻舆情',
     status: 'fallback',
     provider: 'AkShare',
+    startedAt: '2026-06-08T10:00:00',
   },
 ];
 
@@ -53,6 +54,8 @@ describe('RunFlowGraph', () => {
     expect(screen.getByText('入口')).toBeInTheDocument();
     expect(screen.getByText('数据来源')).toBeInTheDocument();
     expect(screen.getByText('降级')).toBeInTheDocument();
+    expect(screen.getByTestId('run-flow-node-news')).toHaveTextContent('开始');
+    expect(screen.getByTestId('run-flow-node-news')).toHaveTextContent('2026');
     expect(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' }));
@@ -188,5 +191,49 @@ describe('RunFlowGraph', () => {
     expect(startY).toBeLessThan(endY);
     expect(startY).toBe(dailyBottom);
     expect(endY).toBe(quoteTop);
+  });
+
+  it('orders data-source lane cards by their observed timestamps', () => {
+    const timeOrderedNodes: RunFlowNode[] = [
+      {
+        id: 'late-news',
+        lane: 'data_source',
+        kind: 'data_source',
+        label: '新闻舆情',
+        status: 'success',
+        startedAt: '2026-06-08T10:00:05',
+      },
+      {
+        id: 'early-quote',
+        lane: 'data_source',
+        kind: 'data_source',
+        label: '实时行情',
+        status: 'success',
+        startedAt: '2026-06-08T10:00:01',
+      },
+      {
+        id: 'middle-daily',
+        lane: 'data_source',
+        kind: 'data_source',
+        label: '日线K线',
+        status: 'success',
+        endedAt: '2026-06-08T10:00:03',
+      },
+    ];
+
+    render(
+      <RunFlowGraph
+        lanes={lanes}
+        nodes={timeOrderedNodes}
+        edges={[]}
+      />,
+    );
+
+    expect(Number(screen.getByTestId('run-flow-node-early-quote').dataset.layoutRow)).toBeLessThan(
+      Number(screen.getByTestId('run-flow-node-middle-daily').dataset.layoutRow),
+    );
+    expect(Number(screen.getByTestId('run-flow-node-middle-daily').dataset.layoutRow)).toBeLessThan(
+      Number(screen.getByTestId('run-flow-node-late-news').dataset.layoutRow),
+    );
   });
 });

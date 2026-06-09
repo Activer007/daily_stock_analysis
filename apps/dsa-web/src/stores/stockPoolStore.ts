@@ -856,7 +856,7 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
     const localRevisionAtRequest = activeTaskLocalRevision;
     try {
       const response = await analysisApi.getTasks({
-        status: 'pending,processing',
+        status: 'pending,processing,cancel_requested',
         limit: 100,
       });
       if (requestId !== activeTaskRequestSeq) {

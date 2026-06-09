@@ -86,6 +86,39 @@ describe('TaskPanel', () => {
     expect(onOpenRunFlow).toHaveBeenCalledWith(baseTask);
   });
 
+  it('keeps cancel-requested tasks visible without rendering them as failed', () => {
+    render(
+      <TaskPanel
+        tasks={[
+          {
+            ...baseTask,
+            status: 'cancel_requested',
+            message: '正在请求取消',
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('贵州茅台')).toBeInTheDocument();
+    expect(screen.getByLabelText('任务状态：请求取消')).toBeInTheDocument();
+    expect(screen.queryByText('失败')).not.toBeInTheDocument();
+  });
+
+  it('does not keep cancelled terminal tasks in the active task panel', () => {
+    const { container } = render(
+      <TaskPanel
+        tasks={[
+          {
+            ...baseTask,
+            status: 'cancelled',
+          },
+        ]}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('does not render when there are no active tasks', () => {
     const { container } = render(
       <TaskPanel

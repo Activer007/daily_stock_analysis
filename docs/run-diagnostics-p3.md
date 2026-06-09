@@ -15,6 +15,65 @@ GET /api/v1/history/{record_id}/diagnostics
 - 同步分析响应若已经带有 `diagnostic_summary`，前端可直接展示，不额外请求历史接口。
 - 诊断面板支持复制后端生成的脱敏 `copy_text`，用于 issue 或部署排障。
 - 分析链路在保存历史后会补齐任务/Provider/LLM/通知诊断到 `context_snapshot.diagnostics`，历史诊断接口统一聚合为用户可读摘要。
+- 首页运行流面板复用同一 RunFlowSnapshot 契约展示 active task、completed report 与大盘复盘；active task 通过任务 SSE 的可选增量事件实时追加事件流，完成或断线后再 refetch 快照保证最终一致。
+
+## 运行流实时增量
+
+运行流增量不新增独立 SSE endpoint，继续复用：
+
+```http
+GET /api/v1/analysis/tasks/stream
+```
+
+兼容契约：
+
+- 事件类型仍为 `task_progress`。
+- 原有 task payload 字段保持不变。
+- 当本次进度更新来自运行诊断时，可选追加 `flow_event` 字段；旧客户端忽略该字段即可。
+- `flow_event` 使用与 `RunFlowSnapshot.events[]` 相同的脱敏事件结构：`id`、`timestamp`、`severity`、`type`、`node_id`、`title`、`message`、`metadata`。
+- 后端 TaskQueue 只为每个 active task 保留最近 N 条运行流事件，避免内存无限增长；完整历史仍以 `context_snapshot.diagnostics` 和历史 RunFlowSnapshot 为准。
+
+示例：
+
+```json
+{
+  "task_id": "3f87...",
+  "trace_id": "3f87...",
+  "stock_code": "600519",
+  "status": "processing",
+  "progress": 64,
+  "message": "LLM 正在生成分析结果",
+  "flow_event": {
+    "id": "flow_0002",
+    "timestamp": "2026-06-08T22:30:24",
+    "severity": "success",
+    "type": "llm_run",
+    "node_id": "llm_analysis_1",
+    "title": "LLM 成功",
+    "message": "LLM deepseek-chat 成功"
+  }
+}
+```
+
+运行诊断记录函数会在 provider、LLM、历史保存、通知记录成功写入内存诊断后 fail-open 触发 event sink。sink 失败只记录 warning，不改变分析、保存或通知的成功/失败判定。
+
+新闻情报搜索也纳入同一 provider 诊断语义：`SearchService.search_stock_news()` 会以 `data_type=news_search` 记录 Tavily、SearXNG、Bocha、Brave 等搜索 provider 的尝试、过滤后结果数、缓存命中和失败原因。多个搜索 provider 连续尝试时，运行流拓扑会将它们展示为“新闻舆情”节点，并通过 fallback / retry 边表达降级过程。
+
+运行流拓扑的数据来源泳道优先按节点开始时间排序；provider / LLM 节点若只有完成时间和耗时，会以 `ended_at - duration_ms` 推导 `started_at`，并在卡片上展示开始时间。无可用时间的节点保留原展示顺序作为兜底。
+
+## 运行流 API
+
+```http
+GET /api/v1/analysis/tasks/{task_id}/flow
+GET /api/v1/history/{record_id}/flow
+```
+
+- 两个接口返回同一 `RunFlowSnapshot` 契约。
+- active task 缺少 diagnostics 时返回 skeleton flow，不伪造 provider / LLM 事件。
+- active task 若已有 recent `flow_event`，snapshot 会返回这些真实事件，并可根据事件中的节点元数据补出临时节点。
+- completed history 优先从 `context_snapshot.diagnostics` 与 `analysis_context_pack_overview` 构建完整拓扑。
+- 大盘复盘历史记录使用 `code=MARKET`、`report_type=market_review`，同样走 `/history/{record_id}/flow` 与 Web 运行流面板，不提供单独 UI 分叉。
+- `cancel_requested` 与 `cancelled` 是合法运行流状态；用户取消不应映射为 `failed`。
 
 ## 运行流视图
 

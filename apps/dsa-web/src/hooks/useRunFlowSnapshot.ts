@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { analysisApi } from '../api/analysis';
 import { getParsedApiError, type ParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
-import type { RunFlowSnapshot, RunFlowSnapshotSource } from '../types/runFlow';
+import type { RunFlowEvent, RunFlowNode, RunFlowSnapshot, RunFlowSnapshotSource } from '../types/runFlow';
+import { useTaskStream } from './useTaskStream';
 
 interface UseRunFlowSnapshotOptions {
   source?: RunFlowSnapshotSource | null;
@@ -41,6 +42,56 @@ const isUsableSource = (source?: RunFlowSnapshotSource | null): source is RunFlo
   return Number.isFinite(source.recordId);
 };
 
+const eventTime = (event: RunFlowEvent): number => (
+  event.timestamp ? Date.parse(event.timestamp) || 0 : 0
+);
+
+const mergeEvents = (events: RunFlowEvent[], incoming: RunFlowEvent): RunFlowEvent[] => {
+  const byId = new Map<string, RunFlowEvent>();
+  [...events, incoming].forEach((event, index) => {
+    byId.set(event.id || `event-${index}`, event);
+  });
+  return Array.from(byId.values()).sort((left, right) => eventTime(left) - eventTime(right));
+};
+
+const isRunFlowNode = (value: unknown): value is RunFlowNode => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const node = value as Partial<RunFlowNode>;
+  return Boolean(node.id && node.lane && node.kind && node.label && node.status);
+};
+
+const mergeFlowEventIntoSnapshot = (
+  snapshot: RunFlowSnapshot,
+  flowEvent: RunFlowEvent,
+): RunFlowSnapshot => {
+  const nodeCandidate = flowEvent.metadata?.node;
+  const eventMetadata = { ...(flowEvent.metadata || {}) };
+  delete eventMetadata.node;
+  const displayEvent: RunFlowEvent = {
+    ...flowEvent,
+    metadata: eventMetadata,
+  };
+  const events = mergeEvents(snapshot.events, displayEvent);
+  const shouldMergeNode = isRunFlowNode(nodeCandidate)
+    && !snapshot.nodes.some((node) => node.id === nodeCandidate.id);
+  const nodes = shouldMergeNode
+    ? [...snapshot.nodes, nodeCandidate]
+    : snapshot.nodes;
+
+  return {
+    ...snapshot,
+    nodes,
+    events,
+    summary: {
+      ...snapshot.summary,
+      eventCount: events.length,
+    },
+    generatedAt: flowEvent.timestamp || snapshot.generatedAt,
+  };
+};
+
 export function useRunFlowSnapshot({
   source,
   enabled = true,
@@ -61,6 +112,40 @@ export function useRunFlowSnapshot({
   const refetch = useCallback(async () => {
     setReloadToken((value) => value + 1);
   }, []);
+
+  useTaskStream({
+    enabled: shouldLoad && sourceType === 'task',
+    onTaskFlowEvent: (task, flowEvent) => {
+      if (task.taskId !== taskId) {
+        return;
+      }
+      setRequestState((current) => {
+        const hasFreshState = current.requestKey === requestKey && current.snapshot;
+        if (!hasFreshState) {
+          return current;
+        }
+        return {
+          ...current,
+          snapshot: mergeFlowEventIntoSnapshot(current.snapshot as RunFlowSnapshot, flowEvent),
+        };
+      });
+    },
+    onTaskCompleted: (task) => {
+      if (task.taskId === taskId) {
+        void refetch();
+      }
+    },
+    onTaskFailed: (task) => {
+      if (task.taskId === taskId) {
+        void refetch();
+      }
+    },
+    onError: () => {
+      if (sourceType === 'task') {
+        void refetch();
+      }
+    },
+  });
 
   useEffect(() => {
     if (!shouldLoad || !sourceType) {

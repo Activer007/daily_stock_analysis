@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { analysisApi } from '../api/analysis';
+import { toCamelCase } from '../api/utils';
 import type { TaskInfo } from '../types/analysis';
+import type { RunFlowEvent } from '../types/runFlow';
 
 /**
  * SSE event types.
@@ -20,6 +22,7 @@ export type SSEEventType =
 export interface SSEEvent {
   type: SSEEventType;
   task?: TaskInfo;
+  flowEvent?: RunFlowEvent;
   timestamp?: string;
 }
 
@@ -37,6 +40,8 @@ export interface UseTaskStreamOptions {
   onTaskProgress?: (task: TaskInfo) => void;
   /** Task failed callback */
   onTaskFailed?: (task: TaskInfo) => void;
+  /** Incremental run-flow event callback carried by task_progress */
+  onTaskFlowEvent?: (task: TaskInfo, event: RunFlowEvent) => void;
   /** Connected callback */
   onConnected?: () => void;
   /** Connection error callback */
@@ -71,6 +76,7 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
     onTaskCompleted,
     onTaskProgress,
     onTaskFailed,
+    onTaskFlowEvent,
     onConnected,
     onError,
     autoReconnect = true,
@@ -90,6 +96,7 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
     onTaskCompleted,
     onTaskProgress,
     onTaskFailed,
+    onTaskFlowEvent,
     onConnected,
     onError,
   });
@@ -102,13 +109,14 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
       onTaskCompleted,
       onTaskProgress,
       onTaskFailed,
+      onTaskFlowEvent,
       onConnected,
       onError,
     };
   });
 
   // Convert snake_case payloads into camelCase TaskInfo objects.
-  const toCamelCase = (data: Record<string, unknown>): TaskInfo => {
+  const toTaskInfo = (data: Record<string, unknown>): TaskInfo => {
     const task: TaskInfo = {
       taskId: data.task_id as string,
       stockCode: data.stock_code as string,
@@ -135,10 +143,14 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
   };
 
   // Parse an SSE payload.
-  const parseEventData = useCallback((eventData: string): TaskInfo | null => {
+  const parseEventData = useCallback((eventData: string): { task: TaskInfo; flowEvent?: RunFlowEvent } | null => {
     try {
       const data = JSON.parse(eventData);
-      return toCamelCase(data);
+      const task = toTaskInfo(data);
+      const flowEvent = data.flow_event
+        ? toCamelCase<RunFlowEvent>(data.flow_event)
+        : undefined;
+      return { task, flowEvent };
     } catch (e) {
       console.error('Failed to parse SSE event data:', e);
       return null;
@@ -149,6 +161,11 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
+    }
+
+    if (typeof window.EventSource !== 'function') {
+      setIsConnected(false);
+      return;
     }
 
     const url = analysisApi.getTaskStreamUrl();
@@ -163,31 +180,36 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
 
     // Task created event
     eventSource.addEventListener('task_created', (e) => {
-      const task = parseEventData(e.data);
-      if (task) callbacksRef.current.onTaskCreated?.(task);
+      const payload = parseEventData(e.data);
+      if (payload) callbacksRef.current.onTaskCreated?.(payload.task);
     });
 
     // Task started event
     eventSource.addEventListener('task_started', (e) => {
-      const task = parseEventData(e.data);
-      if (task) callbacksRef.current.onTaskStarted?.(task);
+      const payload = parseEventData(e.data);
+      if (payload) callbacksRef.current.onTaskStarted?.(payload.task);
     });
 
     eventSource.addEventListener('task_progress', (e) => {
-      const task = parseEventData(e.data);
-      if (task) callbacksRef.current.onTaskProgress?.(task);
+      const payload = parseEventData(e.data);
+      if (payload) {
+        callbacksRef.current.onTaskProgress?.(payload.task);
+        if (payload.flowEvent) {
+          callbacksRef.current.onTaskFlowEvent?.(payload.task, payload.flowEvent);
+        }
+      }
     });
 
     // Task completed event
     eventSource.addEventListener('task_completed', (e) => {
-      const task = parseEventData(e.data);
-      if (task) callbacksRef.current.onTaskCompleted?.(task);
+      const payload = parseEventData(e.data);
+      if (payload) callbacksRef.current.onTaskCompleted?.(payload.task);
     });
 
     // Task failed event
     eventSource.addEventListener('task_failed', (e) => {
-      const task = parseEventData(e.data);
-      if (task) callbacksRef.current.onTaskFailed?.(task);
+      const payload = parseEventData(e.data);
+      if (payload) callbacksRef.current.onTaskFailed?.(payload.task);
     });
 
     // Heartbeat event used to keep the connection alive.
@@ -241,11 +263,16 @@ export function useTaskStream(options: UseTaskStreamOptions = {}): UseTaskStream
   // Connect or disconnect when the hook is enabled or disabled.
   useEffect(() => {
     if (enabled) {
-      connect();
-    } else {
-      disconnect();
+      const connectTimer = window.setTimeout(() => {
+        connect();
+      }, 0);
+      return () => {
+        window.clearTimeout(connectTimer);
+        disconnect();
+      };
     }
 
+    disconnect();
     return () => {
       disconnect();
     };

@@ -7,7 +7,7 @@ import json
 import re
 from collections import defaultdict
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from api.v1.schemas.run_flow import RunFlowSnapshot
@@ -157,6 +157,13 @@ def build_task_run_flow_snapshot(
         _put_skeleton_tail(nodes, edges, anchor_node_id="task_queue", status=flow_status)
 
     _append_task_events(events, task, flow_status)
+    _append_active_flow_events(
+        nodes,
+        edges,
+        events,
+        _as_list(getattr(task, "flow_events", None)),
+        flow_status=flow_status,
+    )
 
     summary = _build_summary(
         nodes,
@@ -397,6 +404,7 @@ def _append_provider_runs(
         status = _provider_run_status(run, had_previous_failure=had_previous_failure)
         duration_ms = _safe_int(run.get("latency_ms"))
         timestamp = _datetime_to_iso(run.get("created_at"))
+        started_at = _started_at_from_end_and_duration(timestamp, duration_ms)
         message = _provider_run_message(label, provider, run, success=success)
         block_key = _DATA_TYPE_TO_BLOCK_KEY.get(data_type, data_type)
 
@@ -408,6 +416,7 @@ def _append_provider_runs(
             label=f"{label} · {provider}",
             status=status,
             provider=provider,
+            started_at=started_at,
             ended_at=timestamp,
             duration_ms=duration_ms,
             attempts=1,
@@ -479,6 +488,7 @@ def _append_context_blocks(
     if not overview:
         return
     metadata = overview.get("metadata") if isinstance(overview.get("metadata"), Mapping) else {}
+    overview_timestamp = overview.get("created_at")
     for block in _as_list(overview.get("blocks")):
         block_map = _as_mapping(block)
         key = _safe_key(block_map.get("key"))
@@ -495,6 +505,8 @@ def _append_context_blocks(
             label=_safe_text(block_map.get("label"), max_length=80) or key,
             status=status,
             provider=block_map.get("source"),
+            started_at=overview_timestamp,
+            ended_at=overview_timestamp,
             record_count=_safe_int(record_count),
             message=_context_block_message(block_map),
             metadata={
@@ -551,6 +563,7 @@ def _append_llm_runs(
             status = "fallback"
         timestamp = _datetime_to_iso(run.get("created_at"))
         duration_ms = _safe_int(run.get("duration_ms"))
+        started_at = _started_at_from_end_and_duration(timestamp, duration_ms)
         message = _llm_run_message(model, run, success=success)
         edge_kind = "data"
         if index > 1:
@@ -563,6 +576,7 @@ def _append_llm_runs(
             label="LLM 生成",
             status=status,
             provider=model or provider,
+            started_at=started_at,
             ended_at=timestamp,
             duration_ms=duration_ms,
             attempts=1,
@@ -818,6 +832,100 @@ def _append_task_events(events: List[Dict[str, Any]], task: Any, flow_status: st
             title="任务完成",
             message=getattr(task, "message", None) or "分析完成",
         )
+
+
+def _append_active_flow_events(
+    nodes: Dict[str, Dict[str, Any]],
+    edges: List[Dict[str, Any]],
+    events: List[Dict[str, Any]],
+    flow_events: List[Any],
+    *,
+    flow_status: str,
+) -> None:
+    if not flow_events:
+        return
+
+    known_node_ids = set(nodes)
+    last_provider_node: Optional[str] = None
+    last_llm_node: Optional[str] = None
+    last_history_node: Optional[str] = None
+
+    for raw_event in flow_events:
+        event = _as_mapping(raw_event)
+        if not event:
+            continue
+        metadata = _sanitize_metadata(event.get("metadata") or {})
+        node_payload = metadata.get("node") if isinstance(metadata, Mapping) else None
+        node_id = _safe_key(event.get("node_id"))
+
+        if isinstance(node_payload, Mapping):
+            raw_node_id = _safe_text(node_payload.get("id"), max_length=120) or node_id
+            if raw_node_id:
+                node_id = raw_node_id
+                _put_node(
+                    nodes,
+                    node_id,
+                    lane=str(node_payload.get("lane") or "analysis"),
+                    kind=str(node_payload.get("kind") or "analysis"),
+                    label=str(node_payload.get("label") or node_id),
+                    status=str(node_payload.get("status") or flow_status),
+                    provider=node_payload.get("provider"),
+                    started_at=node_payload.get("started_at")
+                    or _started_at_from_end_and_duration(
+                        node_payload.get("ended_at") or event.get("timestamp"),
+                        node_payload.get("duration_ms"),
+                    ),
+                    ended_at=node_payload.get("ended_at") or event.get("timestamp"),
+                    duration_ms=node_payload.get("duration_ms"),
+                    attempts=node_payload.get("attempts"),
+                    record_count=node_payload.get("record_count"),
+                    message=node_payload.get("message") or event.get("message"),
+                    metadata={key: value for key, value in metadata.items() if key != "node"},
+                )
+
+        event_type = _safe_key(event.get("type")) or "event"
+        if node_id and node_id in nodes and node_id not in known_node_ids:
+            if event_type == "provider_run":
+                if last_provider_node:
+                    _append_edge(edges, last_provider_node, node_id, "fallback", nodes[node_id].get("status", "unknown"), label="降级/重试")
+                else:
+                    _append_edge(edges, "task_queue", node_id, "control", nodes[node_id].get("status", "unknown"), label="调用")
+                last_provider_node = node_id
+            elif event_type == "llm_run":
+                anchor = "analysis_pipeline" if "analysis_pipeline" in nodes else "task_queue"
+                _append_edge(edges, anchor, node_id, "data", nodes[node_id].get("status", "unknown"), label="生成")
+                last_llm_node = node_id
+            elif event_type == "history_run":
+                anchor = last_llm_node or ("analysis_pipeline" if "analysis_pipeline" in nodes else "task_queue")
+                _append_edge(edges, anchor, node_id, "data", nodes[node_id].get("status", "unknown"), label="保存")
+                last_history_node = node_id
+            elif event_type == "notification_run":
+                anchor = last_history_node or last_llm_node or ("analysis_pipeline" if "analysis_pipeline" in nodes else "task_queue")
+                _append_edge(edges, anchor, node_id, "control", nodes[node_id].get("status", "unknown"), label="通知")
+            known_node_ids.add(node_id)
+
+        _append_external_event(events, event)
+
+
+def _append_external_event(events: List[Dict[str, Any]], event: Dict[str, Any]) -> None:
+    event_id = _safe_text(event.get("id"), max_length=96) or f"flow_{len(events) + 1:04d}"
+    if any(existing.get("id") == event_id for existing in events):
+        return
+    metadata = _sanitize_metadata(event.get("metadata") or {})
+    if isinstance(metadata, Mapping) and "node" in metadata:
+        metadata = {key: value for key, value in metadata.items() if key != "node"}
+    events.append(
+        {
+            "id": event_id,
+            "timestamp": _datetime_to_iso(event.get("timestamp")),
+            "severity": event.get("severity") if event.get("severity") in {"info", "success", "warning", "danger"} else "info",
+            "type": _safe_key(event.get("type")) or "event",
+            "node_id": _safe_text(event.get("node_id"), max_length=120),
+            "title": _safe_text(event.get("title"), max_length=100) or "运行事件",
+            "message": _safe_text(event.get("message"), max_length=220),
+            "metadata": metadata,
+        }
+    )
 
 
 def _group_provider_runs(provider_runs: List[Any]) -> Dict[str, List[Dict[str, Any]]]:
@@ -1228,6 +1336,23 @@ def _elapsed_ms(start: Any, end: Any) -> Optional[int]:
     if seconds < 0:
         return None
     return int(seconds * 1000)
+
+
+def _started_at_from_end_and_duration(end: Any, duration_ms: Any) -> Optional[str]:
+    duration = _safe_int(duration_ms)
+    if duration is None:
+        return None
+    if isinstance(end, datetime):
+        parsed = end
+    elif isinstance(end, str) and "T" in end:
+        normalized = end[:-1] + "+00:00" if end.endswith("Z") else end
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            return None
+    else:
+        return None
+    return (parsed - timedelta(milliseconds=duration)).isoformat()
 
 
 def _local_timezone():

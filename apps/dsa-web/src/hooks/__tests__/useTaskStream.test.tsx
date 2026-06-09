@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskStream } from '../useTaskStream';
 
@@ -51,20 +51,22 @@ describe('useTaskStream', () => {
     });
   });
 
-  it('closes the SSE connection when the hook unmounts', () => {
+  it('closes the SSE connection when the hook unmounts', async () => {
     const { unmount } = renderHook(() => useTaskStream({ enabled: true }));
 
-    expect(getTaskStreamUrl).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(getTaskStreamUrl).toHaveBeenCalledTimes(1));
 
     unmount();
 
     expect(eventSourceInstance.close).toHaveBeenCalled();
   });
 
-  it('parses task_progress events and forwards the updated task payload', () => {
+  it('parses task_progress events and forwards the updated task payload', async () => {
     const onTaskProgress = vi.fn();
+    const onTaskFlowEvent = vi.fn();
 
-    renderHook(() => useTaskStream({ enabled: true, onTaskProgress }));
+    renderHook(() => useTaskStream({ enabled: true, onTaskProgress, onTaskFlowEvent }));
+    await waitFor(() => expect(eventSourceInstance.listeners.task_progress).toBeDefined());
 
     eventSourceInstance.listeners.task_progress?.(
       new MessageEvent('task_progress', {
@@ -80,6 +82,23 @@ describe('useTaskStream', () => {
           analysis_phase: 'intraday',
           created_at: '2026-03-29T08:00:00Z',
           skills: ['growth_quality'],
+          flow_event: {
+            id: 'flow-1',
+            timestamp: '2026-03-29T08:00:01Z',
+            severity: 'success',
+            type: 'provider_run',
+            node_id: 'provider_daily_1',
+            title: '日线K线成功',
+            metadata: {
+              node: {
+                id: 'provider_daily_1',
+                lane: 'data_source',
+                kind: 'data_source',
+                label: '日线K线',
+                status: 'success',
+              },
+            },
+          },
         }),
       }),
     );
@@ -102,5 +121,15 @@ describe('useTaskStream', () => {
       analysisPhase: 'intraday',
       skills: ['growth_quality'],
     });
+    expect(onTaskFlowEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ taskId: 'task-1' }),
+      expect.objectContaining({
+        id: 'flow-1',
+        nodeId: 'provider_daily_1',
+        metadata: expect.objectContaining({
+          node: expect.objectContaining({ lane: 'data_source' }),
+        }),
+      }),
+    );
   });
 });

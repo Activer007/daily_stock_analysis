@@ -21,7 +21,11 @@ from src.services.run_flow import (
     build_history_run_flow_snapshot,
     build_task_run_flow_snapshot,
 )
-from src.services.task_queue import TaskInfo, TaskStatus
+from src.services.run_diagnostics import (
+    activate_run_diagnostic_context,
+    reset_run_diagnostic_context,
+)
+from src.services.task_queue import AnalysisTaskQueue, TaskInfo, TaskStatus
 
 
 def _overview(*, blocks: list[dict]) -> dict:
@@ -158,13 +162,20 @@ def _diagnostics(*, with_fallback: bool = False, unsafe: bool = False) -> dict:
     }
 
 
-def _history_record(*, context_snapshot: dict | None, raw_result: dict | None = None) -> SimpleNamespace:
+def _history_record(
+    *,
+    context_snapshot: dict | None,
+    raw_result: dict | None = None,
+    code: str = "600519",
+    name: str = "贵州茅台",
+    report_type: str = "detailed",
+) -> SimpleNamespace:
     return SimpleNamespace(
         id=7,
         query_id="query-flow",
-        code="600519",
-        name="贵州茅台",
-        report_type="detailed",
+        code=code,
+        name=name,
+        report_type=report_type,
         created_at=datetime(2026, 6, 8, 10, 0, 6),
         raw_result=json.dumps(raw_result or {"success": True, "model_used": "deepseek-chat"}, ensure_ascii=False),
         context_snapshot=json.dumps(context_snapshot, ensure_ascii=False) if context_snapshot is not None else None,
@@ -182,7 +193,29 @@ class _FakeHistoryDb:
         return self.record if self.record is not None and query_id == self.record.query_id else None
 
 
+class _FakeMarketReviewDb:
+    def __init__(self, save_result):
+        self.save_result = save_result
+        self.saved_context_snapshot = None
+        self.updated_diagnostics = None
+
+    def save_analysis_history(self, **kwargs):
+        self.saved_context_snapshot = kwargs.get("context_snapshot")
+        return self.save_result
+
+    def update_analysis_history_diagnostics(self, *, query_id: str, code: str, diagnostics: dict) -> None:
+        _ = (query_id, code)
+        self.updated_diagnostics = diagnostics
+
+
 class RunFlowTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        self._original_queue = AnalysisTaskQueue._instance
+        AnalysisTaskQueue._instance = None
+
+    def tearDown(self) -> None:
+        AnalysisTaskQueue._instance = self._original_queue
+
     def test_active_task_missing_diagnostics_returns_skeleton_flow(self) -> None:
         task = TaskInfo(
             task_id="task-active",
@@ -203,6 +236,67 @@ class RunFlowTestCase(unittest.TestCase):
         self.assertIn("task_queue", {node.id for node in snapshot.nodes})
         self.assertNotIn("provider_run", {event.type for event in snapshot.events})
         self.assertNotIn("llm_run", {event.type for event in snapshot.events})
+
+    def test_active_task_snapshot_includes_recent_flow_events_without_faking_missing_diagnostics(self) -> None:
+        task = TaskInfo(
+            task_id="task-active",
+            trace_id="trace-active",
+            stock_code="600519",
+            stock_name="贵州茅台",
+            status=TaskStatus.PROCESSING,
+            message="正在分析中",
+            created_at=datetime(2026, 6, 8, 10, 0, 0),
+            started_at=datetime(2026, 6, 8, 10, 0, 1),
+            flow_events=[
+                {
+                    "id": "flow-1",
+                    "timestamp": "2026-06-08T10:00:02",
+                    "severity": "success",
+                    "type": "provider_run",
+                    "node_id": "provider_daily_unit_1",
+                    "title": "日线K线成功",
+                    "message": "日线K线 UnitFetcher 成功",
+                    "metadata": {
+                        "provider": "UnitFetcher",
+                        "node": {
+                            "id": "provider_daily_unit_1",
+                            "lane": "data_source",
+                            "kind": "data_source",
+                            "label": "日线K线 · UnitFetcher",
+                            "status": "success",
+                            "provider": "UnitFetcher",
+                            "record_count": 30,
+                        },
+                    },
+                }
+            ],
+        )
+
+        snapshot = build_task_run_flow_snapshot(task)
+
+        self.assertIn("provider_run", {event.type for event in snapshot.events})
+        self.assertIn("provider_daily_unit_1", {node.id for node in snapshot.nodes})
+        self.assertNotIn("llm_run", {event.type for event in snapshot.events})
+
+    def test_task_queue_stores_bounded_flow_events_and_broadcasts_task_progress(self) -> None:
+        queue = AnalysisTaskQueue(max_workers=1)
+        queue._max_flow_events_per_task = 2
+        task = TaskInfo(
+            task_id="task-flow",
+            stock_code="600519",
+            status=TaskStatus.PROCESSING,
+        )
+        queue._tasks[task.task_id] = task
+        events = []
+        queue._broadcast_event = lambda event_type, data: events.append((event_type, data))
+
+        queue.append_task_flow_event("task-flow", {"id": "evt-1", "type": "provider_run"})
+        queue.append_task_flow_event("task-flow", {"id": "evt-2", "type": "llm_run"})
+        queue.append_task_flow_event("task-flow", {"id": "evt-3", "type": "history_run"})
+
+        self.assertEqual([event["id"] for event in queue.get_task_flow_events("task-flow")], ["evt-2", "evt-3"])
+        self.assertEqual(events[-1][0], "task_progress")
+        self.assertEqual(events[-1][1]["flow_event"]["id"], "evt-3")
 
     def test_completed_history_uses_diagnostics_and_context_pack_overview(self) -> None:
         context_snapshot = {
@@ -245,6 +339,9 @@ class RunFlowTestCase(unittest.TestCase):
         node_ids = {node.id for node in snapshot.nodes}
         self.assertIn("context_pack", node_ids)
         self.assertTrue(any(node.kind == "model" and node.status == "success" for node in snapshot.nodes))
+        quote_node = next(node for node in snapshot.nodes if node.id == "provider_realtime_quote_quotefetcher_1")
+        self.assertEqual(quote_node.started_at, "2026-06-08T10:00:00.880000")
+        self.assertEqual(quote_node.ended_at, "2026-06-08T10:00:01")
         self.assertIn("history_run", {event.type for event in snapshot.events})
         self.assertIn("notification_run", {event.type for event in snapshot.events})
 
@@ -275,6 +372,52 @@ class RunFlowTestCase(unittest.TestCase):
         self.assertTrue(
             any(event.type == "provider_run" and event.severity == "warning" for event in snapshot.events)
         )
+
+    def test_news_search_provider_runs_map_to_run_flow_nodes(self) -> None:
+        context_snapshot = {
+            "diagnostics": {
+                "trace_id": "trace-news",
+                "task_id": "task-news",
+                "query_id": "query-news",
+                "stock_code": "600519",
+                "trigger_source": "api",
+                "provider_runs": [
+                    {
+                        "trace_id": "trace-news",
+                        "data_type": "news_search",
+                        "provider": "Tavily",
+                        "operation": "search_stock_news",
+                        "success": False,
+                        "latency_ms": 500,
+                        "error_type": "NoUsableNews",
+                        "error_message_sanitized": "过滤后无有效新闻",
+                        "created_at": "2026-06-08T10:00:01",
+                    },
+                    {
+                        "trace_id": "trace-news",
+                        "data_type": "news_search",
+                        "provider": "SearXNG",
+                        "operation": "search_stock_news",
+                        "success": True,
+                        "latency_ms": 700,
+                        "record_count": 3,
+                        "created_at": "2026-06-08T10:00:02",
+                    },
+                ],
+                "llm_runs": [],
+                "history_runs": [],
+                "notification_runs": [],
+            }
+        }
+
+        snapshot = build_history_run_flow_snapshot(_history_record(context_snapshot=context_snapshot))
+        node_labels = {node.label for node in snapshot.nodes}
+        edge_payload = [edge.model_dump(by_alias=True) for edge in snapshot.edges]
+
+        self.assertIn("新闻舆情 · Tavily", node_labels)
+        self.assertIn("新闻舆情 · SearXNG", node_labels)
+        self.assertTrue(any(edge["kind"] == "fallback" for edge in edge_payload))
+        self.assertTrue(any(event.type == "provider_run" and event.node_id.endswith("searxng_2") for event in snapshot.events))
 
     def test_degraded_context_blocks_do_not_increment_fallback_count(self) -> None:
         diagnostics = _diagnostics()
@@ -385,6 +528,86 @@ class RunFlowTestCase(unittest.TestCase):
             "sk-runtime-secret",
         ):
             self.assertNotIn(leaked, payload)
+
+    def test_market_review_history_uses_same_run_flow_contract(self) -> None:
+        context_snapshot = {
+            "report_kind": "market_review",
+            "market_review_region": "cn",
+            "diagnostics": {
+                "trace_id": "trace-market",
+                "task_id": "task-market",
+                "query_id": "query-flow",
+                "stock_code": "MARKET",
+                "trigger_source": "api",
+                "provider_runs": [],
+                "llm_runs": [],
+                "history_runs": [
+                    {
+                        "trace_id": "trace-market",
+                        "report_saved": True,
+                        "metadata_saved": True,
+                        "analysis_history_id": 7,
+                        "created_at": "2026-06-08T10:00:02",
+                    }
+                ],
+                "notification_runs": [
+                    {
+                        "trace_id": "trace-market",
+                        "channel": "report",
+                        "status": "skipped",
+                        "success": False,
+                        "attempts": 0,
+                        "created_at": "2026-06-08T10:00:03",
+                    }
+                ],
+            },
+        }
+
+        snapshot = build_history_run_flow_snapshot(
+            _history_record(
+                context_snapshot=context_snapshot,
+                code="MARKET",
+                name="大盘复盘",
+                report_type="market_review",
+            )
+        )
+
+        self.assertEqual(snapshot.stock_code, "MARKET")
+        self.assertEqual(snapshot.task_id, "task-market")
+        self.assertIn("history_run", {event.type for event in snapshot.events})
+        self.assertTrue(snapshot.lanes)
+
+    def test_market_review_persist_records_diagnostics_without_bool_history_id(self) -> None:
+        from src.core.market_review import _persist_market_review_history
+
+        fake_db = _FakeMarketReviewDb(save_result=True)
+        config = SimpleNamespace(report_language="zh")
+        token = activate_run_diagnostic_context(
+            trace_id="trace-market",
+            task_id="task-market",
+            query_id="query-flow",
+            stock_code="MARKET",
+            trigger_source="api",
+        )
+        try:
+            with patch("src.storage.DatabaseManager.get_instance", return_value=fake_db):
+                saved = _persist_market_review_history(
+                    review_report="大盘复盘报告",
+                    markdown_report="# 大盘复盘报告",
+                    region="cn",
+                    config=config,
+                    query_id="query-flow",
+                )
+        finally:
+            reset_run_diagnostic_context(token)
+
+        self.assertTrue(saved)
+        self.assertIsNotNone(fake_db.saved_context_snapshot)
+        self.assertIn("diagnostics", fake_db.saved_context_snapshot)
+        self.assertIsNotNone(fake_db.updated_diagnostics)
+        history_runs = fake_db.updated_diagnostics["history_runs"]
+        self.assertTrue(history_runs)
+        self.assertNotEqual(history_runs[-1].get("analysis_history_id"), True)
 
     def test_flow_endpoints_return_404_for_missing_records(self) -> None:
         with self.assertRaises(HTTPException) as history_ctx:

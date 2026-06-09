@@ -17,6 +17,11 @@ if "newspaper" not in sys.modules:
     sys.modules["newspaper"] = mock_np
 
 from src.search_service import SearchResponse, SearchResult, SearchService
+from src.services.run_diagnostics import (
+    activate_run_diagnostic_context,
+    current_diagnostic_snapshot,
+    reset_run_diagnostic_context,
+)
 
 
 def _result(
@@ -158,6 +163,50 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         self.assertEqual([r.title for r in resp.results], ["fresh"])
         p1.search.assert_called_once()
         p2.search.assert_called_once()
+
+    def test_search_stock_news_records_provider_diagnostics_for_fallback(self) -> None:
+        """News search provider attempts should appear in run-flow diagnostics."""
+        today = datetime.now().date()
+        old = (today - timedelta(days=90)).isoformat()
+        fresh = today.isoformat()
+        service = SearchService(
+            bocha_keys=["dummy_key"],
+            searxng_public_instances_enabled=False,
+            news_max_age_days=3,
+            news_strategy_profile="short",
+        )
+        tavily = SimpleNamespace(
+            is_available=True,
+            name="Tavily",
+            search=MagicMock(return_value=_response([_result("too_old", old)])),
+        )
+        searxng = SimpleNamespace(
+            is_available=True,
+            name="SearXNG",
+            search=MagicMock(return_value=_response([_result("贵州茅台 600519 最新公告", fresh)])),
+        )
+        service._providers = [tavily, searxng]
+
+        token = activate_run_diagnostic_context(
+            trace_id="trace-news",
+            task_id="task-news",
+            query_id="query-news",
+            stock_code="600519",
+            trigger_source="api",
+        )
+        try:
+            response = service.search_stock_news("600519", "贵州茅台", max_results=3)
+            diagnostics = current_diagnostic_snapshot()
+        finally:
+            reset_run_diagnostic_context(token)
+
+        self.assertEqual([item.title for item in response.results], ["贵州茅台 600519 最新公告"])
+        provider_runs = diagnostics["provider_runs"]
+        self.assertEqual([run["data_type"] for run in provider_runs], ["news_search", "news_search"])
+        self.assertEqual([run["provider"] for run in provider_runs], ["Tavily", "SearXNG"])
+        self.assertFalse(provider_runs[0]["success"])
+        self.assertTrue(provider_runs[1]["success"])
+        self.assertEqual(provider_runs[1]["record_count"], 1)
 
     def test_search_stock_news_tries_next_provider_when_chinese_context_is_english_only(self) -> None:
         """Chinese-preferred queries should not stop on English-only provider results."""
