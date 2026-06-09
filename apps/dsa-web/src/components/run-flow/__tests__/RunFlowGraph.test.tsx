@@ -179,18 +179,72 @@ describe('RunFlowGraph', () => {
 
     const pathData = container.querySelector('svg g path')?.getAttribute('d') || '';
     const pathNumbers = pathData.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
-    const [startX, startY, curveStartX, , curveEndX, , endX, endY] = pathNumbers;
+    const [startX, startY, endY] = pathNumbers;
     const dailyNode = screen.getByTestId('run-flow-node-daily');
     const quoteNode = screen.getByTestId('run-flow-node-quote');
+    const dailyCenterX = parseFloat(dailyNode.style.left) + parseFloat(dailyNode.style.width) / 2;
     const dailyBottom = parseFloat(dailyNode.style.top) + parseFloat(dailyNode.style.minHeight);
     const quoteTop = parseFloat(quoteNode.style.top);
 
-    expect(startX).toBe(endX);
-    expect(curveStartX).toBe(startX);
-    expect(curveEndX).toBe(endX);
+    expect(pathData).toContain('V');
+    expect(pathData).not.toContain('C');
+    expect(startX).toBe(dailyCenterX);
     expect(startY).toBeLessThan(endY);
     expect(startY).toBe(dailyBottom);
     expect(endY).toBe(quoteTop);
+  });
+
+  it('routes cross-lane flow edges through side ports with orthogonal segments', () => {
+    const crossLaneNodes: RunFlowNode[] = [
+      {
+        id: 'request',
+        lane: 'entry',
+        kind: 'entry',
+        label: '用户请求',
+        status: 'success',
+      },
+      {
+        id: 'llm',
+        lane: 'analysis',
+        kind: 'model',
+        label: 'LLM 生成',
+        status: 'success',
+      },
+    ];
+    const crossLaneEdges: RunFlowEdge[] = [
+      {
+        id: 'request-llm',
+        from: 'request',
+        to: 'llm',
+        kind: 'data',
+        status: 'success',
+      },
+    ];
+    const { container } = render(
+      <RunFlowGraph
+        lanes={lanes}
+        nodes={crossLaneNodes}
+        edges={crossLaneEdges}
+      />,
+    );
+
+    const pathData = container.querySelector('svg g path')?.getAttribute('d') || '';
+    const pathNumbers = pathData.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
+    const [startX, startY, , endY, endX] = pathNumbers;
+    const requestNode = screen.getByTestId('run-flow-node-request');
+    const llmNode = screen.getByTestId('run-flow-node-llm');
+    const requestRight = parseFloat(requestNode.style.left) + parseFloat(requestNode.style.width);
+    const requestCenterY = parseFloat(requestNode.style.top) + parseFloat(requestNode.style.minHeight) / 2;
+    const llmLeft = parseFloat(llmNode.style.left);
+    const llmCenterY = parseFloat(llmNode.style.top) + parseFloat(llmNode.style.minHeight) / 2;
+
+    expect(pathData).toContain('H');
+    expect(pathData).toContain('V');
+    expect(pathData).not.toContain('C');
+    expect(startX).toBe(requestRight);
+    expect(startY).toBe(requestCenterY);
+    expect(endX).toBe(llmLeft);
+    expect(endY).toBe(llmCenterY);
   });
 
   it('orders data-source lane cards by their observed timestamps', () => {

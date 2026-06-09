@@ -57,9 +57,17 @@ GET /api/v1/analysis/tasks/stream
 
 运行诊断记录函数会在 provider、LLM、历史保存、通知记录成功写入内存诊断后 fail-open 触发 event sink。sink 失败只记录 warning，不改变分析、保存或通知的成功/失败判定。
 
-新闻情报搜索也纳入同一 provider 诊断语义：`SearchService.search_stock_news()` 会以 `data_type=news_search` 记录 Tavily、SearXNG、Bocha、Brave 等搜索 provider 的尝试、过滤后结果数、缓存命中和失败原因。多个搜索 provider 连续尝试时，运行流拓扑会将它们展示为“新闻舆情”节点，并通过 fallback / retry 边表达降级过程。
+新闻情报搜索也纳入同一 provider 诊断语义：`SearchService.search_stock_news()` 会以 `data_type=news_search` 记录 Tavily、SearXNG、Bocha、Brave 等搜索 provider 的尝试、过滤后结果数、缓存命中和失败原因。多个搜索 provider 连续尝试时，Web 运行流主图默认聚合为一个“新闻舆情”节点，卡片展示 provider 链路与状态，节点详情展示成功/失败次数、fallback / retry 次数；需要排障时可展开该聚合节点查看单次 provider 尝试。
 
-运行流拓扑的数据来源泳道优先按节点开始时间排序；provider / LLM 节点若只有完成时间和耗时，会以 `ended_at - duration_ms` 推导 `started_at`，并在卡片上展示开始时间。无可用时间的节点保留原展示顺序作为兜底。
+运行流拓扑的数据来源泳道优先按节点开始时间排序；provider / LLM 节点若只有完成时间和耗时，会以 `ended_at - duration_ms` 推导 `started_at`，并在卡片上展示开始时间。无可用时间的节点保留原展示顺序作为兜底。主图表达“入口 -> 数据来源 -> ContextPack -> LLM -> 保存/通知”的流程结构；完整排障细节保留在事件流、节点详情和聚合节点展开态中。
+
+Web 运行流主图使用前端内部展示模型，不改变后端 `RunFlowSnapshot` 契约：
+
+- provider attempts 按 `metadata.data_type` 聚合为数据来源节点，例如实时行情、日线数据、新闻舆情。
+- `context_block_*` 节点默认折叠进 `ContextPack` 详情，避免与 provider attempts 在数据来源泳道混排。
+- 点击聚合节点可在详情区查看 attempts 表格；点击“展开尝试”后，当前聚合组的子 provider 节点会回到拓扑中。
+- 事件流仍展示完整事件；事件关联节点会映射到当前可见节点，折叠时指向聚合节点，展开时指向具体 attempt。
+- 拓扑连线使用多连接点策略：横向主流程走左右端口，同泳道上下关系走底部到顶部，fallback / retry 继续使用文字标签与虚线样式表达。
 
 ## 运行流 API
 
