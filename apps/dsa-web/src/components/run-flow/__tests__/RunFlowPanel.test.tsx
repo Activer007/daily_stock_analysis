@@ -113,6 +113,80 @@ const snapshot: RunFlowSnapshot = {
   ],
 };
 
+const providerAttemptSnapshot: RunFlowSnapshot = {
+  ...snapshot,
+  nodes: [
+    {
+      id: 'task_queue',
+      lane: 'entry',
+      kind: 'queue',
+      label: '任务队列',
+      status: 'success',
+    },
+    {
+      id: 'provider_news_search_tavily_1',
+      lane: 'data_source',
+      kind: 'data_source',
+      label: '新闻舆情 · Tavily',
+      provider: 'Tavily',
+      status: 'failed',
+      durationMs: 1200,
+      metadata: { data_type: 'news_search', attempt: 1 },
+    },
+    {
+      id: 'provider_news_search_searxng_2',
+      lane: 'data_source',
+      kind: 'data_source',
+      label: '新闻舆情 · SearXNG',
+      provider: 'SearXNG',
+      status: 'success',
+      durationMs: 800,
+      recordCount: 6,
+      metadata: { data_type: 'news_search', attempt: 2 },
+    },
+    {
+      id: 'context_pack',
+      lane: 'analysis',
+      kind: 'analysis',
+      label: 'ContextPack',
+      status: 'success',
+    },
+  ],
+  edges: [
+    {
+      id: 'queue-news-1',
+      from: 'task_queue',
+      to: 'provider_news_search_tavily_1',
+      kind: 'control',
+      status: 'failed',
+    },
+    {
+      id: 'news-1-news-2',
+      from: 'provider_news_search_tavily_1',
+      to: 'provider_news_search_searxng_2',
+      kind: 'fallback',
+      status: 'success',
+    },
+    {
+      id: 'news-context',
+      from: 'provider_news_search_searxng_2',
+      to: 'context_pack',
+      kind: 'data',
+      status: 'success',
+    },
+  ],
+  events: [
+    {
+      id: 'evt-news-1',
+      timestamp: '2026-06-08T08:00:02Z',
+      severity: 'warning',
+      type: 'provider_run',
+      nodeId: 'provider_news_search_tavily_1',
+      title: '新闻舆情失败',
+    },
+  ],
+};
+
 describe('RunFlowPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -171,6 +245,21 @@ describe('RunFlowPanel', () => {
 
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('LLM 生成');
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('DeepSeek');
+  });
+
+  it('expands provider attempt groups from node details', async () => {
+    vi.mocked(analysisApi.getTaskFlow).mockResolvedValue(providerAttemptSnapshot);
+
+    render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
+
+    expect(await screen.findByTestId('run-flow-node-topology_data_news_search')).toBeInTheDocument();
+    expect(screen.queryByTestId('run-flow-node-provider_news_search_tavily_1')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('run-flow-node-details')).toHaveTextContent('运行尝试');
+
+    fireEvent.click(screen.getByRole('button', { name: '展开尝试' }));
+
+    expect(await screen.findByTestId('run-flow-node-provider_news_search_tavily_1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '收起尝试' })).toBeInTheDocument();
   });
 
   it('does not update state after a pending request is cleaned up', async () => {
