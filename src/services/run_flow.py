@@ -846,7 +846,7 @@ def _append_active_flow_events(
         return
 
     known_node_ids = set(nodes)
-    last_provider_node: Optional[str] = None
+    last_provider_node_by_type: Dict[str, Tuple[str, Dict[str, Any]]] = {}
     last_llm_node: Optional[str] = None
     last_history_node: Optional[str] = None
 
@@ -886,11 +886,28 @@ def _append_active_flow_events(
         event_type = _safe_key(event.get("type")) or "event"
         if node_id and node_id in nodes and node_id not in known_node_ids:
             if event_type == "provider_run":
-                if last_provider_node:
-                    _append_edge(edges, last_provider_node, node_id, "fallback", nodes[node_id].get("status", "unknown"), label="降级/重试")
+                provider_data_type = _safe_key(metadata.get("data_type") or "provider")
+                provider_run = {
+                    "provider": metadata.get("provider") or nodes[node_id].get("provider"),
+                    "success": event.get("severity") == "success" or nodes[node_id].get("status") in {"success", "fallback"},
+                    "fallback_from": metadata.get("fallback_from"),
+                    "fallback_to": metadata.get("fallback_to"),
+                }
+                previous_provider = last_provider_node_by_type.get(provider_data_type)
+                if previous_provider:
+                    previous_provider_node, previous_provider_run = previous_provider
+                    edge_kind = _provider_transition_kind(previous_provider_run, provider_run)
+                    _append_edge(
+                        edges,
+                        previous_provider_node,
+                        node_id,
+                        edge_kind,
+                        nodes[node_id].get("status", "unknown"),
+                        label="降级" if edge_kind == "fallback" else ("重试" if edge_kind == "retry" else "调用"),
+                    )
                 else:
                     _append_edge(edges, "task_queue", node_id, "control", nodes[node_id].get("status", "unknown"), label="调用")
-                last_provider_node = node_id
+                last_provider_node_by_type[provider_data_type] = (node_id, provider_run)
             elif event_type == "llm_run":
                 anchor = "analysis_pipeline" if "analysis_pipeline" in nodes else "task_queue"
                 _append_edge(edges, anchor, node_id, "data", nodes[node_id].get("status", "unknown"), label="生成")

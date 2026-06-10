@@ -344,7 +344,7 @@ export type AnalyzeResponse = AnalysisResult | AnalyzeAsyncResponse;
 export interface TaskStatus {
   taskId: string;
   traceId?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancel_requested' | 'cancelled';
   progress?: number;
   result?: AnalysisResult;
   marketReviewReport?: string;

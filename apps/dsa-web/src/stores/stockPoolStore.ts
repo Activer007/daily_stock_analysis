@@ -868,7 +868,10 @@ export const useStockPoolStore = create<StockPoolState>((set, get) => ({
       );
       const remoteTaskIds = new Set(remoteTasks.map((task) => task.taskId));
       const remoteTaskById = new Map(remoteTasks.map((task) => [task.taskId, task]));
-      const isCompleteSnapshot = response.tasks.length === response.pending + response.processing;
+      const activeTaskCount = response.pending
+        + response.processing
+        + response.tasks.filter((task) => task.status === 'cancel_requested').length;
+      const isCompleteSnapshot = response.tasks.length === activeTaskCount;
       const canPruneLocalTasks = isCompleteSnapshot && activeTaskLocalRevision === localRevisionAtRequest;
 
       const currentTasks = get().activeTasks;

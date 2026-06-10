@@ -278,6 +278,64 @@ class RunFlowTestCase(unittest.TestCase):
         self.assertIn("provider_daily_unit_1", {node.id for node in snapshot.nodes})
         self.assertNotIn("llm_run", {event.type for event in snapshot.events})
 
+    def test_active_provider_events_only_link_fallbacks_within_same_data_type(self) -> None:
+        task = TaskInfo(
+            task_id="task-active-providers",
+            trace_id="trace-active-providers",
+            stock_code="600519",
+            stock_name="贵州茅台",
+            status=TaskStatus.PROCESSING,
+            created_at=datetime(2026, 6, 8, 10, 0, 0),
+            flow_events=[
+                {
+                    "id": "flow-daily",
+                    "timestamp": "2026-06-08T10:00:02",
+                    "severity": "success",
+                    "type": "provider_run",
+                    "node_id": "provider_daily_unit_1",
+                    "title": "日线K线成功",
+                    "metadata": {
+                        "provider": "DailyFetcher",
+                        "data_type": "daily_data",
+                        "node": {
+                            "id": "provider_daily_unit_1",
+                            "lane": "data_source",
+                            "kind": "data_source",
+                            "label": "日线K线 · DailyFetcher",
+                            "status": "success",
+                            "provider": "DailyFetcher",
+                        },
+                    },
+                },
+                {
+                    "id": "flow-news",
+                    "timestamp": "2026-06-08T10:00:03",
+                    "severity": "success",
+                    "type": "provider_run",
+                    "node_id": "provider_news_unit_1",
+                    "title": "新闻舆情成功",
+                    "metadata": {
+                        "provider": "NewsFetcher",
+                        "data_type": "news_search",
+                        "node": {
+                            "id": "provider_news_unit_1",
+                            "lane": "data_source",
+                            "kind": "data_source",
+                            "label": "新闻舆情 · NewsFetcher",
+                            "status": "success",
+                            "provider": "NewsFetcher",
+                        },
+                    },
+                },
+            ],
+        )
+
+        snapshot = build_task_run_flow_snapshot(task)
+        edge_payload = [edge.model_dump(by_alias=True) for edge in snapshot.edges]
+
+        self.assertEqual(snapshot.summary.fallback_count, 0)
+        self.assertFalse(any(edge["kind"] in {"fallback", "retry"} for edge in edge_payload))
+
     def test_task_queue_stores_bounded_flow_events_and_broadcasts_task_progress(self) -> None:
         queue = AnalysisTaskQueue(max_workers=1)
         queue._max_flow_events_per_task = 2
