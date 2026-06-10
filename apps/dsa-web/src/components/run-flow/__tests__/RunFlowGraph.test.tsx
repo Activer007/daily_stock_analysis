@@ -54,6 +54,7 @@ describe('RunFlowGraph', () => {
     expect(screen.getByText('入口')).toBeInTheDocument();
     expect(screen.getByText('数据来源')).toBeInTheDocument();
     expect(screen.getByText('降级')).toBeInTheDocument();
+    expect(screen.getByText('降级输入')).toBeInTheDocument();
     expect(screen.getByTestId('run-flow-node-news')).toHaveTextContent('开始');
     expect(screen.getByTestId('run-flow-node-news')).toHaveTextContent('2026');
     expect(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' })).toBeInTheDocument();
@@ -61,6 +62,59 @@ describe('RunFlowGraph', () => {
     fireEvent.click(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' }));
 
     expect(onSelectNode).toHaveBeenCalledWith(expect.objectContaining({ id: 'news' }));
+  });
+
+  it('dims unrelated edges and hides their labels when a node is selected', () => {
+    const selectionNodes: RunFlowNode[] = [
+      ...nodes,
+      {
+        id: 'llm',
+        lane: 'analysis',
+        kind: 'model',
+        label: 'LLM 生成',
+        status: 'success',
+      },
+      {
+        id: 'artifact',
+        lane: 'analysis',
+        kind: 'artifact',
+        label: '报告产物',
+        status: 'success',
+      },
+    ];
+    const selectionEdges: RunFlowEdge[] = [
+      {
+        id: 'request-news',
+        from: 'request',
+        to: 'news',
+        kind: 'control',
+        status: 'success',
+        label: '调度输入',
+      },
+      {
+        id: 'llm-artifact',
+        from: 'llm',
+        to: 'artifact',
+        kind: 'data',
+        status: 'success',
+        label: '报告输出',
+      },
+    ];
+
+    const { container } = render(
+      <RunFlowGraph
+        lanes={lanes}
+        nodes={selectionNodes}
+        edges={selectionEdges}
+        selectedNodeId="news"
+      />,
+    );
+
+    const paths = Array.from(container.querySelectorAll('svg g path'));
+
+    expect(paths.map((path) => path.getAttribute('opacity'))).toEqual(['0.9', '0.22']);
+    expect(screen.getByText('调度输入')).toBeInTheDocument();
+    expect(screen.queryByText('报告输出')).not.toBeInTheDocument();
   });
 
   it('distributes fan-out edge anchors instead of routing every line through the node center', () => {

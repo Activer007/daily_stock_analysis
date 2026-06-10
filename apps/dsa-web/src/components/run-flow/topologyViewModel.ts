@@ -74,13 +74,18 @@ const firstDefinedRecordCount = (nodes: RunFlowNode[]): number | null => {
   return node?.recordCount ?? null;
 };
 
+const metadataString = (node: RunFlowNode, ...keys: string[]): string | null => {
+  const value = keys.map((key) => node.metadata?.[key]).find((item) => typeof item === 'string' && item.trim());
+  return typeof value === 'string' ? value.trim() : null;
+};
+
 const dataTypeFromNode = (node: RunFlowNode): string | null => {
-  const value = node.metadata?.data_type;
+  const value = metadataString(node, 'dataType', 'data_type');
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 };
 
 const contextBlockKeyFromNode = (node: RunFlowNode): string | null => {
-  const value = node.metadata?.block_key;
+  const value = metadataString(node, 'blockKey', 'block_key');
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 };
 

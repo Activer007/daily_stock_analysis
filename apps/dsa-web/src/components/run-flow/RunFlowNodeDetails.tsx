@@ -31,11 +31,34 @@ interface DetailItem {
   message?: string | null;
 }
 
+const ALWAYS_HIDDEN_METADATA_KEYS = new Set(['attempts', 'context_blocks', 'topologyGroup', 'expanded']);
+const TOPOLOGY_SUMMARY_METADATA_KEYS = new Set([
+  'data_type',
+  'dataType',
+  'provider_chain',
+  'providerChain',
+  'success_count',
+  'successCount',
+  'failed_count',
+  'failedCount',
+  'fallback_count',
+  'fallbackCount',
+  'retry_count',
+  'retryCount',
+  'context_status_counts',
+  'contextStatusCounts',
+]);
+
 const readDetailItems = (node: RunFlowNode, key: string): DetailItem[] => {
   const value = node.metadata?.[key];
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is DetailItem => Boolean(item) && typeof item === 'object');
 };
+
+const shouldHideMetadataKey = (node: RunFlowNode, key: string): boolean => (
+  ALWAYS_HIDDEN_METADATA_KEYS.has(key)
+  || (Boolean(node.metadata?.topologyGroup) && TOPOLOGY_SUMMARY_METADATA_KEYS.has(key))
+);
 
 const isRunFlowStatus = (value: unknown): value is RunFlowStatus => (
   typeof value === 'string' && value in RUN_FLOW_STATUS_STYLE
@@ -62,7 +85,7 @@ export const RunFlowNodeDetails: React.FC<RunFlowNodeDetailsProps> = ({
 
   const style = RUN_FLOW_STATUS_STYLE[node.status] || RUN_FLOW_STATUS_STYLE.unknown;
   const metadata = Object.entries(node.metadata || {}).filter(([key, value]) => (
-    !['attempts', 'context_blocks', 'topologyGroup', 'expanded'].includes(key)
+    !shouldHideMetadataKey(node, key)
     && value !== null
     && value !== undefined
     && value !== ''

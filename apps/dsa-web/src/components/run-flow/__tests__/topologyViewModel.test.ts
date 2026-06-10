@@ -151,6 +151,101 @@ describe('buildRunFlowTopologyModel', () => {
     });
   });
 
+  it('honors API-normalized camelCase metadata when grouping topology nodes', () => {
+    const snapshot: RunFlowSnapshot = {
+      ...baseSnapshot,
+      nodes: [
+        baseSnapshot.nodes[0],
+        {
+          id: 'provider_compatible_alpha_1',
+          lane: 'data_source',
+          kind: 'data_source',
+          label: '兼容行情 · Alpha',
+          status: 'failed',
+          provider: 'Alpha',
+          metadata: { dataType: 'compatible_live_quote', attempt: 1 },
+        },
+        {
+          id: 'provider_compatible_beta_2',
+          lane: 'data_source',
+          kind: 'data_source',
+          label: '兼容行情 · Beta',
+          status: 'success',
+          provider: 'Beta',
+          metadata: { dataType: 'compatible_live_quote', attempt: 2 },
+        },
+        {
+          id: 'api_normalized_context_news',
+          lane: 'data_source',
+          kind: 'data_source',
+          label: '新闻',
+          status: 'success',
+          recordCount: 3,
+          metadata: { blockKey: 'news' },
+        },
+        {
+          id: 'context_pack',
+          lane: 'analysis',
+          kind: 'analysis',
+          label: 'ContextPack',
+          status: 'success',
+        },
+      ],
+      edges: [
+        {
+          id: 'compatible-1-compatible-2',
+          from: 'provider_compatible_alpha_1',
+          to: 'provider_compatible_beta_2',
+          kind: 'fallback',
+          status: 'success',
+        },
+        {
+          id: 'normalized-block-pack',
+          from: 'api_normalized_context_news',
+          to: 'context_pack',
+          kind: 'data',
+          status: 'success',
+        },
+      ],
+      events: [
+        {
+          id: 'evt-compatible',
+          timestamp: '2026-06-08T10:00:02',
+          severity: 'warning',
+          type: 'provider_run',
+          nodeId: 'provider_compatible_alpha_1',
+          title: '兼容行情失败',
+        },
+        {
+          id: 'evt-normalized-block',
+          timestamp: '2026-06-08T10:00:05',
+          severity: 'success',
+          type: 'context_block_status',
+          nodeId: 'api_normalized_context_news',
+          title: '新闻输入状态',
+        },
+      ],
+    };
+
+    const model = buildRunFlowTopologyModel(snapshot);
+
+    expect(model.nodes.map((node) => node.id)).toContain('topology_data_compatible_live_quote');
+    expect(model.nodes.map((node) => node.id)).not.toContain('topology_data_compatible');
+    expect(model.nodes.map((node) => node.id)).not.toContain('api_normalized_context_news');
+    expect(model.nodes.find((node) => node.id === 'topology_data_compatible_live_quote')).toMatchObject({
+      provider: 'Alpha -> Beta',
+      attempts: 2,
+    });
+    expect(model.nodes.find((node) => node.id === 'context_pack')?.metadata).toMatchObject({
+      topologyGroup: 'context_pack',
+      context_status_counts: {
+        success: 1,
+      },
+    });
+    expect(model.events.find((event) => event.id === 'evt-compatible')?.nodeId).toBe('topology_data_compatible_live_quote');
+    expect(model.events.find((event) => event.id === 'evt-normalized-block')?.nodeId).toBe('context_pack');
+  });
+
   it('attaches context block states to ContextPack and remaps events', () => {
     const model = buildRunFlowTopologyModel(baseSnapshot);
     const contextPack = model.nodes.find((node) => node.id === 'context_pack');

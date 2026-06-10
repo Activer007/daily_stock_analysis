@@ -187,6 +187,54 @@ const providerAttemptSnapshot: RunFlowSnapshot = {
   ],
 };
 
+const contextBlockSnapshot: RunFlowSnapshot = {
+  ...snapshot,
+  status: 'degraded',
+  nodes: [
+    {
+      id: 'context_block_news',
+      lane: 'data_source',
+      kind: 'data_source',
+      label: '新闻',
+      status: 'success',
+      recordCount: 6,
+      metadata: { block_key: 'news' },
+    },
+    {
+      id: 'context_block_fundamental',
+      lane: 'data_source',
+      kind: 'data_source',
+      label: '基本面',
+      status: 'degraded',
+      metadata: { block_key: 'fundamental' },
+    },
+    {
+      id: 'context_pack',
+      lane: 'analysis',
+      kind: 'analysis',
+      label: 'ContextPack',
+      status: 'degraded',
+    },
+  ],
+  edges: [
+    {
+      id: 'news-context',
+      from: 'context_block_news',
+      to: 'context_pack',
+      kind: 'data',
+      status: 'success',
+    },
+    {
+      id: 'fundamental-context',
+      from: 'context_block_fundamental',
+      to: 'context_pack',
+      kind: 'data',
+      status: 'degraded',
+    },
+  ],
+  events: [],
+};
+
 describe('RunFlowPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -245,6 +293,13 @@ describe('RunFlowPanel', () => {
 
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('LLM 生成');
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('DeepSeek');
+
+    fireEvent.click(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' }));
+
+    expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('fallbackFrom');
+    expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('Tushare');
+    expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('fallbackTo');
+    expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('AkShare');
   });
 
   it('expands provider attempt groups from node details', async () => {
@@ -262,19 +317,55 @@ describe('RunFlowPanel', () => {
     expect(screen.getByRole('button', { name: '收起尝试' })).toBeInTheDocument();
   });
 
+  it('hides topology summary metadata from aggregated node details', async () => {
+    vi.mocked(analysisApi.getTaskFlow).mockResolvedValue(providerAttemptSnapshot);
+
+    render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
+
+    const details = await screen.findByTestId('run-flow-node-details');
+
+    expect(details).toHaveTextContent('运行尝试');
+    expect(details).not.toHaveTextContent('data_type');
+    expect(details).not.toHaveTextContent('provider_chain');
+    expect(details).not.toHaveTextContent('success_count');
+    expect(details).not.toHaveTextContent('failed_count');
+    expect(details).not.toHaveTextContent('fallback_count');
+    expect(details).not.toHaveTextContent('retry_count');
+  });
+
+  it('hides context-pack topology counts from raw metadata details', async () => {
+    vi.mocked(analysisApi.getTaskFlow).mockResolvedValue(contextBlockSnapshot);
+
+    render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
+
+    const details = await screen.findByTestId('run-flow-node-details');
+
+    expect(details).toHaveTextContent('ContextPack');
+    expect(details).toHaveTextContent('上下文输入');
+    expect(details).toHaveTextContent('新闻');
+    expect(details).toHaveTextContent('基本面');
+    expect(details).not.toHaveTextContent('context_status_counts');
+  });
+
   it('does not update state after a pending request is cleaned up', async () => {
     let resolveSnapshot: (value: RunFlowSnapshot) => void = () => undefined;
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(analysisApi.getTaskFlow).mockReturnValue(new Promise((resolve) => {
       resolveSnapshot = resolve;
     }));
 
-    const { unmount } = render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
-    unmount();
+    try {
+      const { unmount } = render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
+      unmount();
 
-    await act(async () => {
-      resolveSnapshot(snapshot);
-    });
+      await act(async () => {
+        resolveSnapshot(snapshot);
+      });
 
-    expect(analysisApi.getTaskFlow).toHaveBeenCalledWith('task-1');
+      expect(analysisApi.getTaskFlow).toHaveBeenCalledWith('task-1');
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });
