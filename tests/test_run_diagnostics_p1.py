@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -17,6 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from data_provider.base import BaseFetcher, DataFetcherManager
 from src.services.run_diagnostics import (
+    RunDiagnosticContext,
     activate_run_diagnostic_context,
     current_diagnostic_snapshot,
     record_provider_run,
@@ -299,6 +301,60 @@ class RunDiagnosticsP1TestCase(unittest.TestCase):
                 "provider_daily_data_backupdailyfetcher_2",
             ],
         )
+
+    def test_live_flow_event_sink_redacts_paths_and_sensitive_metadata(self) -> None:
+        events = []
+        context = RunDiagnosticContext(trace_id="trace-live-redaction", event_sink=events.append)
+
+        context._emit_flow_event(
+            {
+                "timestamp": "2026-06-08T10:00:01",
+                "severity": "danger",
+                "type": "provider_run",
+                "node_id": "provider_daily_data_unsafe_1",
+                "title": "Provider failed",
+                "message": (
+                    r"failed /home/activer/private/.env C:\Users\activer\.env "
+                    "prompt=full-user-prompt raw_response=full-raw-response "
+                    "https://hooks.example.com/webhook?key=secret"
+                ),
+                "metadata": {
+                    "trace_id": "trace-live-redaction",
+                    "operation": "/home/activer/project/.env",
+                    "prompt": "full prompt body",
+                    "raw_response": "full raw body",
+                    "headers": {"Authorization": "Bearer sk-live-secret"},
+                    "proxy": "http://proxy_user:proxy_pass@proxy.internal",
+                    "node": {
+                        "id": "provider_daily_data_unsafe_1",
+                        "lane": "data_source",
+                        "kind": "data_source",
+                        "label": "日线K线 · UnsafeFetcher",
+                        "status": "failed",
+                        "message": r"failed in C:\Users\activer\.env raw_response=full-raw-response",
+                    },
+                },
+            }
+        )
+
+        payload = json.dumps(events, ensure_ascii=False)
+        for leaked in (
+            "/home/activer",
+            "Users",
+            "full-user-prompt",
+            "full-raw-response",
+            "full prompt body",
+            "full raw body",
+            "hooks.example.com/webhook",
+            "sk-live-secret",
+            "proxy_user",
+            "proxy_pass",
+        ):
+            self.assertNotIn(leaked, payload)
+        self.assertIn("<redacted-path>", payload)
+        self.assertIn("<redacted>", payload)
+        self.assertIn('"prompt": "<redacted>"', payload)
+        self.assertIn('"raw_response": "<redacted>"', payload)
 
 
 if __name__ == "__main__":

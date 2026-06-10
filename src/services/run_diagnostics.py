@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+from collections.abc import Mapping
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -63,6 +64,18 @@ _SECRET_REDACTIONS = (
         "Bearer <redacted>",
     ),
 )
+_SENSITIVE_KEY_RE = re.compile(
+    r"(?i)(authorization|api[_-]?key|access[_-]?token|(?:^|[_-])(?:auth|refresh|session|bearer)?[_-]?token$|secret|password|passwd|cookie|"
+    r"webhook|sendkey|prompt|raw[_-]?prompt|raw[_-]?response|headers?|proxy)"
+)
+_WEBHOOK_URL_RE = re.compile(r"https?://[^\s]+?(?:webhook|token|key|secret|sendkey)[^\s]*", re.IGNORECASE)
+_LOCAL_ABSOLUTE_PATH_RE = re.compile(
+    r"(?<![\w:/.-])(?:/(?:home|Users|root|var|tmp|opt|etc)/[^\s,;]+|[A-Za-z]:\\[^\s,;]+)"
+)
+_SENSITIVE_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(api[_-]?key|access[_-]?token|token|secret|password|passwd|cookie|webhook|sendkey|"
+    r"prompt|raw[_-]?prompt|raw[_-]?response)\s*[:=]\s*([^\s,&;]+)"
+)
 
 
 def build_trace_id() -> str:
@@ -71,7 +84,7 @@ def build_trace_id() -> str:
 
 
 def sanitize_diagnostic_text(value: Any, *, max_length: int = 300) -> Optional[str]:
-    """Return a short diagnostic string with obvious credentials redacted."""
+    """Return a short diagnostic string with sensitive details redacted."""
     if value is None:
         return None
 
@@ -81,10 +94,49 @@ def sanitize_diagnostic_text(value: Any, *, max_length: int = 300) -> Optional[s
 
     for pattern, replacement in _SECRET_REDACTIONS:
         text = pattern.sub(replacement, text)
+    text = _WEBHOOK_URL_RE.sub("<redacted-url>", text)
+    text = _LOCAL_ABSOLUTE_PATH_RE.sub("<redacted-path>", text)
+    text = _SENSITIVE_ASSIGNMENT_RE.sub(lambda match: f"{match.group(1)}=<redacted>", text)
 
     if len(text) > max_length:
         return f"{text[:max_length].rstrip()}..."
     return text
+
+
+def safe_diagnostic_key(value: Any) -> str:
+    """Normalize a diagnostic object key after applying text redaction."""
+    text = sanitize_diagnostic_text(value, max_length=80) or ""
+    return re.sub(r"[^A-Za-z0-9_]+", "_", text.strip().lower()).strip("_")[:80]
+
+
+def sanitize_diagnostic_metadata(value: Any, *, depth: int = 0) -> Any:
+    """Recursively redact diagnostic metadata before it reaches API/SSE payloads."""
+    if depth > 3:
+        return "<truncated>"
+    if isinstance(value, Mapping):
+        sanitized: Dict[str, Any] = {}
+        for index, (key, item) in enumerate(value.items()):
+            if index >= 20:
+                sanitized["truncated"] = True
+                break
+            safe_key = safe_diagnostic_key(key)
+            if not safe_key:
+                continue
+            if _SENSITIVE_KEY_RE.search(str(key)):
+                sanitized[safe_key] = "<redacted>"
+                continue
+            safe_value = sanitize_diagnostic_metadata(item, depth=depth + 1)
+            if safe_value not in (None, "", [], {}):
+                sanitized[safe_key] = safe_value
+        return sanitized
+    if isinstance(value, list):
+        items = [sanitize_diagnostic_metadata(item, depth=depth + 1) for item in value[:8]]
+        return [item for item in items if item not in (None, "", [], {})]
+    if isinstance(value, tuple):
+        return sanitize_diagnostic_metadata(list(value), depth=depth)
+    if isinstance(value, (int, float, bool)):
+        return value
+    return sanitize_diagnostic_text(value, max_length=160)
 
 
 @dataclass
@@ -302,7 +354,8 @@ class RunDiagnosticContext:
             return
         try:
             self.flow_event_index += 1
-            event_payload = dict(event)
+            event_payload = sanitize_diagnostic_metadata(event)
+            event_payload = dict(event_payload) if isinstance(event_payload, Mapping) else {}
             event_payload["id"] = event_payload.get("id") or f"flow_{self.flow_event_index:04d}"
             self.event_sink(event_payload)
         except Exception as exc:  # pragma: no cover - defensive fail-open guard
@@ -381,8 +434,7 @@ _DATA_TYPE_LABELS = {
 
 
 def _safe_event_key(value: Any) -> str:
-    text = sanitize_diagnostic_text(value, max_length=80) or ""
-    return re.sub(r"[^A-Za-z0-9_]+", "_", text.strip().lower()).strip("_")[:80]
+    return safe_diagnostic_key(value)
 
 
 def _clean_metadata(value: Dict[str, Any]) -> Dict[str, Any]:

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
@@ -12,7 +11,11 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from api.v1.schemas.run_flow import RunFlowSnapshot
 from src.analysis_context_pack_overview import extract_analysis_context_pack_overview
-from src.services.run_diagnostics import sanitize_diagnostic_text
+from src.services.run_diagnostics import (
+    safe_diagnostic_key,
+    sanitize_diagnostic_metadata,
+    sanitize_diagnostic_text,
+)
 from src.utils.data_processing import normalize_model_used, parse_json_field
 
 
@@ -68,20 +71,6 @@ _CONTEXT_STATUS_TO_FLOW = {
     "not_supported": "skipped",
     "fetch_failed": "failed",
 }
-
-_SENSITIVE_KEY_RE = re.compile(
-    r"(?i)(authorization|api[_-]?key|access[_-]?token|(?:^|[_-])(?:auth|refresh|session|bearer)?[_-]?token$|secret|password|passwd|cookie|"
-    r"webhook|sendkey|prompt|raw[_-]?prompt|raw[_-]?response|headers?|proxy)"
-)
-_WEBHOOK_URL_RE = re.compile(r"https?://[^\s]+?(?:webhook|token|key|secret|sendkey)[^\s]*", re.IGNORECASE)
-_LOCAL_ABSOLUTE_PATH_RE = re.compile(
-    r"(?<![\w:/.-])(?:/(?:home|Users|root|var|tmp|opt|etc)/[^\s,;]+|[A-Za-z]:\\[^\s,;]+)"
-)
-_SENSITIVE_ASSIGNMENT_RE = re.compile(
-    r"(?i)\b(api[_-]?key|access[_-]?token|token|secret|password|passwd|cookie|webhook|sendkey|"
-    r"prompt|raw[_-]?prompt|raw[_-]?response)\s*[:=]\s*([^\s,&;]+)"
-)
-
 
 def build_task_run_flow_snapshot(
     task: Any,
@@ -1261,23 +1250,11 @@ def _valid_status(value: Any) -> str:
 
 
 def _safe_text(value: Any, *, max_length: int = 300) -> Optional[str]:
-    if value is None:
-        return None
-    text = sanitize_diagnostic_text(value, max_length=max_length)
-    if not text:
-        return None
-    text = _WEBHOOK_URL_RE.sub("<redacted-url>", text)
-    text = _LOCAL_ABSOLUTE_PATH_RE.sub("<redacted-path>", text)
-    text = _SENSITIVE_ASSIGNMENT_RE.sub(lambda match: f"{match.group(1)}=<redacted>", text)
-    if len(text) > max_length:
-        return f"{text[:max_length].rstrip()}..."
-    return text
+    return sanitize_diagnostic_text(value, max_length=max_length)
 
 
 def _safe_key(value: Any) -> str:
-    text = _safe_text(value, max_length=80) or ""
-    text = re.sub(r"[^A-Za-z0-9_]+", "_", text.strip().lower())
-    return text.strip("_")[:80]
+    return safe_diagnostic_key(value)
 
 
 def _safe_int(value: Any) -> Optional[int]:
@@ -1291,32 +1268,7 @@ def _safe_int(value: Any) -> Optional[int]:
 
 
 def _sanitize_metadata(value: Any, *, depth: int = 0) -> Any:
-    if depth > 3:
-        return "<truncated>"
-    if isinstance(value, Mapping):
-        sanitized: Dict[str, Any] = {}
-        for index, (key, item) in enumerate(value.items()):
-            if index >= 20:
-                sanitized["truncated"] = True
-                break
-            safe_key = _safe_key(key)
-            if not safe_key:
-                continue
-            if _SENSITIVE_KEY_RE.search(str(key)):
-                sanitized[safe_key] = "<redacted>"
-                continue
-            safe_value = _sanitize_metadata(item, depth=depth + 1)
-            if safe_value not in (None, "", [], {}):
-                sanitized[safe_key] = safe_value
-        return sanitized
-    if isinstance(value, list):
-        items = [_sanitize_metadata(item, depth=depth + 1) for item in value[:8]]
-        return [item for item in items if item not in (None, "", [], {})]
-    if isinstance(value, tuple):
-        return _sanitize_metadata(list(value), depth=depth)
-    if isinstance(value, (int, float, bool)):
-        return value
-    return _safe_text(value, max_length=160)
+    return sanitize_diagnostic_metadata(value, depth=depth)
 
 
 def _as_mapping(value: Any) -> Dict[str, Any]:
