@@ -265,10 +265,9 @@ class TaskStatus(BaseModel):
     
     task_id: str = Field(..., description="任务 ID")
     trace_id: Optional[str] = Field(None, description="诊断 trace ID")
-    status: str = Field(
+    status: TaskStatusEnum = Field(
         ..., 
         description="任务状态",
-        pattern="^(pending|processing|completed|failed)$"
     )
     progress: Optional[int] = Field(
         None, 

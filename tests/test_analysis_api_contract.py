@@ -502,6 +502,38 @@ class AnalysisApiContractTestCase(unittest.TestCase):
         self.assertEqual(status.market_review_payload["kind"], "market_review")
         self.assertIsNone(status.result)
 
+    def test_get_analysis_status_accepts_cancel_states_from_queue(self) -> None:
+        if get_analysis_status is None or analysis_endpoint_module is None:
+            self.skipTest("analysis endpoint helpers unavailable in this environment")
+
+        for task_status in (
+            analysis_endpoint_module.TaskStatusEnum.CANCEL_REQUESTED,
+            analysis_endpoint_module.TaskStatusEnum.CANCELLED,
+        ):
+            with self.subTest(task_status=task_status.value):
+                queue = MagicMock()
+                queue.get_task.return_value = SimpleNamespace(
+                    task_id=f"task-{task_status.value}",
+                    trace_id=f"trace-{task_status.value}",
+                    stock_code="600519",
+                    stock_name="贵州茅台",
+                    status=task_status,
+                    progress=42,
+                    result=None,
+                    error=None,
+                    original_query=None,
+                    selection_source=None,
+                    analysis_phase="auto",
+                    skills=[],
+                )
+
+                with patch("api.v1.endpoints.analysis.get_task_queue", return_value=queue):
+                    status = get_analysis_status(f"task-{task_status.value}")
+
+                self.assertEqual(status.status, task_status.value)
+                self.assertEqual(status.progress, 42)
+                self.assertIsNone(status.result)
+
     def test_get_analysis_status_normalizes_completed_queue_result_contract(self) -> None:
         if get_analysis_status is None or analysis_endpoint_module is None:
             self.skipTest("analysis endpoint helpers unavailable in this environment")

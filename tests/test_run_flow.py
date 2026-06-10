@@ -357,6 +357,22 @@ class RunFlowTestCase(unittest.TestCase):
                 latency_ms=120,
                 record_count=30,
             )
+            record_provider_run(
+                data_type="news_search",
+                provider="NewsFetcher",
+                operation="search_stock_news",
+                success=True,
+                latency_ms=80,
+                record_count=5,
+            )
+            record_provider_run(
+                data_type="daily_data",
+                provider="BackupDailyFetcher",
+                operation="get_daily_data",
+                success=True,
+                latency_ms=90,
+                record_count=28,
+            )
             diagnostics = current_diagnostic_snapshot()
         finally:
             reset_run_diagnostic_context(token)
@@ -377,14 +393,28 @@ class RunFlowTestCase(unittest.TestCase):
             _history_record(context_snapshot={"diagnostics": diagnostics})
         )
 
-        active_provider = next(node for node in active_snapshot.nodes if node.id.startswith("provider_daily_data_"))
-        history_provider = next(node for node in history_snapshot.nodes if node.id == active_provider.id)
-        for field in ("id", "label", "provider", "status", "record_count", "duration_ms"):
-            self.assertEqual(
-                getattr(active_provider, field),
-                getattr(history_provider, field),
-                field,
-            )
+        expected_provider_ids = [
+            "provider_daily_data_dailyfetcher_1",
+            "provider_news_search_newsfetcher_1",
+            "provider_daily_data_backupdailyfetcher_2",
+        ]
+        active_providers = {
+            node.id: node for node in active_snapshot.nodes if node.id in expected_provider_ids
+        }
+        history_providers = {
+            node.id: node for node in history_snapshot.nodes if node.id in expected_provider_ids
+        }
+        self.assertEqual(list(active_providers), expected_provider_ids)
+        self.assertEqual(list(history_providers), expected_provider_ids)
+        for node_id in expected_provider_ids:
+            active_provider = active_providers[node_id]
+            history_provider = history_providers[node_id]
+            for field in ("id", "label", "provider", "status", "record_count", "duration_ms"):
+                self.assertEqual(
+                    getattr(active_provider, field),
+                    getattr(history_provider, field),
+                    f"{node_id}.{field}",
+                )
 
     def test_task_queue_stores_bounded_flow_events_and_broadcasts_task_progress(self) -> None:
         queue = AnalysisTaskQueue(max_workers=1)

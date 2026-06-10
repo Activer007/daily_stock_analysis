@@ -276,10 +276,14 @@ class RunDiagnosticContext:
     history_runs: List[HistoryRun] = field(default_factory=list)
     event_sink: Optional[Callable[[Dict[str, Any]], None]] = None
     flow_event_index: int = 0
+    provider_attempt_index_by_type: Dict[str, int] = field(default_factory=dict)
 
     def record_provider_run(self, provider_run: ProviderRun) -> None:
         self.provider_runs.append(provider_run)
-        self._emit_flow_event(_provider_flow_event(self, provider_run, len(self.provider_runs)))
+        data_type_key = _safe_event_key(provider_run.data_type) or "provider"
+        attempt_index = self.provider_attempt_index_by_type.get(data_type_key, 0) + 1
+        self.provider_attempt_index_by_type[data_type_key] = attempt_index
+        self._emit_flow_event(_provider_flow_event(self, provider_run, attempt_index))
 
     def record_llm_run(self, llm_run: LLMRun) -> None:
         self.llm_runs.append(llm_run)

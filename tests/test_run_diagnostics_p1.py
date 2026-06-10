@@ -255,6 +255,51 @@ class RunDiagnosticsP1TestCase(unittest.TestCase):
         llm_ended = datetime.fromisoformat(llm_node["ended_at"])
         self.assertEqual(int((llm_ended - llm_started).total_seconds() * 1000), 34)
 
+    def test_provider_flow_event_attempt_index_is_scoped_by_data_type(self) -> None:
+        events = []
+        token = activate_run_diagnostic_context(
+            trace_id="trace-provider-attempts",
+            task_id="task-provider-attempts",
+            query_id="query-provider-attempts",
+            stock_code="600519",
+            event_sink=events.append,
+        )
+        try:
+            record_provider_run(
+                data_type="daily_data",
+                provider="DailyFetcher",
+                operation="get_daily_data",
+                success=True,
+            )
+            record_provider_run(
+                data_type="news_search",
+                provider="NewsFetcher",
+                operation="search_stock_news",
+                success=True,
+            )
+            record_provider_run(
+                data_type="daily_data",
+                provider="BackupDailyFetcher",
+                operation="get_daily_data",
+                success=True,
+            )
+        finally:
+            reset_run_diagnostic_context(token)
+
+        provider_node_ids = [
+            event["metadata"]["node"]["id"]
+            for event in events
+            if event["type"] == "provider_run"
+        ]
+        self.assertEqual(
+            provider_node_ids,
+            [
+                "provider_daily_data_dailyfetcher_1",
+                "provider_news_search_newsfetcher_1",
+                "provider_daily_data_backupdailyfetcher_2",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
