@@ -22,7 +22,8 @@ export const RunFlowPanel: React.FC<RunFlowPanelProps> = ({ source, title }) => 
     source,
     enabled: Boolean(source),
   });
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null | false>(null);
+  const [explicitSelectedNodeId, setExplicitSelectedNodeId] = useState<string | null>(null);
+  const [isDetailsClosed, setIsDetailsClosed] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(() => new Set());
   const topology = useMemo(
     () => (snapshot ? buildRunFlowTopologyModel(snapshot, { expandedGroupIds }) : null),
@@ -42,23 +43,33 @@ export const RunFlowPanel: React.FC<RunFlowPanelProps> = ({ source, title }) => 
     ));
     return notable?.id || topology.nodes[0].id;
   }, [topology]);
-  const resolvedSelectedNodeId = useMemo(() => {
-    if (selectedNodeId === false) {
+  const graphSelectedNodeId = useMemo(() => {
+    if (explicitSelectedNodeId && topology?.nodes.some((node) => node.id === explicitSelectedNodeId)) {
+      return explicitSelectedNodeId;
+    }
+    return null;
+  }, [explicitSelectedNodeId, topology]);
+  const detailNodeId = useMemo(() => {
+    if (isDetailsClosed) {
       return null;
     }
-    if (selectedNodeId && topology?.nodes.some((node) => node.id === selectedNodeId)) {
-      return selectedNodeId;
+    if (graphSelectedNodeId) {
+      return graphSelectedNodeId;
     }
     return defaultNodeId;
-  }, [defaultNodeId, selectedNodeId, topology]);
+  }, [defaultNodeId, graphSelectedNodeId, isDetailsClosed]);
   const selectedNode = useMemo(
-    () => topology?.nodes.find((node) => node.id === resolvedSelectedNodeId) || null,
-    [resolvedSelectedNodeId, topology],
+    () => topology?.nodes.find((node) => node.id === detailNodeId) || null,
+    [detailNodeId, topology],
   );
 
-  const selectNode = (node: RunFlowNode) => setSelectedNodeId(node.id);
+  const selectNode = (node: RunFlowNode) => {
+    setExplicitSelectedNodeId(node.id);
+    setIsDetailsClosed(false);
+  };
   const toggleExpandedGroup = useCallback((nodeId: string) => {
-    setSelectedNodeId(nodeId);
+    setExplicitSelectedNodeId(nodeId);
+    setIsDetailsClosed(false);
     setExpandedGroupIds((current) => {
       const next = new Set(current);
       if (next.has(nodeId)) {
@@ -71,7 +82,8 @@ export const RunFlowPanel: React.FC<RunFlowPanelProps> = ({ source, title }) => 
   }, []);
   const selectNodeById = (nodeId: string) => {
     if (topology?.nodes.some((node) => node.id === nodeId)) {
-      setSelectedNodeId(nodeId);
+      setExplicitSelectedNodeId(nodeId);
+      setIsDetailsClosed(false);
     }
   };
 
@@ -153,20 +165,23 @@ export const RunFlowPanel: React.FC<RunFlowPanelProps> = ({ source, title }) => 
               lanes={topology?.lanes || snapshot.lanes}
               nodes={topology?.nodes || snapshot.nodes}
               edges={topology?.edges || snapshot.edges}
-              selectedNodeId={resolvedSelectedNodeId}
+              selectedNodeId={graphSelectedNodeId}
               onSelectNode={selectNode}
             />
             <RunFlowNodeDetails
               node={selectedNode}
-              isExpanded={Boolean(resolvedSelectedNodeId && expandedGroupIds.has(resolvedSelectedNodeId))}
+              isExpanded={Boolean(detailNodeId && expandedGroupIds.has(detailNodeId))}
               onToggleExpanded={toggleExpandedGroup}
-              onClose={() => setSelectedNodeId(false)}
+              onClose={() => {
+                setExplicitSelectedNodeId(null);
+                setIsDetailsClosed(true);
+              }}
             />
           </div>
           <div className="min-h-[20rem] 2xl:max-h-[calc(100vh-18rem)]">
             <RunFlowEventList
               events={topology?.events || snapshot.events}
-              selectedNodeId={resolvedSelectedNodeId}
+              selectedNodeId={graphSelectedNodeId}
               onSelectNode={selectNodeById}
             />
           </div>

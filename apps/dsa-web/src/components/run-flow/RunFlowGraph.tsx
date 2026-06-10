@@ -400,7 +400,7 @@ export const RunFlowGraph: React.FC<RunFlowGraphProps> = ({
                   markerEnd={`url(#${arrowId}-arrow)`}
                   opacity={selectedNodeId ? (relatedToSelected ? 0.9 : 0.22) : 0.68}
                 />
-                {edge.label && (!selectedNodeId || relatedToSelected) ? (
+                {edge.label && (!selectedNodeId || relatedToSelected || edge.kind === 'fallback' || edge.kind === 'retry') ? (
                   <text
                     x={labelX}
                     y={labelY}

@@ -64,7 +64,7 @@ describe('RunFlowGraph', () => {
     expect(onSelectNode).toHaveBeenCalledWith(expect.objectContaining({ id: 'news' }));
   });
 
-  it('dims unrelated edges and hides their labels when a node is selected', () => {
+  it('dims unrelated edges while keeping fallback and retry labels visible when a node is selected', () => {
     const selectionNodes: RunFlowNode[] = [
       ...nodes,
       {
@@ -99,6 +99,14 @@ describe('RunFlowGraph', () => {
         status: 'success',
         label: '报告输出',
       },
+      {
+        id: 'llm-artifact-fallback',
+        from: 'llm',
+        to: 'artifact',
+        kind: 'fallback',
+        status: 'fallback',
+        label: '降级输出',
+      },
     ];
 
     const { container } = render(
@@ -112,9 +120,10 @@ describe('RunFlowGraph', () => {
 
     const paths = Array.from(container.querySelectorAll('svg g path'));
 
-    expect(paths.map((path) => path.getAttribute('opacity'))).toEqual(['0.9', '0.22']);
+    expect(paths.map((path) => path.getAttribute('opacity'))).toEqual(['0.9', '0.22', '0.22']);
     expect(screen.getByText('调度输入')).toBeInTheDocument();
     expect(screen.queryByText('报告输出')).not.toBeInTheDocument();
+    expect(screen.getByText('降级输出')).toBeInTheDocument();
   });
 
   it('distributes fan-out edge anchors instead of routing every line through the node center', () => {

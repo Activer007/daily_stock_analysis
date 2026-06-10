@@ -302,6 +302,39 @@ describe('RunFlowPanel', () => {
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('AkShare');
   });
 
+  it('shows default node details without selecting the graph or hiding unrelated edge labels', async () => {
+    vi.mocked(analysisApi.getTaskFlow).mockResolvedValue({
+      ...snapshot,
+      nodes: [
+        ...snapshot.nodes,
+        {
+          id: 'artifact',
+          lane: 'artifact',
+          kind: 'artifact',
+          label: '保存报告',
+          status: 'success',
+        },
+      ],
+      edges: [
+        ...snapshot.edges,
+        {
+          id: 'llm-artifact',
+          from: 'llm',
+          to: 'artifact',
+          kind: 'data',
+          status: 'success',
+          label: '保存',
+        },
+      ],
+    });
+
+    render(<RunFlowPanel source={{ type: 'task', taskId: 'task-1' }} />);
+
+    expect(await screen.findByTestId('run-flow-node-details')).toHaveTextContent('新闻舆情');
+    expect(screen.getByText('保存')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('expands provider attempt groups from node details', async () => {
     vi.mocked(analysisApi.getTaskFlow).mockResolvedValue(providerAttemptSnapshot);
 
