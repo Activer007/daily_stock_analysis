@@ -72,6 +72,16 @@ const snapshot: RunFlowSnapshot = {
   ],
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('useRunFlowSnapshot', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -140,5 +150,80 @@ describe('useRunFlowSnapshot', () => {
 
     await waitFor(() => expect(historyApi.getRecordFlow).toHaveBeenCalledWith(7));
     expect(taskStreamCalls.at(-1)?.enabled).toBe(false);
+  });
+
+  it('replays buffered flow events into refetched task snapshots', async () => {
+    const initialRequest = createDeferred<RunFlowSnapshot>();
+    const refreshedRequest = createDeferred<RunFlowSnapshot>();
+    vi.mocked(analysisApi.getTaskFlow)
+      .mockReturnValueOnce(initialRequest.promise)
+      .mockReturnValueOnce(refreshedRequest.promise);
+
+    const { result } = renderHook(() => useRunFlowSnapshot({
+      source: { type: 'task', taskId: 'task-1' },
+      enabled: true,
+    }));
+
+    act(() => {
+      initialRequest.resolve(snapshot);
+    });
+
+    await waitFor(() => expect(result.current.snapshot?.events).toHaveLength(1));
+
+    act(() => {
+      taskStreamCalls.at(-1)?.onTaskCompleted?.({
+        taskId: 'task-1',
+        stockCode: '600519',
+        status: 'completed',
+        progress: 100,
+        reportType: 'detailed',
+        createdAt: '2026-06-08T08:00:00Z',
+      });
+      taskStreamCalls.at(-1)?.onTaskFlowEvent?.(
+        {
+          taskId: 'task-1',
+          stockCode: '600519',
+          status: 'processing',
+          progress: 99,
+          reportType: 'detailed',
+          createdAt: '2026-06-08T08:00:00Z',
+        },
+        {
+          id: 'flow-late',
+          timestamp: '2026-06-08T08:00:02Z',
+          severity: 'success',
+          type: 'provider_run',
+          nodeId: 'provider_news_1',
+          title: '新闻检索成功',
+          metadata: {
+            provider: 'NewsFetcher',
+            node: {
+              id: 'provider_news_1',
+              lane: 'data_source',
+              kind: 'data_source',
+              label: '新闻 · NewsFetcher',
+              status: 'success',
+            },
+          },
+        },
+      );
+    });
+
+    await waitFor(() => expect(analysisApi.getTaskFlow).toHaveBeenCalledTimes(2));
+
+    act(() => {
+      refreshedRequest.resolve({
+        ...snapshot,
+        status: 'success',
+        events: snapshot.events,
+        nodes: snapshot.nodes,
+      });
+    });
+
+    await waitFor(() => expect(result.current.snapshot?.status).toBe('success'));
+    const lateEvent = result.current.snapshot?.events.find((event) => event.id === 'flow-late');
+    expect(lateEvent).toBeDefined();
+    expect(lateEvent?.metadata).not.toHaveProperty('node');
+    expect(result.current.snapshot?.nodes.some((node) => node.id === 'provider_news_1')).toBe(true);
   });
 });

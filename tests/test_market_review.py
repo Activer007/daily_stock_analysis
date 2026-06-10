@@ -474,6 +474,53 @@ class MarketReviewLocalizationTestCase(unittest.TestCase):
                 else:
                     os.environ["DATABASE_PATH"] = old_db_path
 
+    def test_run_market_review_reuses_generated_query_id_for_notification_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            old_db_path = os.environ.get("DATABASE_PATH")
+            os.environ["DATABASE_PATH"] = os.path.join(temp_dir, "market_review_generated_query.db")
+            Config._instance = None
+            DatabaseManager.reset_instance()
+            notifier = self._make_notifier()
+            market_analyzer = MagicMock()
+            market_analyzer.run_daily_review_with_snapshot.return_value = SimpleNamespace(
+                report="## 今日大盘\n\n复盘正文",
+                market_light_snapshot={"region": "cn", "trade_date": "2026-03-06", "score": 60},
+            )
+            token = activate_run_diagnostic_context(
+                trace_id="trace-market-generated",
+                task_id="task-market-generated",
+                stock_code=market_review_module.MARKET_REVIEW_HISTORY_CODE,
+                trigger_source="cli",
+            )
+            try:
+                with patch.object(market_review_module, "MarketAnalyzer", return_value=market_analyzer):
+                    result = run_market_review(
+                        notifier,
+                        config=SimpleNamespace(report_language="zh", market_review_region="cn"),
+                        send_notification=True,
+                        trigger_source="cli",
+                    )
+
+                self.assertEqual(result, "## 今日大盘\n\n复盘正文")
+                db = DatabaseManager.get_instance()
+                with db.get_session() as session:
+                    rows = session.query(AnalysisHistory).all()
+                    self.assertEqual(len(rows), 1)
+                    row = rows[0]
+                    self.assertTrue(row.query_id.startswith("market_review_"))
+                    context_snapshot = json.loads(row.context_snapshot)
+                    notification_runs = context_snapshot["diagnostics"]["notification_runs"]
+                    self.assertEqual(notification_runs[-1]["status"], "success")
+                    self.assertTrue(notification_runs[-1]["success"])
+            finally:
+                reset_run_diagnostic_context(token)
+                DatabaseManager.reset_instance()
+                Config._instance = None
+                if old_db_path is None:
+                    os.environ.pop("DATABASE_PATH", None)
+                else:
+                    os.environ["DATABASE_PATH"] = old_db_path
+
 
 if __name__ == "__main__":
     unittest.main()

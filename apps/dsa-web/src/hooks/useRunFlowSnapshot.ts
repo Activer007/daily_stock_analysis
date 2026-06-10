@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { analysisApi } from '../api/analysis';
 import { getParsedApiError, type ParsedApiError } from '../api/error';
 import { historyApi } from '../api/history';
@@ -22,6 +22,8 @@ type RunFlowRequestState = {
   snapshot: RunFlowSnapshot | null;
   error: ParsedApiError | null;
 };
+
+const MAX_BUFFERED_FLOW_EVENTS = 50;
 
 const getSourceKey = (source?: RunFlowSnapshotSource | null): string => {
   if (!source) {
@@ -92,6 +94,24 @@ const mergeFlowEventIntoSnapshot = (
   };
 };
 
+const rememberFlowEvent = (events: RunFlowEvent[], flowEvent: RunFlowEvent): RunFlowEvent[] => {
+  const byId = new Map<string, RunFlowEvent>();
+  [...events, flowEvent].forEach((event, index) => {
+    byId.set(event.id || `${event.type}:${event.nodeId || 'none'}:${event.timestamp || index}`, event);
+  });
+  return Array.from(byId.values())
+    .sort((left, right) => eventTime(left) - eventTime(right))
+    .slice(-MAX_BUFFERED_FLOW_EVENTS);
+};
+
+const replayFlowEvents = (
+  snapshot: RunFlowSnapshot,
+  flowEvents: RunFlowEvent[],
+): RunFlowSnapshot => flowEvents.reduce(
+  (currentSnapshot, flowEvent) => mergeFlowEventIntoSnapshot(currentSnapshot, flowEvent),
+  snapshot,
+);
+
 export function useRunFlowSnapshot({
   source,
   enabled = true,
@@ -108,10 +128,15 @@ export function useRunFlowSnapshot({
   const recordId = source?.type === 'history' ? source.recordId : null;
   const requestKey = `${sourceKey}:${reloadToken}`;
   const shouldLoad = enabled && isUsableSource(source);
+  const flowEventBufferRef = useRef<RunFlowEvent[]>([]);
 
   const refetch = useCallback(async () => {
     setReloadToken((value) => value + 1);
   }, []);
+
+  useEffect(() => {
+    flowEventBufferRef.current = [];
+  }, [sourceKey]);
 
   useTaskStream({
     enabled: shouldLoad && sourceType === 'task',
@@ -119,6 +144,7 @@ export function useRunFlowSnapshot({
       if (task.taskId !== taskId) {
         return;
       }
+      flowEventBufferRef.current = rememberFlowEvent(flowEventBufferRef.current, flowEvent);
       setRequestState((current) => {
         const hasFreshState = current.requestKey === requestKey && current.snapshot;
         if (!hasFreshState) {
@@ -161,9 +187,12 @@ export function useRunFlowSnapshot({
     request
       .then((result) => {
         if (active) {
+          const snapshot = sourceType === 'task'
+            ? replayFlowEvents(result, flowEventBufferRef.current)
+            : result;
           setRequestState({
             requestKey,
-            snapshot: result,
+            snapshot,
             error: null,
           });
         }

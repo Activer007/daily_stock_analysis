@@ -23,6 +23,8 @@ from src.services.run_flow import (
 )
 from src.services.run_diagnostics import (
     activate_run_diagnostic_context,
+    current_diagnostic_snapshot,
+    record_provider_run,
     reset_run_diagnostic_context,
 )
 from src.services.task_queue import AnalysisTaskQueue, TaskInfo, TaskStatus
@@ -335,6 +337,54 @@ class RunFlowTestCase(unittest.TestCase):
 
         self.assertEqual(snapshot.summary.fallback_count, 0)
         self.assertFalse(any(edge["kind"] in {"fallback", "retry"} for edge in edge_payload))
+
+    def test_active_and_history_provider_nodes_share_id_and_core_fields(self) -> None:
+        flow_events: list[dict] = []
+        token = activate_run_diagnostic_context(
+            trace_id="trace-provider-contract",
+            task_id="task-provider-contract",
+            query_id="query-provider-contract",
+            stock_code="600519",
+            trigger_source="api",
+            event_sink=flow_events.append,
+        )
+        try:
+            record_provider_run(
+                data_type="daily_data",
+                provider="DailyFetcher",
+                operation="get_daily_data",
+                success=True,
+                latency_ms=120,
+                record_count=30,
+            )
+            diagnostics = current_diagnostic_snapshot()
+        finally:
+            reset_run_diagnostic_context(token)
+
+        self.assertIsNotNone(diagnostics)
+        active_snapshot = build_task_run_flow_snapshot(
+            TaskInfo(
+                task_id="task-provider-contract",
+                trace_id="trace-provider-contract",
+                stock_code="600519",
+                stock_name="贵州茅台",
+                status=TaskStatus.PROCESSING,
+                created_at=datetime(2026, 6, 8, 10, 0, 0),
+                flow_events=flow_events,
+            )
+        )
+        history_snapshot = build_history_run_flow_snapshot(
+            _history_record(context_snapshot={"diagnostics": diagnostics})
+        )
+
+        active_provider = next(node for node in active_snapshot.nodes if node.id.startswith("provider_daily_data_"))
+        history_provider = next(node for node in history_snapshot.nodes if node.id == active_provider.id)
+        for field in ("id", "label", "provider", "status", "record_count", "duration_ms"):
+            self.assertEqual(
+                getattr(active_provider, field),
+                getattr(history_provider, field),
+                field,
+            )
 
     def test_task_queue_stores_bounded_flow_events_and_broadcasts_task_progress(self) -> None:
         queue = AnalysisTaskQueue(max_workers=1)
