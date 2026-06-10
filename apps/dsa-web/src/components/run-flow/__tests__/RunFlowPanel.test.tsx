@@ -296,7 +296,7 @@ describe('RunFlowPanel', () => {
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('LLM 生成');
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('DeepSeek');
 
-    fireEvent.click(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' }));
+    fireEvent.click(screen.getByRole('button', { name: '新闻舆情 节点，状态 降级回退' }));
 
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('fallbackFrom');
     expect(screen.getByTestId('run-flow-node-details')).toHaveTextContent('Tushare');
@@ -334,7 +334,7 @@ describe('RunFlowPanel', () => {
 
     expect(await screen.findByTestId('run-flow-node-details')).toHaveTextContent('新闻舆情');
     expect(screen.getByText('保存')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '新闻舆情 节点，状态 Fallback' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: '新闻舆情 节点，状态 降级回退' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('expands provider attempt groups from node details', async () => {

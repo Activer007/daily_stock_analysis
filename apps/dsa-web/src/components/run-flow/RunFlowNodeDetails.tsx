@@ -39,6 +39,8 @@ const ALWAYS_HIDDEN_METADATA_KEYS = new Set([
   'counts',
   'dataQuality',
   'packVersion',
+  'context_status_counts',
+  'contextStatusCounts',
 ]);
 const TOPOLOGY_SUMMARY_METADATA_KEYS = new Set([
   'data_type',
@@ -53,8 +55,6 @@ const TOPOLOGY_SUMMARY_METADATA_KEYS = new Set([
   'fallbackCount',
   'retry_count',
   'retryCount',
-  'context_status_counts',
-  'contextStatusCounts',
 ]);
 
 type DetailRow = [string, string];

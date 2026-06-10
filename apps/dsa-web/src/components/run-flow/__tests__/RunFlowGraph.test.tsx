@@ -145,9 +145,13 @@ describe('RunFlowGraph', () => {
       />,
     );
 
-    const paths = Array.from(container.querySelectorAll('svg g path'));
+    const relatedPath = container.querySelector('[data-testid="run-flow-edge-request-news"]');
+    const unrelatedPath = container.querySelector('[data-testid="run-flow-edge-llm-artifact"]');
+    const unrelatedFallbackPath = container.querySelector('[data-testid="run-flow-edge-llm-artifact-fallback"]');
 
-    expect(paths.map((path) => path.getAttribute('opacity'))).toEqual(['0.9', '0.22', '0.22']);
+    expect(relatedPath).toHaveAttribute('opacity', '0.82');
+    expect(unrelatedPath).toHaveAttribute('opacity', '0.18');
+    expect(unrelatedFallbackPath).toHaveAttribute('opacity', '0.18');
     expect(screen.getByText('调度输入')).toBeInTheDocument();
     expect(screen.queryByText('报告输出')).not.toBeInTheDocument();
     expect(screen.getByText('降级输出')).toBeInTheDocument();
